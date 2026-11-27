@@ -50,24 +50,24 @@ pub fn scan(usage: u16) -> Option<Scan> {
         0x04..=0x1D => k(LETTERS[(usage - 0x04) as usize]),
         // 1..9 then 0.
         0x1E..=0x27 => k(0x02 + (usage - 0x1E)),
-        0x28 => k(0x1C), // Return
-        0x29 => k(0x01), // Escape
-        0x2A => k(0x0E), // Backspace
-        0x2B => k(0x0F), // Tab
-        0x2C => k(0x39), // Space
-        0x2D => k(0x0C), // - _
-        0x2E => k(0x0D), // = +
-        0x2F => k(0x1A), // [ {
-        0x30 => k(0x1B), // ] }
-        0x31 => k(0x2B), // \ |
-        0x32 => k(0x2B), // non-US # ~
-        0x33 => k(0x27), // ; :
-        0x34 => k(0x28), // ' "
-        0x35 => k(0x29), // ` ~
-        0x36 => k(0x33), // , <
-        0x37 => k(0x34), // . >
-        0x38 => k(0x35), // / ?
-        0x39 => k(0x3A), // Caps Lock
+        0x28 => k(0x1C),                         // Return
+        0x29 => k(0x01),                         // Escape
+        0x2A => k(0x0E),                         // Backspace
+        0x2B => k(0x0F),                         // Tab
+        0x2C => k(0x39),                         // Space
+        0x2D => k(0x0C),                         // - _
+        0x2E => k(0x0D),                         // = +
+        0x2F => k(0x1A),                         // [ {
+        0x30 => k(0x1B),                         // ] }
+        0x31 => k(0x2B),                         // \ |
+        0x32 => k(0x2B),                         // non-US # ~
+        0x33 => k(0x27),                         // ; :
+        0x34 => k(0x28),                         // ' "
+        0x35 => k(0x29),                         // ` ~
+        0x36 => k(0x33),                         // , <
+        0x37 => k(0x34),                         // . >
+        0x38 => k(0x35),                         // / ?
+        0x39 => k(0x3A),                         // Caps Lock
         0x3A..=0x43 => k(0x3B + (usage - 0x3A)), // F1..F10
         0x44 => k(0x57),                         // F11
         0x45 => k(0x58),                         // F12
@@ -97,12 +97,12 @@ pub fn scan(usage: u16) -> Option<Scan> {
         0x5E => k(0x4D),
         0x5F => k(0x47),
         0x60 => k(0x48),
-        0x61 => k(0x49), // keypad 9
-        0x62 => k(0x52), // keypad 0
-        0x63 => k(0x53), // keypad .
-        0x64 => k(0x56), // non-US \ |
-        0x65 => e(0x5D), // Application (menu)
-        0x67 => k(0x59), // keypad =
+        0x61 => k(0x49),                         // keypad 9
+        0x62 => k(0x52),                         // keypad 0
+        0x63 => k(0x53),                         // keypad .
+        0x64 => k(0x56),                         // non-US \ |
+        0x65 => e(0x5D),                         // Application (menu)
+        0x67 => k(0x59),                         // keypad =
         0x68..=0x6E => k(0x64 + (usage - 0x68)), // F13..F19
         0x6F..=0x72 => k(0x6B + (usage - 0x6F)), // F20..F23
         0x73 => k(0x76),                         // F24

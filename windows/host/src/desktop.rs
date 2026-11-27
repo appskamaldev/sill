@@ -142,8 +142,10 @@ struct Pipeline {
     next_slot: Instant,
     frame_index: i64,
     parameter_sets: Option<Arc<[u8]>>,
-    /// When each frame the encoder holds went in, oldest first.
-    in_flight: std::collections::VecDeque<Instant>,
+    /// When each frame the encoder holds went in, and when its picture was captured, oldest first.
+    in_flight: std::collections::VecDeque<(Instant, Instant)>,
+    /// When the picture in `last` was captured.
+    last_captured: Option<Instant>,
 }
 
 impl Pipeline {
@@ -178,6 +180,7 @@ impl Pipeline {
             frame_index: 0,
             parameter_sets: None,
             in_flight: std::collections::VecDeque::new(),
+            last_captured: None,
         })
     }
 
@@ -196,7 +199,7 @@ impl Pipeline {
         // Every output first: the MFT asks for no more input while one waits to be taken (a slow
         // keyframe missed a 50 ms wait and stalled the stream for good, Duo test 2026-11-27).
         self.drain(hub, stats, now_us, Duration::ZERO)?;
-        if let Some(t) = self.in_flight.front() {
+        if let Some((t, _)) = self.in_flight.front() {
             if t.elapsed() > Duration::from_secs(2) {
                 return Err("the encoder has held a frame for 2 s".into());
             }
@@ -216,6 +219,7 @@ impl Pipeline {
             let nv12 = self.converter.convert(&frame).map_err(|e| format!("BGRA to NV12: {e}"))?;
             stats.convert_us.fetch_add(t.elapsed().as_micros() as u64, Ordering::Relaxed);
             self.last = Some(nv12);
+            self.last_captured = Some(frame.captured);
             self.fresh = true;
         }
         let due = Instant::now() >= self.next_slot;
@@ -231,7 +235,10 @@ impl Pipeline {
         }
         let interval = 10_000_000 / i64::from(self.fps);
         self.encoder.submit(&nv12, self.frame_index * interval, interval).map_err(|e| format!("encoder input: {e}"))?;
-        self.in_flight.push_back(Instant::now());
+        let now = Instant::now();
+        // A still screen's picture encoded again (a keyframe) is timed from now, not its capture.
+        let captured = if self.fresh { self.last_captured.unwrap_or(now) } else { now };
+        self.in_flight.push_back((now, captured));
         self.frame_index += 1;
         self.fresh = false;
         self.keyframe_wanted = false;
@@ -248,8 +255,8 @@ impl Pipeline {
         loop {
             match self.encoder.output(wait) {
                 Ok(Some(out)) => {
-                    let us = self.in_flight.pop_front().map_or(0, |t| t.elapsed().as_micros() as u64);
-                    self.publish(hub, stats, now_us, &out.annexb, us);
+                    let (submitted, captured) = self.in_flight.pop_front().unwrap_or((Instant::now(), Instant::now()));
+                    self.publish(hub, stats, now_us, &out.annexb, submitted.elapsed().as_micros() as u64, captured);
                     wait = Duration::ZERO;
                 }
                 Ok(None) => return Ok(()),
@@ -258,7 +265,15 @@ impl Pipeline {
         }
     }
 
-    fn publish(&mut self, hub: &Hub, stats: &Stats, now_us: &impl Fn() -> u64, annexb_bytes: &[u8], us: u64) {
+    fn publish(
+        &mut self,
+        hub: &Hub,
+        stats: &Stats,
+        now_us: &impl Fn() -> u64,
+        annexb_bytes: &[u8],
+        us: u64,
+        captured: Instant,
+    ) {
         let r = annexb::repack(annexb_bytes);
         if !r.parameter_sets.is_empty() {
             match annexb::kind0(&r.parameter_sets) {
@@ -270,11 +285,15 @@ impl Pipeline {
             return;
         }
         stats.note_encoded(us, r.au.len());
+        stats.note_au_latency(captured.elapsed());
         let Some(ps) = self.parameter_sets.clone() else {
             // A delta before the first parameter sets: nobody could decode it.
             self.keyframe_wanted = true;
             return;
         };
-        hub.deliver(&Encoded { keyframe: r.keyframe, au: Arc::from(r.au), parameter_sets: ps }, now_us());
+        hub.deliver(
+            &Encoded { keyframe: r.keyframe, au: Arc::from(r.au), parameter_sets: ps, captured: Some(captured) },
+            now_us(),
+        );
     }
 }

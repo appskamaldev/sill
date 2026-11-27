@@ -108,7 +108,8 @@ mod win {
         }
 
         fn cpu_ticks() -> Option<u64> {
-            let (mut c, mut e, mut k, mut u) = (FILETIME::default(), FILETIME::default(), FILETIME::default(), FILETIME::default());
+            let (mut c, mut e, mut k, mut u) =
+                (FILETIME::default(), FILETIME::default(), FILETIME::default(), FILETIME::default());
             unsafe { GetProcessTimes(GetCurrentProcess(), &mut c, &mut e, &mut k, &mut u).ok()? };
             Some(ticks(k) + ticks(u))
         }
@@ -152,7 +153,10 @@ mod win {
             let wall = now.duration_since(t0).as_secs_f64();
             // FILETIME ticks are 100 ns.
             let cpu_percent = if wall > 0.0 { (cpu.saturating_sub(c0) as f64 / 1e7) / wall * 100.0 } else { 0.0 };
-            let mut m = PROCESS_MEMORY_COUNTERS { cb: std::mem::size_of::<PROCESS_MEMORY_COUNTERS>() as u32, ..Default::default() };
+            let mut m = PROCESS_MEMORY_COUNTERS {
+                cb: std::mem::size_of::<PROCESS_MEMORY_COUNTERS>() as u32,
+                ..Default::default()
+            };
             let ws = unsafe {
                 if K32GetProcessMemoryInfo(GetCurrentProcess(), &mut m, m.cb).as_bool() {
                     m.WorkingSetSize as f64 / (1024.0 * 1024.0)
@@ -190,7 +194,11 @@ mod tests {
 
     #[test]
     fn words() {
-        let r = Reading { cpu_percent: 4.25, working_set_mb: 38.4, gpu: vec![("VideoEncode".into(), 18.2), ("3D".into(), 2.0)] };
+        let r = Reading {
+            cpu_percent: 4.25,
+            working_set_mb: 38.4,
+            gpu: vec![("VideoEncode".into(), 18.2), ("3D".into(), 2.0)],
+        };
         assert_eq!(r.words(), " | cpu 4.2% mem 38 MB gpu VideoEncode 18% 3D 2%");
         assert_eq!(Reading::default().words(), " | cpu 0.0% mem 0 MB");
     }

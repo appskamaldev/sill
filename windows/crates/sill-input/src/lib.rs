@@ -43,12 +43,27 @@ pub enum Button {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Action {
     /// To this physical pixel of the virtual desktop.
-    MoveTo { x: i32, y: i32 },
-    Button { button: Button, down: bool },
+    MoveTo {
+        x: i32,
+        y: i32,
+    },
+    Button {
+        button: Button,
+        down: bool,
+    },
     /// Wheel units, positive up (vertical) or right (horizontal).
-    Wheel { delta: i32, horizontal: bool },
-    Key { scan: Scan, down: bool },
-    Unicode { unit: u16, down: bool },
+    Wheel {
+        delta: i32,
+        horizontal: bool,
+    },
+    Key {
+        scan: Scan,
+        down: bool,
+    },
+    Unicode {
+        unit: u16,
+        down: bool,
+    },
 }
 
 /// The streamed monitor in physical pixels of the virtual desktop, and its scale (points to pixels).
@@ -67,7 +82,9 @@ impl Rect {
         if !x.is_finite() || !y.is_finite() || self.width == 0 || self.height == 0 {
             return None;
         }
-        let px = |f: f64, origin: i32, len: u32| origin + ((f.clamp(0.0, 1.0) * f64::from(len)).floor() as i32).min(len as i32 - 1);
+        let px = |f: f64, origin: i32, len: u32| {
+            origin + ((f.clamp(0.0, 1.0) * f64::from(len)).floor() as i32).min(len as i32 - 1)
+        };
         Some((px(x, self.left, self.width), px(y, self.top, self.height)))
     }
 
@@ -441,7 +458,17 @@ mod tests {
             }
         }
         assert_eq!(units, vec![0x68, 0xE9, 0xD83D, 0xDE00]);
-        assert_eq!(keys(&a), vec![(0x1C, false, true), (0x1C, false, false), (0x0F, false, true), (0x0F, false, false), (0x0E, false, true), (0x0E, false, false)]);
+        assert_eq!(
+            keys(&a),
+            vec![
+                (0x1C, false, true),
+                (0x1C, false, false),
+                (0x0F, false, true),
+                (0x0F, false, false),
+                (0x0E, false, true),
+                (0x0E, false, false)
+            ]
+        );
         assert_eq!(text(&"x".repeat(5000)).len(), MAX_TEXT_UNITS * 2);
     }
 }

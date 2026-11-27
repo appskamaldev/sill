@@ -99,7 +99,12 @@ pub fn send(actions: &[Action]) -> usize {
         match *a {
             Action::MoveTo { x, y } => {
                 last = (norm(x, vx, vw), norm(y, vy, vh));
-                inputs.push(mouse(last.0, last.1, 0, MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK));
+                inputs.push(mouse(
+                    last.0,
+                    last.1,
+                    0,
+                    MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK,
+                ));
             }
             Action::Button { button, down } => {
                 let f = match (button, down) {

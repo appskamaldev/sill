@@ -38,7 +38,8 @@ impl DesktopInput {
 impl InputSink for DesktopInput {
     fn event(&self, session: u64, literal: bool, ev: &InputEvent) {
         let mut sessions = self.sessions.lock().unwrap();
-        let inj = sessions.entry(session).or_insert_with(|| if literal { Injector::literal() } else { Injector::new() });
+        let inj =
+            sessions.entry(session).or_insert_with(|| if literal { Injector::literal() } else { Injector::new() });
         if inj.literal != literal {
             win::send(&inj.release_all());
             *inj = if literal { Injector::literal() } else { Injector::new() };

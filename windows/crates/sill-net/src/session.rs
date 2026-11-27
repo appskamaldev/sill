@@ -39,15 +39,25 @@ pub fn window_list(host: &Host) -> WindowList {
     l
 }
 
-async fn writer<S: AsyncWrite>(mut w: WriteHalf<S>, mut rx: mpsc::UnboundedReceiver<Out>, in_flight: Arc<AtomicUsize>) {
+async fn writer<S: AsyncWrite>(
+    mut w: WriteHalf<S>,
+    mut rx: mpsc::UnboundedReceiver<Out>,
+    in_flight: Arc<AtomicUsize>,
+    stats: Arc<crate::stats::Stats>,
+) {
     while let Some(o) = rx.recv().await {
         let r = match o {
             Out::Control(b) => w.write_all(&b).await,
-            Out::Frame { header, au } => {
+            Out::Frame { header, au, captured } => {
                 let r = match w.write_all(&header).await {
                     Ok(()) => w.write_all(&au).await,
                     e => e,
                 };
+                if let (Ok(()), Some(c)) = (&r, captured) {
+                    // The last byte is in the TLS stream (written to the socket, or about to be at the
+                    // flush below, which follows at once when nothing else waits).
+                    stats.note_sent_latency(c.elapsed());
+                }
                 in_flight.fetch_sub(1, Ordering::SeqCst);
                 r
             }
@@ -93,7 +103,7 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
     let (mut r, w) = tokio::io::split(stream);
     let (tx, rx) = mpsc::unbounded_channel();
     let in_flight = Arc::new(AtomicUsize::new(0));
-    let writer = tokio::spawn(writer(w, rx, in_flight.clone()));
+    let writer = tokio::spawn(writer(w, rx, in_flight.clone(), host.stats.clone()));
     let out = Sender { tx: tx.clone(), last_sent: Arc::new(AtomicU64::new(0)), host: host.clone() };
     let name =
         host.paired_name(&fp).filter(|n| !n.is_empty()).unwrap_or_else(|| format!("key {}", spki::key_label(&fp)));

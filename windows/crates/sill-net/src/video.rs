@@ -119,12 +119,14 @@ pub struct Encoded {
     pub au: Arc<[u8]>,
     /// Kind 0's payload for the stream this AU belongs to (sent before every keyframe).
     pub parameter_sets: Arc<[u8]>,
+    /// When the picture in it was captured (latency meter); none for the test clip.
+    pub captured: Option<std::time::Instant>,
 }
 
 impl Clip {
     pub fn encoded(&self, i: usize) -> Encoded {
         let f = &self.frames[i];
-        Encoded { keyframe: f.keyframe, au: f.au.clone(), parameter_sets: self.parameter_sets.clone() }
+        Encoded { keyframe: f.keyframe, au: f.au.clone(), parameter_sets: self.parameter_sets.clone(), captured: None }
     }
 }
 
@@ -145,6 +147,8 @@ pub enum Out {
     Frame {
         header: [u8; HEADER_LENGTH],
         au: Arc<[u8]>,
+        /// When its picture was captured: the writer notes capture → written.
+        captured: Option<std::time::Instant>,
     },
 }
 
@@ -314,7 +318,7 @@ impl Hub {
             }
             c.in_flight.fetch_add(1, Ordering::SeqCst);
             let h = header(Kind::Frame, ts, frame.keyframe, frame.au.len());
-            if c.tx.send(Out::Frame { header: h, au: frame.au.clone() }).is_err() {
+            if c.tx.send(Out::Frame { header: h, au: frame.au.clone(), captured: frame.captured }).is_err() {
                 c.in_flight.fetch_sub(1, Ordering::SeqCst);
                 continue;
             }

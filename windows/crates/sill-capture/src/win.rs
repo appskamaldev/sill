@@ -166,6 +166,27 @@ pub struct Frame {
     pub texture: ID3D11Texture2D,
     pub width: u32,
     pub height: u32,
+    /// When Windows composed it (its `SystemRelativeTime`, a QPC time), as an `Instant`.
+    pub captured: std::time::Instant,
+}
+
+/// The `Instant` of a QPC-based time in 100 ns units (WGC's `SystemRelativeTime`); now, if it is
+/// in the future or more than a second ago (not a QPC time after all).
+fn instant_of_qpc_100ns(t: i64) -> std::time::Instant {
+    use windows::Win32::System::Performance::{QueryPerformanceCounter, QueryPerformanceFrequency};
+    let now = std::time::Instant::now();
+    let (mut c, mut f) = (0i64, 0i64);
+    unsafe {
+        if QueryPerformanceCounter(&mut c).is_err() || QueryPerformanceFrequency(&mut f).is_err() || f <= 0 {
+            return now;
+        }
+    }
+    let now_100ns = (i128::from(c) * 10_000_000 / i128::from(f)) as i64;
+    let age = now_100ns - t;
+    if !(0..=10_000_000).contains(&age) {
+        return now;
+    }
+    now.checked_sub(std::time::Duration::from_nanos(age as u64 * 100)).unwrap_or(now)
 }
 
 /// Windows Graphics Capture of one monitor on a free-threaded frame pool.
@@ -216,9 +237,19 @@ impl Capture {
         }
         let Some(frame) = last else { return Ok(None) };
         let size = frame.ContentSize()?;
+        let captured = frame
+            .SystemRelativeTime()
+            .map(|t| instant_of_qpc_100ns(t.Duration))
+            .unwrap_or_else(|_| std::time::Instant::now());
         let access: IDirect3DDxgiInterfaceAccess = frame.Surface()?.cast()?;
         let texture: ID3D11Texture2D = unsafe { access.GetInterface()? };
-        Ok(Some(Frame { _frame: frame, texture, width: size.Width.max(0) as u32, height: size.Height.max(0) as u32 }))
+        Ok(Some(Frame {
+            _frame: frame,
+            texture,
+            width: size.Width.max(0) as u32,
+            height: size.Height.max(0) as u32,
+            captured,
+        }))
     }
 }
 

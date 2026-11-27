@@ -1,6 +1,8 @@
 //! Counters behind the once-a-second stats line.
 
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Mutex;
+use std::time::Duration;
 
 #[derive(Default)]
 pub struct Stats {
@@ -25,6 +27,10 @@ pub struct Stats {
     pub encode_us_max: AtomicU64,
     /// Access unit bytes out of the encoder.
     pub au_bytes: AtomicU64,
+    /// Microseconds from capture to the AU coming out of the encoder, this second.
+    pub latency_au: Mutex<Vec<u32>>,
+    /// Microseconds from capture to the frame's last byte written, per client and frame.
+    pub latency_sent: Mutex<Vec<u32>>,
 }
 
 /// One second's worth, taken (and reset) by `Stats::take`.
@@ -45,6 +51,8 @@ pub struct Second {
     pub encode_us: u64,
     pub encode_us_max: u64,
     pub au_bytes: u64,
+    pub latency_au: Vec<u32>,
+    pub latency_sent: Vec<u32>,
 }
 
 impl Stats {
@@ -66,7 +74,17 @@ impl Stats {
             encode_us: t(&self.encode_us),
             encode_us_max: t(&self.encode_us_max),
             au_bytes: t(&self.au_bytes),
+            latency_au: std::mem::take(&mut *self.latency_au.lock().unwrap()),
+            latency_sent: std::mem::take(&mut *self.latency_sent.lock().unwrap()),
         }
+    }
+
+    pub fn note_au_latency(&self, d: Duration) {
+        push_capped(&self.latency_au, d);
+    }
+
+    pub fn note_sent_latency(&self, d: Duration) {
+        push_capped(&self.latency_sent, d);
     }
 
     /// Notes one access unit that took `us` microseconds to encode.
@@ -78,7 +96,40 @@ impl Stats {
     }
 }
 
+/// At most this many samples a second are kept (a few clients at 120 fps).
+const MAX_SAMPLES: usize = 1024;
+
+fn push_capped(v: &Mutex<Vec<u32>>, d: Duration) {
+    let mut v = v.lock().unwrap();
+    if v.len() < MAX_SAMPLES {
+        v.push(d.as_micros().min(u128::from(u32::MAX)) as u32);
+    }
+}
+
+/// (median, p95) in milliseconds; `None` without samples.
+pub fn percentiles(samples: &[u32]) -> Option<(f64, f64)> {
+    if samples.is_empty() {
+        return None;
+    }
+    let mut s = samples.to_vec();
+    s.sort_unstable();
+    let at = |q: f64| f64::from(s[((s.len() - 1) as f64 * q).round() as usize]) / 1000.0;
+    Some((at(0.5), at(0.95)))
+}
+
 impl Second {
+    /// " | latency capture→AU 21.3/34.0 ms capture→sent 22.1/36.2 ms" (median/p95); empty without samples.
+    pub fn latency_words(&self) -> String {
+        let mut s = String::new();
+        if let Some((m, p)) = percentiles(&self.latency_au) {
+            s.push_str(&format!(" | latency capture→AU {m:.1}/{p:.1} ms"));
+        }
+        if let Some((m, p)) = percentiles(&self.latency_sent) {
+            s.push_str(&format!(" capture→sent {m:.1}/{p:.1} ms"));
+        }
+        s
+    }
+
     /// The capture and encoder part of the stats line; empty while nothing was captured or encoded.
     pub fn media_words(&self) -> String {
         if self.captured == 0 && self.encoded == 0 {
@@ -116,5 +167,18 @@ mod tests {
             " | capture 30 fps (superseded 2) convert 1.0 ms | encode 2 fps 5.0 ms (max 6.0) AU 30 kB/s"
         );
         assert_eq!(s.take().encode_us_max, 0, "taken and reset");
+    }
+
+    #[test]
+    fn latency_percentiles() {
+        assert_eq!(percentiles(&[]), None);
+        assert_eq!(percentiles(&[5000]), Some((5.0, 5.0)));
+        let v: Vec<u32> = (1..=100).map(|i| i * 1000).collect();
+        assert_eq!(percentiles(&v), Some((51.0, 95.0)));
+        let s = Stats::default();
+        s.note_au_latency(Duration::from_millis(20));
+        s.note_sent_latency(Duration::from_millis(22));
+        assert_eq!(s.take().latency_words(), " | latency capture→AU 20.0/20.0 ms capture→sent 22.0/22.0 ms");
+        assert_eq!(s.take().latency_words(), "");
     }
 }
