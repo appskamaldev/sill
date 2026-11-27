@@ -110,6 +110,13 @@ fn encode_png(bmp: windows::Win32::Graphics::Gdi::HBITMAP) -> Result<Vec<u8>> {
 /// Opens `shell:AppsFolder\<id>`, as Start does. The caller has checked `id` is listed.
 pub fn launch(id: &str) -> Result<()> {
     com();
+    // The host has just injected the device's tap, so it may hand the foreground on; without this,
+    // Windows can open the app behind the window that has focus.
+    unsafe {
+        let _ = windows::Win32::UI::WindowsAndMessaging::AllowSetForegroundWindow(
+            windows::Win32::UI::WindowsAndMessaging::ASFW_ANY,
+        );
+    }
     let target = HSTRING::from(format!("shell:AppsFolder\\{id}"));
     let r =
         unsafe { ShellExecuteW(None, &HSTRING::from("open"), &target, PCWSTR::null(), PCWSTR::null(), SW_SHOWNORMAL) };
