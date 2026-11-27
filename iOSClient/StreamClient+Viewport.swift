@@ -32,6 +32,9 @@ extension StreamClient {
             return
         }
         lastViewport = v
+        #if DEBUG
+        if WindowsRig.active { WindowsRig.log("viewport: sent " + (String(data: Wire.encode(v), encoding: .utf8) ?? "?")) }
+        #endif
         send(.viewport, payload: Wire.encode(v))
     }
 

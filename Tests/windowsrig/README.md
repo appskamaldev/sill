@@ -13,6 +13,11 @@ Tests/windowsrig/run.sh connect                         # connect to the saved c
 Tests/windowsrig/run.sh connect KAMAL-LAPTOP            # ... or by its saved name, or another address
 Tests/windowsrig/run.sh input                           # connect, then send the Windows input sequence
 Tests/windowsrig/run.sh shot                            # launch plainly, one screenshot
+Tests/windowsrig/run.sh window Notepad                  # connect, pick the first window whose title or app has "notepad"
+Tests/windowsrig/run.sh window Notepad 1.25             # ... with Aa at 1.25×: the host fits the real window to it
+RIG_INPUT=1 Tests/windowsrig/run.sh window Notepad      # ... and send the input sequence (it types into what streams)
+Tests/windowsrig/run.sh cmd Notepad minimize            # send minimize|close|fullScreen for that window (kind 15)
+RIG_HOST=KAMAL-LAPTOP Tests/windowsrig/run.sh window …  # window and cmd: another saved computer
 RIG_NO_BUILD=1 Tests/windowsrig/run.sh connect          # skip the build (reuse the last one)
 ```
 
@@ -39,6 +44,18 @@ once, then use `connect` and `input`.
   runs only on a loopback session whose host has no version (a synthetic host), as every input
   script does, or with `-SillAllowRemoteInputTest 1` on a host whose list says `hostPlatform`
   "windows". The rig's `input` mode passes both.
+- `-SillPickWindow <text>`: on the window lists, the first window whose title or app name contains the
+  text (any case) is picked 1.5 s after the list that shows it (after the device's own Desktop request),
+  with `select`, as a tap on its thumbnail in the window bar. The log lists the windows (`windows:   id …
+  "title" (app) w×h`) whenever the list changes, then `pick: matched …` and `pick: OK: selecting id …`, or
+  `pick: FAILED` when no list within 10 s of the first one has a match. `window` mode waits for it, then
+  about 5 s, then takes the screenshots.
+- `-SillTextScale <number>`: Aa's value for the run, set as the ruler's release sets it (the nearest of
+  0.5× to 1.5×, no Off) as soon as the stream screen shows, so every viewport carries `scale`. Each
+  viewport sent is logged as its JSON (`viewport: sent {"width":…,"scale":1.25,…}`).
+- `-SillCommandWindow <text> -SillCommandAction minimize|close|fullScreen`: that window's command (kind
+  15), 2 s after the list that shows it, through the long-press menu's `command`. `cmd: OK` or `cmd: FAILED`.
+  It acts on the host's real window: not for a host someone is using.
 - `-SillRigLog 1`: writes the log with no other rig argument.
 
 The log: `Documents/sill-rig.log` in the app's data container, os_log subsystem `sill.rig`, and

@@ -53,5 +53,36 @@ check(lines(8) == ["pointer rightDown 0.500,0.500", "pointer rightUp 0.500,0.500
 check(steps[9].events.count == 3 && steps[9].events.allSatisfy {
     if case .scroll(_, _, let dx, let dy) = $0 { return dx == 0 && dy < 0 } else { return false } }, "three steps down")
 
+// MARK: -SillPickWindow, -SillCommandWindow, -SillTextScale, -SillCommandAction
+
+let listed = [
+    WindowInfo(id: 7, title: "Settings", appName: "System Settings", bundleID: "", width: 900, height: 700),
+    WindowInfo(id: 9, title: "Untitled - Notepad", appName: "Notepad", bundleID: "", width: 800, height: 600),
+    WindowInfo(id: 11, title: "notes.txt - Notepad", appName: "Notepad", bundleID: "", width: 640, height: 480),
+    WindowInfo(id: 12, title: "Inbox", appName: "Mail", bundleID: "", width: 1200, height: 800),
+]
+check(WindowsRig.windowMatch("notepad", in: listed)?.id == 9, "a title, any case: the first match")
+check(WindowsRig.windowMatch("MAIL", in: listed)?.id == 12, "an app name, any case")
+check(WindowsRig.windowMatch("system set", in: listed)?.id == 7, "part of an app name")
+check(WindowsRig.windowMatch("notes.txt", in: listed)?.id == 11, "part of a title")
+check(WindowsRig.windowMatch("Paint", in: listed) == nil, "no match")
+check(WindowsRig.windowMatch(" ", in: listed) == nil, "empty matches nothing")
+check(WindowsRig.windowMatch("x", in: []) == nil, "an empty list")
+check(WindowsRig.describe(listed[1]) == "id 9 \"Untitled - Notepad\" (Notepad) 800×600", "a window's line: \(WindowsRig.describe(listed[1]))")
+check(WindowsRig.textScale("1.25") == 1.25, "a detent as it is")
+check(WindowsRig.textScale("1.1") == 1.0, "the nearest detent")
+check(WindowsRig.textScale("3") == 1.5, "clamped high")
+check(WindowsRig.textScale("0.3") == 0.5, "clamped low, never Off")
+check(WindowsRig.textScale(" 0.75 ") == 0.75, "spaces")
+check(WindowsRig.textScale("0") == nil && WindowsRig.textScale("-1") == nil && WindowsRig.textScale("big") == nil
+      && WindowsRig.textScale("nan") == nil, "not a positive number")
+check(WindowsRig.commandAction("minimize") == .minimize, "minimize")
+check(WindowsRig.commandAction("fullscreen") == .fullScreen && WindowsRig.commandAction("fullScreen") == .fullScreen, "fullScreen, any case")
+check(WindowsRig.commandAction("Close") == .close, "close")
+check(WindowsRig.commandAction("quit") == nil && WindowsRig.commandAction("") == nil, "nothing else")
+check(String(data: Wire.encode(WindowCommand(id: 9, action: .fullScreen)), encoding: .utf8) == #"{"id":9,"action":"fullScreen"}"#
+      || String(data: Wire.encode(WindowCommand(id: 9, action: .fullScreen)), encoding: .utf8) == #"{"action":"fullScreen","id":9}"#,
+      "kind 15's payload")
+
 print("windows-rig: \(checks - failures) of \(checks) checks passed")
 exit(failures == 0 ? 0 : 1)

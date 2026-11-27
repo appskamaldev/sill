@@ -1237,3 +1237,69 @@ extension RemoteDialPolicy {
         return false
     }
 }
+
+#if DEBUG
+// The Windows rig (WindowsRig, Tests/windowsrig): a window picked, or a window command sent, by launch
+// argument, through the paths a tap in the window bar and its long-press menu take.
+extension StreamClient {
+    private static var rigLastListed: [WindowInfo]? = nil
+    private static var rigFirstList: Date? = nil
+    private static var rigPickDone = false
+    private static var rigCommandDone = false
+
+    /// Every window list (main thread): the list logged when it changes, until the rig's steps are done.
+    /// `-SillPickWindow <text>`: the first window whose title or app contains it is picked 1.5 s later
+    /// (after this device's own Desktop request) with `select`, as a tap on its thumbnail.
+    /// `-SillCommandWindow <text> -SillCommandAction minimize|close|fullScreen`: that window's command
+    /// 2 s later with `command`, as the long-press menu. Either fails when 10 s after the first list
+    /// no list has shown a match.
+    func rigListed(_ windows: [WindowInfo]) {
+        let d = UserDefaults.standard
+        let pick = Self.rigPickDone ? nil : d.string(forKey: "SillPickWindow")
+        let commandWindow = Self.rigCommandDone ? nil : d.string(forKey: "SillCommandWindow")
+        guard pick != nil || commandWindow != nil else { return }
+        if Self.rigLastListed != windows {
+            Self.rigLastListed = windows
+            WindowsRig.log("windows: \(windows.count) listed")
+            for w in windows { WindowsRig.log("windows:   " + WindowsRig.describe(w)) }
+        }
+        if Self.rigFirstList == nil {
+            Self.rigFirstList = Date()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+                if !Self.rigPickDone, let q = d.string(forKey: "SillPickWindow") {
+                    Self.rigPickDone = true
+                    WindowsRig.log("pick: FAILED: no window matches \(q.debugDescription)")
+                }
+                if !Self.rigCommandDone, let q = d.string(forKey: "SillCommandWindow") {
+                    Self.rigCommandDone = true
+                    WindowsRig.log("cmd: FAILED: no window matches \(q.debugDescription)")
+                }
+            }
+        }
+        if let pick, let w = WindowsRig.windowMatch(pick, in: windows) {
+            Self.rigPickDone = true
+            WindowsRig.log("pick: matched \(pick.debugDescription): " + WindowsRig.describe(w))
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                guard let self, self.connected else { WindowsRig.log("pick: FAILED: the session ended"); return }
+                WindowsRig.log("pick: OK: selecting id \(w.id)")
+                self.select(.window(w.id))
+            }
+        }
+        if let commandWindow {
+            guard let action = WindowsRig.commandAction(d.string(forKey: "SillCommandAction") ?? "") else {
+                Self.rigCommandDone = true
+                WindowsRig.log("cmd: FAILED: -SillCommandAction is not minimize, close or fullScreen")
+                return
+            }
+            guard let w = WindowsRig.windowMatch(commandWindow, in: windows) else { return }
+            Self.rigCommandDone = true
+            WindowsRig.log("cmd: matched \(commandWindow.debugDescription): " + WindowsRig.describe(w))
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                guard let self, self.connected else { WindowsRig.log("cmd: FAILED: the session ended"); return }
+                WindowsRig.log("cmd: OK: \(action.rawValue) sent for id \(w.id)")
+                self.command(action, window: w.id)
+            }
+        }
+    }
+}
+#endif

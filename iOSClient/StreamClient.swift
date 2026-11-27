@@ -4595,6 +4595,9 @@ final class StreamClient: ObservableObject {
                 // Forget thumbnails for windows that are gone.
                 let live = Set(list.windows.map(\.id))
                 self.thumbnails = self.thumbnails.filter { live.contains($0.key) }
+                #if DEBUG
+                self.rigListed(list.windows)   // the Windows rig's -SillPickWindow and -SillCommandWindow
+                #endif
                 // The first list after a move without a fence: if the Mac stopped the stream meanwhile,
                 // what this device was watching is picked again (`resumeSource`).
                 if let resume = self.resumeSource {

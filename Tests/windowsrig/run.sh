@@ -6,9 +6,13 @@
 #   Tests/windowsrig/run.sh connect [NAME|ADDRESS]  connect to a saved computer (default 100.90.47.26)
 #   Tests/windowsrig/run.sh input [NAME|ADDRESS]    connect, then send the Windows input sequence
 #   Tests/windowsrig/run.sh shot                    launch plainly, one screenshot
+#   Tests/windowsrig/run.sh window TEXT [SCALE]     connect, pick the window whose title or app has TEXT, Aa at SCALE
+#   Tests/windowsrig/run.sh cmd TEXT ACTION         connect, send minimize|close|fullScreen for that window
 #
 # Environment: RIG_NO_BUILD=1 (reuse the last build), RIG_WAIT=<s> (how long to wait for the result;
-# default 60, input 90), RIG_KEEP_BOOTED=1 (leave Sill-Duo booted: only for a run straight after).
+# default 60, input 90), RIG_KEEP_BOOTED=1 (leave Sill-Duo booted: only for a run straight after),
+# RIG_HOST=<name|address> (window and cmd: the saved computer, default 100.90.47.26), RIG_INPUT=1 (window:
+# also send the Windows input sequence, which types into whatever streams).
 # Results: .build/windowsrig/results/<time>-<mode>/ (rig.log, console.out.log, console.err.log, *.png, summary.txt).
 # It takes the shared Xcode lock and always releases it; it makes Sill-Duo only when it is missing and
 # shuts it down at the end. It never touches any other simulator.
@@ -22,7 +26,7 @@ work="$root/.build/windowsrig"
 derived="$work/DerivedData"
 logname="sill-rig.log"
 
-usage() { sed -n '5,8p' "$0" | sed 's/^# //' >&2; exit 2; }
+usage() { sed -n '5,10p' "$0" | sed 's/^# //' >&2; exit 2; }
 mode="${1:-}"; [ -n "$mode" ] || usage; shift
 args=()
 wait_s="${RIG_WAIT:-60}"
@@ -36,6 +40,15 @@ case "$mode" in
         args=(-SillAutoConnect "${1:-100.90.47.26}" -SillInputScript windows -SillAllowRemoteInputTest 1)
         wait_s="${RIG_WAIT:-90}" ;;
     shot) args=(-SillRigLog 1); wait_s="${RIG_WAIT:-8}" ;;
+    window)
+        [ $# -ge 1 ] && [ $# -le 2 ] || usage
+        args=(-SillAutoConnect "${RIG_HOST:-100.90.47.26}" -SillPickWindow "$1")
+        [ $# -eq 2 ] && args+=(-SillTextScale "$2")
+        if [ -n "${RIG_INPUT:-}" ]; then args+=(-SillInputScript windows -SillAllowRemoteInputTest 1); wait_s="${RIG_WAIT:-90}"; fi ;;
+    cmd)
+        [ $# -eq 2 ] || usage
+        case "$2" in minimize|close|fullScreen) ;; *) echo "windowsrig: the action is minimize, close or fullScreen" >&2; exit 2 ;; esac
+        args=(-SillAutoConnect "${RIG_HOST:-100.90.47.26}" -SillCommandWindow "$1" -SillCommandAction "$2") ;;
     *) usage ;;
 esac
 results="$work/results/$(date +%Y%m%d-%H%M%S)-$mode"
@@ -111,6 +124,10 @@ case "$mode" in
     connect) done_re='session: CONNECTED|autoconnect: FAILED' ;;
     input) done_re='input: DONE|input: REFUSED|autoconnect: FAILED' ;;
     shot) done_re='^$NEVER' ;;
+    window)
+        if [ -n "${RIG_INPUT:-}" ]; then done_re='input: DONE|input: REFUSED|pick: FAILED|autoconnect: FAILED'
+        else done_re='pick: OK|pick: FAILED|autoconnect: FAILED'; fi ;;
+    cmd) done_re='cmd: OK|cmd: FAILED|autoconnect: FAILED' ;;
 esac
 # A screenshot of the default display (deviceScaleFactor), with a time limit: a display's capture can hang.
 # The iPhone Duo has two displays (inner and cover) and simctl will not choose: each one it lists is taken.
@@ -136,7 +153,7 @@ for ((i = 0; i < wait_s; i++)); do
     fi
     sleep 1
 done
-sleep 5
+sleep 5   # window: about 4 s for the picked window (and its fit to Aa) to stream
 shot "$mode"
 xcrun simctl terminate "$udid" "$bid" >/dev/null 2>&1 || true
 [ -f "$rig" ] && cp "$rig" "$results/rig.log" || : > "$results/rig.log"
@@ -144,7 +161,7 @@ xcrun simctl terminate "$udid" "$bid" >/dev/null 2>&1 || true
 {
     echo "mode: $mode   simulator: $name $udid   app: $bid"
     echo "results: $results"
-    grep -E 'pair: (OK|FAILED)|autoconnect:|session: CONNECTED|input: ([0-9]+ steps|REFUSED|DONE)' "$results/rig.log" | sed 's/^/  /' || true
+    grep -E 'pair: (OK|FAILED)|autoconnect:|session: CONNECTED|input: ([0-9]+ steps|REFUSED|DONE)|pick: |cmd: |scale: |viewport: ' "$results/rig.log" | sed 's/^/  /' || true
     sent="$(grep -c 'input: t=' "$results/rig.log" || true)"
     [ "$mode" = input ] && echo "  events sent: $sent"
     last_status="$(grep 'status: ' "$results/rig.log" | tail -n 1 | sed 's/^[^ ]* //' || true)"

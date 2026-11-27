@@ -942,6 +942,16 @@ struct StreamScreen: View {
                 scaleOpen = true
             }
         }
+        // `-SillTextScale <number>` (the Windows rig): Aa's value for this run, set now as the ruler's
+        // release sets it (the nearest scale, no Off), so every viewport carries it.
+        if let raw = defaults.string(forKey: "SillTextScale") {
+            if let scale = WindowsRig.textScale(raw) {
+                WindowsRig.log("scale: Aa set to \(TextScale.title(at: scale)) (asked \(raw))")
+                textScale = scale
+            } else {
+                WindowsRig.log("scale: FAILED: \(raw.debugDescription) is not a positive number")
+            }
+        }
         // `-SillScaleScript '<s> <scale|off>[; …]'`: Aa's value set s seconds in, as the ruler's release
         // sets it, whatever streams (a synthetic host streams only the Desktop, over which Aa is dimmed):
         // the viewport it sends (the console's `viewport: …` line), and the host's `win.fitOff` for a
