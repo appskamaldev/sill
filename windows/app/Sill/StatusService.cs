@@ -19,6 +19,9 @@ public sealed class StatusService
     public Status? Current { get; private set; }
     public bool Reached { get; private set; }
 
+    /// "--demo": made-up status, no host (screenshots).
+    public bool Demo { get; set; }
+
     /// Raised on the UI thread after every poll.
     public event Action? Updated;
 
@@ -34,6 +37,13 @@ public sealed class StatusService
 
     public async Task RefreshAsync()
     {
+        if (Demo)
+        {
+            Current = Sill.Demo.Status();
+            Reached = true;
+            Updated?.Invoke();
+            return;
+        }
         if (busy) return;
         busy = true;
         try
@@ -52,6 +62,7 @@ public sealed class StatusService
     /// Sends a command, then polls at once so the window shows its effect.
     public async Task<string?> RunAsync(JsonObject request)
     {
+        if (Demo) return null;
         var e = await HostClient.Shared.CommandAsync(request);
         await RefreshAsync();
         return e;

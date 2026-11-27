@@ -44,6 +44,7 @@ public partial class App : Application
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         DispatcherQueue = DispatcherQueue.GetForCurrentThread();
+        StatusService.Shared.Demo = Environment.GetCommandLineArgs().Contains("--demo");
         StatusService.Shared.Start(DispatcherQueue);
         Route(Environment.GetCommandLineArgs().Skip(1).ToArray());
     }
