@@ -1,0 +1,78 @@
+<Window
+    x:Class="Sill.FlyoutWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Sill">
+    <Window.SystemBackdrop>
+        <DesktopAcrylicBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid x:Name="Root" KeyDown="OnKey">
+        <!-- Plain buttons here are subtle: no fill until the pointer is over them. -->
+        <Grid.Resources>
+            <ResourceDictionary>
+                <ResourceDictionary.ThemeDictionaries>
+                    <ResourceDictionary x:Key="Default">
+                        <StaticResource x:Key="ButtonBackground" ResourceKey="SubtleFillColorTransparentBrush" />
+                        <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="SubtleFillColorSecondaryBrush" />
+                        <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="SubtleFillColorTertiaryBrush" />
+                        <StaticResource x:Key="ButtonBorderBrush" ResourceKey="SubtleFillColorTransparentBrush" />
+                        <StaticResource x:Key="ButtonBorderBrushPointerOver" ResourceKey="SubtleFillColorTransparentBrush" />
+                        <StaticResource x:Key="ButtonBorderBrushPressed" ResourceKey="SubtleFillColorTransparentBrush" />
+                    </ResourceDictionary>
+                    <ResourceDictionary x:Key="Light">
+                        <StaticResource x:Key="ButtonBackground" ResourceKey="SubtleFillColorTransparentBrush" />
+                        <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="SubtleFillColorSecondaryBrush" />
+                        <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="SubtleFillColorTertiaryBrush" />
+                        <StaticResource x:Key="ButtonBorderBrush" ResourceKey="SubtleFillColorTransparentBrush" />
+                        <StaticResource x:Key="ButtonBorderBrushPointerOver" ResourceKey="SubtleFillColorTransparentBrush" />
+                        <StaticResource x:Key="ButtonBorderBrushPressed" ResourceKey="SubtleFillColorTransparentBrush" />
+                    </ResourceDictionary>
+                    <ResourceDictionary x:Key="HighContrast" />
+                </ResourceDictionary.ThemeDictionaries>
+            </ResourceDictionary>
+        </Grid.Resources>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Padding="20,18,20,12" Spacing="6">
+            <Grid>
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Image Source="ms-appx:///Assets/sill-256.png" Width="20" Height="20" VerticalAlignment="Center" />
+                    <TextBlock Text="Sill" Style="{StaticResource SubtitleTextBlockStyle}" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock x:Name="PcName" Style="{StaticResource Secondary}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Ellipse x:Name="Dot" Width="8" Height="8" Fill="{ThemeResource SystemFillColorSuccessBrush}" VerticalAlignment="Center" />
+                <TextBlock x:Name="StateText" Text="Ready for your devices" Style="{StaticResource BodyTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Padding="12,0,12,0" Spacing="2">
+            <TextBlock Text="Devices" Style="{StaticResource Secondary}" Margin="8,4,0,4" />
+            <StackPanel x:Name="DeviceList" Spacing="2" />
+            <TextBlock x:Name="NoDevices" Text="No devices yet. Pair your iPhone or iPad to begin." Style="{StaticResource Secondary}" Margin="8,4,8,8" Visibility="Collapsed" />
+            <Button x:Name="PairButton" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Stretch" Margin="8,12,8,16" Height="36" Click="OnPair">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon Glyph="&#xED14;" FontSize="14" />
+                    <TextBlock Text="Pair a device…" />
+                </StackPanel>
+            </Button>
+        </StackPanel>
+
+        <Grid Grid.Row="2" Padding="12,10" Background="{ThemeResource LayerOnAcrylicFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
+            <StackPanel Orientation="Horizontal" Spacing="4">
+                <Button Content="Open Sill" Click="OnOpen" />
+                <Button x:Name="PauseButton" Content="Pause hosting" Click="OnPause" />
+            </StackPanel>
+            <Button HorizontalAlignment="Right" Width="36" Height="32" Padding="0" Click="OnQuit"
+                    AutomationProperties.Name="Quit Sill" ToolTipService.ToolTip="Quit Sill">
+                <FontIcon Glyph="&#xE7E8;" FontSize="16" />
+            </Button>
+        </Grid>
+    </Grid>
+</Window>

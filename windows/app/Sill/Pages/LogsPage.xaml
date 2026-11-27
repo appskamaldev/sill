@@ -1,0 +1,29 @@
+<local:SillPage
+    x:Class="Sill.LogsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Sill">
+    <Grid MaxWidth="1000" Padding="40,28,40,32" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid>
+            <TextBlock Text="Logs" Style="{StaticResource PageTitle}" />
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <ToggleSwitch x:Name="Follow" IsOn="True" OnContent="Follow" OffContent="Follow" MinWidth="0" AutomationProperties.Name="Follow new lines" />
+                <Button Click="OnCopy">
+                    <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE8C8;" FontSize="14" /><TextBlock Text="Copy" /></StackPanel>
+                </Button>
+                <Button Click="OnOpenFolder">
+                    <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE838;" FontSize="14" /><TextBlock Text="Open folder" /></StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+        <Border Grid.Row="1" Style="{StaticResource Card}" Padding="0">
+            <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Auto" Padding="16,12">
+                <TextBlock x:Name="LogText" FontFamily="{StaticResource MonoFont}" FontSize="12" IsTextSelectionEnabled="True" TextWrapping="NoWrap" />
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</local:SillPage>

@@ -58,6 +58,9 @@ pub fn open_app(args: &str) {
         return;
     }
     unsafe {
+        // The click on the tray icon gave this process the foreground; pass it on so the flyout
+        // and the window come up in front.
+        let _ = windows::Win32::UI::WindowsAndMessaging::AllowSetForegroundWindow(u32::MAX);
         ShellExecuteW(
             None,
             w!("open"),
