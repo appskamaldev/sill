@@ -375,7 +375,7 @@ extension StreamClient {
             guard let self else { return }
             self.clipboardPasteWork = nil
             guard self.connected, self.pastesNow(late: false) else { self.receiptNoted(pasted: false); return }
-            KeyChord.paste.forEach(self.sendFromKeyRow)
+            HostKeys.paste(self.hostPlatform).forEach(self.sendFromKeyRow)   // ⌘V on a Mac, Ctrl+V on a PC
             #if DEBUG
             print("clipboard: ⌘V sent to the Mac")
             #endif

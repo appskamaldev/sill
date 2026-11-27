@@ -100,6 +100,12 @@ public struct WindowList: Codable {
     /// left out otherwise and by every host before. A device keeps the picture, covers nothing and says what it
     /// is (`LockedMac.viewLine`).
     public var offConsoleView: Bool?
+    /// FORK EXTENSION (appskamaldev/sill, not upstream): the host's platform, "windows" from the Windows
+    /// host and left out by every Mac host, which never sends it. Missing or unknown means a Mac. A device
+    /// whose hello says `Hello.pcKeys` then sends that host's keys literally (HostKeys, on the device): its
+    /// kind 8 keys are a PC's, and its key row names them so (Win, Ctrl, Alt). Set after the initializer,
+    /// as `keyRepeat`.
+    public var hostPlatform: String?
 
     public init(macName: String, windows: [WindowInfo], active: StreamSource, launchID: String? = nil,
                 hostVersion: String? = nil, protocol: Int? = nil, gestures: Int? = nil, clipboard: Int? = nil) {

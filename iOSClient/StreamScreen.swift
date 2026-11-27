@@ -1887,6 +1887,7 @@ struct StreamScreen: View {
                              onModifiersConsumed: { latched = [] },
                              sendGesture: { client.sendGesture($0, fingers: $1) },
                              macRepeatsKeys: { KeyTyping.macRepeats(keyRepeat: client.hostKeyRepeat) },
+                             commandIsControl: { client.commandIsControl },
                              readZoom: { [zoom] in zoom.zoom },
                              writeZoom: { [zoom] in zoom.set($0) },
                              padOverPicture: FullScreenPolicy.pictureIsTrackpad(switchOn: trackpadInFullScreen,

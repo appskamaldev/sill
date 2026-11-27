@@ -90,6 +90,9 @@ struct HostSettingsPanel: View {
     /// This iPhone's Arrow Keys (#287; PhoneKeyRow.arrowKeysKey): off unless turned on, read by the key row
     /// (the four arrows after shift, in a row that scrolls), never sent; offered on an iPhone alone.
     @AppStorage(PhoneKeyRow.arrowKeysKey) private var arrowKeys = PhoneKeyRow.arrowKeysDefault
+    /// FORK EXTENSION: "Use ⌘ as Ctrl on PCs" (HostKeys.commandAsControlKey): on unless turned off, read as a
+    /// hardware keyboard's keys go to a Windows PC, never sent; offered while the host is a PC.
+    @AppStorage(HostKeys.commandAsControlKey) private var commandAsControl = HostKeys.commandAsControlDefault
     /// Shake to Show Controls (full screen, docs/full-screen-plan.md): on unless turned off, never sent.
     @AppStorage(FullScreenPolicy.shakeKey) private var shakeShowsControls = true
     /// Use Picture as Trackpad (FullScreenPolicy.trackpadKey): off unless turned on, read by the stream screen,
@@ -1024,7 +1027,9 @@ struct HostSettingsPanel: View {
     /// group under This iPhone, after the gestures and before Take the Tour, where the key row's other
     /// switches are to join it. For every Mac: the row is this device's own, and the Mac sees only its keys.
     @ViewBuilder private var keys: some View {
-        if PhoneKeyRow.offered(phoneArrangement: DuoLayout.phoneArrangement) {
+        let arrows = PhoneKeyRow.offered(phoneArrangement: DuoLayout.phoneArrangement)
+        let pc = client.hostPlatform == .windows
+        if arrows || pc {
             Text(PhoneKeyRow.Copy.group)
                 .font(.footnote.weight(.medium))
                 .foregroundStyle(Palette.muted)
@@ -1033,13 +1038,25 @@ struct HostSettingsPanel: View {
                 .padding(.bottom, 6)
                 .accessibilityAddTraits(.isHeader)
                 .id(Self.keysGroupID)
-            Rows {
-                Toggle(isOn: $arrowKeys) {
-                    Text(PhoneKeyRow.Copy.title).foregroundStyle(Palette.text)
+            if arrows {
+                Rows {
+                    Toggle(isOn: $arrowKeys) {
+                        Text(PhoneKeyRow.Copy.title).foregroundStyle(Palette.text)
+                    }
+                    .rowFrame()
                 }
-                .rowFrame()
+                Footnote(text: PhoneKeyRow.Copy.footnote)
             }
-            Footnote(text: PhoneKeyRow.Copy.footnote)
+            // A PC host (HostKeys): a hardware keyboard's ⌘ as Ctrl there.
+            if pc {
+                Rows {
+                    Toggle(isOn: $commandAsControl) {
+                        Text(HostKeys.Copy.commandAsControlTitle).foregroundStyle(Palette.text)
+                    }
+                    .rowFrame()
+                }
+                Footnote(text: HostKeys.Copy.commandAsControlFootnote)
+            }
         }
     }
 

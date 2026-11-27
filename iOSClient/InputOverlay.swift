@@ -110,6 +110,13 @@ final class InputOverlayView: UIView, UITextInput, UIGestureRecognizerDelegate {
     /// `keyRepeat`): a hardware keyboard's characters go to it as keys only then (KeyTyping), as a Mac that
     /// repeats none would type each once. Asked as each key goes down.
     var macRepeatsKeys: () -> Bool = { false }
+    /// FORK EXTENSION: whether a hardware keyboard's ⌘ goes as Ctrl (`StreamClient.commandIsControl`: a PC
+    /// host, "Use ⌘ as Ctrl on PCs" on; HostKeys.commandAsControl). Asked for each key event sent.
+    var commandIsControl: () -> Bool = { false }
+    /// A hardware key's event to the host: ⌘ as Ctrl on a PC with the switch on (`commandIsControl`).
+    private func sendHardwareKey(_ event: InputEvent) {
+        send(commandIsControl() ? HostKeys.commandAsControl(event) : event)
+    }
     /// A three- or four-finger gesture this view decided, for the Mac (`StreamClient.sendGesture`,
     /// which checks this device's switch and the Mac's `gestures`, and shows the Desktop first while
     /// a window streams). True when it went.
@@ -1111,7 +1118,7 @@ final class InputOverlayView: UIView, UITextInput, UIGestureRecognizerDelegate {
         guard !events.isEmpty else { return }
         setOwnPointer(nil, .none)
         forgetTyped()
-        events.forEach(send)
+        events.forEach(sendHardwareKey)
     }
 
     /// DEBUG: every hardware key this view sees, and which way it went ("hwkey: usage 41 down via
@@ -1212,7 +1219,7 @@ final class InputOverlayView: UIView, UITextInput, UIGestureRecognizerDelegate {
             if down, TextInputRules.isKeyboardSwitch(usage: usage, modifiers: modifiers,
                                                      keyboards: UITextInputMode.activeInputModes.compactMap(\.primaryLanguage)) {
                 let ups = forwarded.keyboardSwitch()
-                ups.forEach(send)
+                ups.forEach(sendHardwareKey)
                 Self.hwkey(usage, down: down, via: channel, modifiers: modifiers, to: "iPadOS's keyboard switch",
                            note: ups.isEmpty ? nil : "let go on the Mac: " + ups.map { event -> String in
                                if case .key(let u, _, _) = event { return "usage \(u)" } else { return "\(event)" } }.joined(separator: ", "))
@@ -1224,7 +1231,7 @@ final class InputOverlayView: UIView, UITextInput, UIGestureRecognizerDelegate {
             switch outcome {
             case .send(let event):
                 if down { forgetTyped() }
-                send(event)
+                sendHardwareKey(event)
                 Self.hwkey(usage, down: down, via: channel, modifiers: modifiers, to: "to the Mac",
                            note: down ? typingNote(typing) : nil)
             case .text:
@@ -1306,7 +1313,7 @@ final class InputOverlayView: UIView, UITextInput, UIGestureRecognizerDelegate {
     /// panel took the keyboard, the tour showed) or is leaving the screen, and UIKit sends it no
     /// release for them.
     private func releaseForwardedKeys() {
-        for up in forwarded.releaseAll() { send(up) }
+        for up in forwarded.releaseAll() { sendHardwareKey(up) }
     }
 }
 
@@ -2166,6 +2173,8 @@ struct InputOverlay: UIViewRepresentable {
     /// Whether the session's Mac repeats a held key (`StreamClient.hostKeyRepeat`); see
     /// `InputOverlayView.macRepeatsKeys`.
     var macRepeatsKeys: () -> Bool = { false }
+    /// `StreamClient.commandIsControl`; see `InputOverlayView.commandIsControl`.
+    var commandIsControl: () -> Bool = { false }
     /// The picture's zoom, kept by the stream screen (its StreamZoomModel, which ZoomedStreamView draws):
     /// read for every touch, written while two fingers pinch or move the picture. Nil keeps it in the
     /// view.
@@ -2189,6 +2198,7 @@ struct InputOverlay: UIViewRepresentable {
         uiView.latchedModifiers = latchedModifiers
         uiView.sendGesture = sendGesture
         uiView.macRepeatsKeys = macRepeatsKeys
+        uiView.commandIsControl = commandIsControl
         uiView.readZoom = readZoom
         uiView.writeZoom = writeZoom
         uiView.padOverPicture = padOverPicture

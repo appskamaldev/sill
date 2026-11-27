@@ -1,0 +1,5 @@
+# `host-keys`
+
+**Checks:** a fork extension (appskamaldev/sill, not upstream): the keys this device offers and sends by its host's kind (`HostKeys`). `WindowList.hostPlatform` "windows" is a PC, missing or anything else a Mac; the literal mode needs both that and the hello's `pcKeys` 1. The key row's modifiers per platform (a Mac's ctrl, opt, cmd, shift; a PC's Start, Ctrl, Alt, Shift) with the HID usage and flag each sends (Win 0xE3 with command, Ctrl 0xE0 with control, Alt 0xE2 with option); a tapped Start left alone goes as Win down and up; the Shortcuts list per platform (none on a Mac; on a PC Search Win+S, Alt+Tab, Win+D, Win+Tab, Win+E, Ctrl+Shift+Esc, Win+L, Alt+F4, and never Ctrl+Alt+Del) and their exact events; paste as ⌘V on a Mac and Ctrl+V on a PC; "Use ⌘ as Ctrl on PCs" (on by default, a PC only) and what it does to a hardware key (⌘'s keys and flag as Ctrl's, everything else as it was); the wire: both fields' JSON keys, old JSON still decoding, and the new fields left out when nil
+
+**Compiles:** `Sources/StreamProtocol/*.swift`, `iOSClient/KeyChords.swift`, `iOSClient/TextComposition.swift` and `iOSClient/HostKeys.swift` (`swiftc`)
