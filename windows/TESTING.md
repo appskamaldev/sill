@@ -75,6 +75,21 @@ client reads it as "isn't Sill".
 | 2026-11-27 | macOS (arm64), loopback | `tlsprobe` against sill-host and against upstream `SillHost --synthetic --remote` | see "R1: what Apple's client sees" below |
 | 2026-11-27 | macOS (arm64) | `cargo test --workspace --locked` (Checkpoint 1 fixes) | 57 passed, 0 failed; clippy `-D warnings` (host and `--target x86_64-pc-windows-msvc` for sill-platform, sill-store) and fmt clean |
 
+### First automated end-to-end run: the simulator rig (2026-11-27, 19:42–19:44 UTC)
+
+The Mac's iPhone Duo simulator ("Sill-Duo", Sill Dev 0.6.3 (11), iPhone19,4 simulator) ran against
+this laptop's host over Tailscale (100.95.33.72 → 100.90.47.26:7455). Kamal approved the pairing
+and the scripted input. Host 168423cb+36f5277e, `--log-level debug`. **PASS on both sides.**
+
+- Pairing: "Paired Sill-Duo (key agx9AmB8…) from 100.95.33.72, with the code."
+- Run 1 (connect only, 12 s): hello with `pcKeys 1`, 236 apps and 236 icons sent, the desktop
+  streamed with BGRA input: capture → sent 21–25 ms median, viewport 366×228 pt at 60 fps.
+- Run 2 (scripted input, 49 s): pointer to the centre, left click, text "sill rig 123", Return,
+  Win (HID 227, literal mode), Esc, Ctrl+A (HID 224 + 4 with the control flag), Backspace,
+  right click, scroll dy −0.05 ×3. Every event was logged at debug and injected, with no
+  `SendInput` shortfall. On the laptop, the text landed in Notepad (Kamal) and Start opened and
+  closed. The app-side log and screenshots matched (Mac session).
+
 ### Phase 2 MVP results (task/windows-phase2, 2026-11-27)
 
 Laptop: HP, Core Ultra 7 155H, Intel Arc iGPU (driver 32.0.101.8831), Windows 11 Pro 26H2 build
