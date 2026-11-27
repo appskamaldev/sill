@@ -75,6 +75,33 @@ client reads it as "isn't Sill".
 | 2026-11-27 | macOS (arm64), loopback | `tlsprobe` against sill-host and against upstream `SillHost --synthetic --remote` | see "R1: what Apple's client sees" below |
 | 2026-11-27 | macOS (arm64) | `cargo test --workspace --locked` (Checkpoint 1 fixes) | 57 passed, 0 failed; clippy `-D warnings` (host and `--target x86_64-pc-windows-msvc` for sill-platform, sill-store) and fmt clean |
 
+### Colour regression check: the chart through the rig (2026-11-27, ~19:48–20:10 UTC)
+
+`windows/testdata/colour-chart.png` (written by `windows/tools/colour-chart.py`) was shown on the
+laptop, in Photos maximized at 89 %, and its on-screen values were checked by a local screenshot to
+be exact. The Mac's simulator rig connected over Tailscale (`Tests/windowsrig/run.sh connect`
+in the sill-trackpad worktree), took a screenshot of the streamed picture, and averaged 7×7 at each
+patch centre (the stream rectangle found from the red patch). Patch order: black, grey 16, grey
+128, grey 235, white, red, green, blue. Ramp samples are at 0/29/59/128/193/255 of the reference.
+
+| Run | Patches on the device | Ramp | Verdict |
+|---|---|---|---|
+| BGRA input, 36f5277e | 16, 30, 126, 218, 235; (239,16,15), (13,237,14), (16,16,239) | 20/45/70/127/181/233 | **Fail:** limited range shown as full (washed out) |
+| NV12 input (`--encoder-input nv12`) | 0, 16, 128, 235, 255; (253,0,0), (0,254,1), (0,0,253) | 3/32/61/128/193/254 | **Pass** (baseline) |
+| BGRA input with the SPS fix, dd86c7f3 | 0, 16, 128, 235, 255; (255,1,0), (0,255,1), (1,0,255) | 3/31/61/129/193/254 | **Pass:** matches NV12 |
+
+Cause: with BGRA input, the Intel MF HEVC MFT converts RGB to YUV itself in limited range (Y 16–235)
+but writes `video_full_range_flag = 1` in its SPS. Our NV12 path (the video processor, full range)
+also says full, correctly. Fix: in BGRA mode the host rewrites that one bit to 0
+(`sill_encode::sps::set_full_range`), so the device expands to 0–255, and the BGRA latency gain
+(capture → sent 37 → 22 ms) is kept. The host logs what each pipeline signals ("Encoder signals
+limited range, no colour description (BGRA input)."). Neither mode sends a colour description
+(primaries, transfer, matrix): the device's defaults match, as the neutral greys and exact
+primaries show.
+
+Repeat after any encoder or conversion change: show the chart, run the rig's connect plus patch
+sampling, and compare against the NV12 row.
+
 ### First automated end-to-end run: the simulator rig (2026-11-27, 19:42–19:44 UTC)
 
 The Mac's iPhone Duo simulator ("Sill-Duo", Sill Dev 0.6.3 (11), iPhone19,4 simulator) ran against
