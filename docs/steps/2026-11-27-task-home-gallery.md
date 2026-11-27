@@ -42,3 +42,7 @@ approved the design that day). Our fork only (Sill Dev), not for upstream.** Cli
   policy home-device goodbye remote-rules duo`: all passed (home-gallery 144). Debug for the simulator and
   Release for a device at 16.4. Harness photos on the passDuo-Duo simulator (borrowed, Sill removed after).
   Not run: VoiceOver on a device, iOS 16 itself, the real dial paths (Cancel, Not answering).
+
+**Own build 9 (2026-11-27, `task/duo-own-build`).** The gallery and Use Picture as Trackpad, CURRENT_PROJECT_VERSION 9.
+Release with `-allowProvisioningUpdates` (com.appskamaldev.sill, MinimumOSVersion 16.4). Installed on Kamal's iPad
+(cfgutil); the Duo was not reachable (devicectl 1011), so not installed there.
