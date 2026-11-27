@@ -54,6 +54,31 @@ impl Config {
     }
 }
 
+/// A connected session, as the app's status shows it.
+#[derive(Clone, Debug)]
+pub struct Live {
+    pub name: String,
+    /// The device's key (base64url SHA-256 of its SPKI), as `--list-devices` prints it.
+    pub key: String,
+    pub peer: String,
+    pub door: &'static str,
+    /// "Sill 0.6.2 (1607)" once its hello came.
+    pub app: Option<String>,
+    /// Seconds since 1970 when it connected.
+    pub since: f64,
+}
+
+/// The last second's numbers, for the app's status.
+#[derive(Clone, Debug, Default)]
+pub struct LastSecond {
+    pub fps: u64,
+    pub kbps: u64,
+    /// Capture to last byte sent, median, milliseconds.
+    pub latency_ms: Option<f64>,
+    pub cpu_percent: Option<f64>,
+    pub memory_mb: Option<f64>,
+}
+
 /// What `--pair` shows.
 #[derive(Clone, Debug)]
 pub struct PairingOffer {
@@ -101,6 +126,15 @@ pub struct Host {
     pub shutdown: watch::Sender<bool>,
     /// Fingerprints taken off the list: their sessions get goodbye `removed`.
     pub removed: broadcast::Sender<Vec<u8>>,
+    /// Fingerprints the app disconnected: their sessions get goodbye `quit` (they may come back).
+    pub kicked: broadcast::Sender<Vec<u8>>,
+    /// Connected sessions by the hub's id.
+    pub live: Mutex<HashMap<u64, Live>>,
+    /// Hosting paused from the app: sessions are closed and new ones turned away.
+    pub paused: std::sync::atomic::AtomicBool,
+    /// The pairing window last opened: its code, link and when it ends (seconds since 1970).
+    pub offer: Mutex<Option<(PairingOffer, f64)>>,
+    pub last_second: Mutex<LastSecond>,
 }
 
 /// Counts a session for as long as it lives.
@@ -166,6 +200,11 @@ impl Host {
             }),
             shutdown: watch::channel(false).0,
             removed: broadcast::channel(16).0,
+            kicked: broadcast::channel(16).0,
+            live: Mutex::new(HashMap::new()),
+            paused: std::sync::atomic::AtomicBool::new(false),
+            offer: Mutex::new(None),
+            last_second: Mutex::new(LastSecond::default()),
             config,
             store,
         }))
@@ -286,7 +325,9 @@ impl Host {
             }
         });
         let link = PairLink::new(&self.fingerprint, &secret, &self.config.name, port, &addresses);
-        Ok(PairingOffer { code, link: link.url(), expires_in: LIFETIME })
+        let offer = PairingOffer { code, link: link.url(), expires_in: LIFETIME };
+        *self.offer.lock().unwrap() = Some((offer.clone(), crate::wall_clock() + LIFETIME));
+        Ok(offer)
     }
 
     pub fn pairing_open(&self) -> bool {
@@ -433,6 +474,21 @@ impl Host {
             }
             Err(e) => error!("Could not read the paired devices again: {e}"),
         }
+    }
+
+    /// Closes the pairing window now (the app's Cancel).
+    pub fn close_pairing(&self) {
+        let mut s = self.state.lock().unwrap();
+        s.window = PairingWindow::new();
+        *self.offer.lock().unwrap() = None;
+    }
+
+    /// Disconnects every session of the device with this key (it may reconnect).
+    pub fn disconnect(&self, key: &str) -> bool {
+        let Some(fp) = base64url::decode(key) else { return false };
+        let any = self.live.lock().unwrap().values().any(|l| l.key == key);
+        let _ = self.kicked.send(fp);
+        any
     }
 
     /// Asks every task to wind down (goodbye `quit` to every session).

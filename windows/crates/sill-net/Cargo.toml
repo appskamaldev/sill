@@ -14,6 +14,7 @@ sill-policy = { path = "../sill-policy" }
 sill-store = { path = "../sill-store" }
 sill-platform = { path = "../sill-platform" }
 serde_json.workspace = true
+qrcode.workspace = true
 sha2.workspace = true
 p256 = { workspace = true, features = ["pkcs8"] }
 getrandom.workspace = true

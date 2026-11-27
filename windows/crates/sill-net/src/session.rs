@@ -137,6 +137,15 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
         }
     }
 
+    if host.paused.load(Ordering::Relaxed) {
+        info!("{name} at {peer} turned away: hosting is paused.");
+        out.send(message(Kind::Goodbye, encode(&Goodbye { reconnect: Some(false), ..Goodbye::reason(Goodbye::QUIT) })));
+        drop(out);
+        drop(tx);
+        let _ = writer.await;
+        drain(&mut r, host.config.close_wait).await;
+        return;
+    }
     info!("Client connected: {name} at {peer} ({} door).", crate::tls::door_word(door));
     // Catalog first (kinds 2 then 16), as upstream's `sendCatalog`.
     out.send(message(Kind::WindowList, encode(&window_list(&host))));
@@ -166,6 +175,18 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
         None => None,
     };
     let video_id = host.hub.join(video.clone());
+    host.live.lock().unwrap().insert(
+        video_id,
+        crate::host::Live {
+            name: name.clone(),
+            key: sill_pairing::base64url::encode(&fp),
+            peer: peer.to_string(),
+            door: crate::tls::door_word(door),
+            app: None,
+            since: crate::wall_clock(),
+        },
+    );
+    let mut kicked = host.kicked.subscribe();
 
     let mut shutdown = host.shutdown.subscribe();
     let mut removed = host.removed.subscribe();
@@ -283,6 +304,14 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
                     out.send(message(Kind::HostSettings, encode(&host_settings(&host, None))));
                 }
             }
+            gone = kicked.recv() => {
+                if let Ok(gone) = gone {
+                    if gone == fp {
+                        info!("{name} at {peer}: disconnected from this PC.");
+                        break End::Goodbye(Goodbye { reconnect: Some(false), ..Goodbye::reason(Goodbye::QUIT) });
+                    }
+                }
+            }
             _ = shutdown.changed() => {
                 break End::Goodbye(Goodbye { reconnect: Some(true), ..Goodbye::reason(Goodbye::QUIT) });
             }
@@ -297,6 +326,7 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
         }
     };
     host.hub.leave(video_id);
+    host.live.lock().unwrap().remove(&video_id);
     if let Some(sink) = host.input.get() {
         sink.left(video_id);
     }
@@ -363,7 +393,11 @@ impl SessionState<'_> {
                     if self.literal_keys {
                         info!("{name} at {peer} sends literal PC keys (pcKeys {}).", h.pc_keys.unwrap_or(0));
                     }
-                    self.host.note_app(&self.fp, device_gate::app_label(&h));
+                    let label = device_gate::app_label(&h);
+                    if let Some(l) = self.host.live.lock().unwrap().get_mut(&self.session_id) {
+                        l.app = label.clone();
+                    }
+                    self.host.note_app(&self.fp, label);
                 }
                 None => info!("{name} at {peer}: a hello that does not decode."),
             },

@@ -227,7 +227,15 @@ async fn chores(host: Arc<Host>) {
         }
         window_was_open = open;
         let s = host.stats.take();
-        let cost = meter.read().map(|r| r.words()).unwrap_or_default();
+        let reading = meter.read();
+        let cost = reading.as_ref().map(|r| r.words()).unwrap_or_default();
+        *host.last_second.lock().unwrap() = crate::host::LastSecond {
+            fps: s.sent,
+            kbps: s.bytes * 8 / 1000,
+            latency_ms: crate::stats::percentiles(&s.latency_sent).map(|(m, _)| m),
+            cpu_percent: reading.as_ref().map(|r| r.cpu_percent),
+            memory_mb: reading.as_ref().map(|r| r.working_set_mb),
+        };
         let (home, remote) = host.sessions();
         if home + remote > 0 {
             info!(

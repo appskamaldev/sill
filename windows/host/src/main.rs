@@ -1,6 +1,10 @@
-//! `sill-host`: the Windows host: pairing, sessions, and the desktop as hardware HEVC (Phase 2), or
-//! the synthetic test picture with `--test-clip`. Runs on macOS too for development (plain files,
-//! no Bonjour, test picture only). See windows/BUILD.md.
+//! `sill-host`: the Windows host: pairing, sessions, the desktop and windows as hardware HEVC, the
+//! tray icon and the control pipe the Sill app uses; or the synthetic test picture with
+//! `--test-clip`. A Windows (GUI) program: it opens no console, and prints into the terminal that
+//! started it. Runs on macOS too for development (plain files, no Bonjour, test picture only). See
+//! windows/BUILD.md.
+
+#![cfg_attr(windows, windows_subsystem = "windows")]
 
 #[cfg(windows)]
 mod catalog;
@@ -8,6 +12,8 @@ mod catalog;
 mod desktop;
 #[cfg(windows)]
 mod input;
+#[cfg(windows)]
+mod shell;
 mod thumbs;
 
 use sill_net::{Clip, Config, Host};
@@ -40,6 +46,8 @@ const USAGE: &str = "usage: sill-host [options]
   --bitrate MBPS           starting megabits per second at 60 fps (default 15; devices can change
                            it; the stream gets bitrate x fps / 60)
   --probe-encoder          list the hardware HEVC encoders and exit
+  --no-tray                no notification-area icon
+  --control-any-client     DEV ONLY: let any process of this user use the control pipe
   --encoder-input bgra|nv12  what the encoder gets at full size (default bgra: the capture as
                            is, the encoder converts; nv12: converted on the GPU's video processor
                            first, as a scaled stream always is)
@@ -63,6 +71,8 @@ struct Args {
     bitrate_mbps: f64,
     probe_encoder: bool,
     bgra_input: bool,
+    tray: bool,
+    control_any_client: bool,
 }
 
 fn parse(mut it: impl Iterator<Item = String>) -> Result<Args, String> {
@@ -84,6 +94,8 @@ fn parse(mut it: impl Iterator<Item = String>) -> Result<Args, String> {
         bitrate_mbps: 15.0,
         probe_encoder: false,
         bgra_input: true,
+        tray: true,
+        control_any_client: false,
     };
     while let Some(flag) = it.next() {
         let mut value = |f: &str| it.next().ok_or_else(|| format!("{f} needs a value"));
@@ -110,6 +122,8 @@ fn parse(mut it: impl Iterator<Item = String>) -> Result<Args, String> {
             "--log-level" => a.log_level = value("--log-level")?,
             "--test-clip" => a.test_clip = true,
             "--probe-encoder" => a.probe_encoder = true,
+            "--no-tray" => a.tray = false,
+            "--control-any-client" => a.control_any_client = true,
             "--encoder-input" => {
                 a.bgra_input = match value("--encoder-input")?.as_str() {
                     "bgra" => true,
@@ -174,6 +188,8 @@ fn default_name() -> String {
 }
 
 fn main() {
+    #[cfg(windows)]
+    shell::attach_console();
     let args = match parse(std::env::args().skip(1)) {
         Ok(a) => a,
         Err(e) => {
@@ -216,6 +232,12 @@ fn main() {
     if lock.try_lock().is_err() {
         if args.pair {
             std::process::exit(ask_running_host_to_pair(&dir));
+        }
+        // Started again (the Start menu, a double-click) while it runs: open the app instead.
+        #[cfg(windows)]
+        if shell::app_exe().exists() {
+            shell::open_app("");
+            std::process::exit(0);
         }
         eprintln!(
             "sill-host: a host is already running for {}. `sill-host --pair` opens a pairing window in it.",
@@ -465,8 +487,48 @@ async fn run(store: Store, args: Args) -> i32 {
             desktop::Options { capture_scale: args.capture_scale, bgra_input: args.bgra_input },
         );
     }
-    let _ = tokio::signal::ctrl_c().await;
+    let quit = Arc::new(tokio::sync::Notify::new());
+    #[cfg(windows)]
+    {
+        let control = Arc::new(sill_net::control::Control {
+            host: host.clone(),
+            running: running.clone(),
+            platform: Arc::new(shell::WinPlatform { quit: quit.clone() }),
+        });
+        tokio::spawn(shell::serve_control(control.clone(), args.control_any_client));
+        if args.tray {
+            shell::start_tray(control, quit.clone());
+            let h = host.clone();
+            tokio::spawn(async move {
+                let mut every = tokio::time::interval(std::time::Duration::from_secs(2));
+                loop {
+                    every.tick().await;
+                    let names: Vec<String> = h.live.lock().unwrap().values().map(|l| l.name.clone()).collect();
+                    let tip = if h.paused.load(std::sync::atomic::Ordering::Relaxed) {
+                        "Sill · Paused".to_string()
+                    } else if names.is_empty() {
+                        "Sill · Ready".to_string()
+                    } else {
+                        format!("Sill · Streaming to {}", names.join(", "))
+                    };
+                    shell::set_tooltip(&tip);
+                }
+            });
+        }
+    }
+    // Ctrl+C in the terminal that started it, or Quit from the tray or the app. A host without a
+    // console (started from the tray app or at sign-in) has no Ctrl+C: only Quit ends it.
+    tokio::select! {
+        r = tokio::signal::ctrl_c() => {
+            if r.is_err() {
+                quit.notified().await;
+            }
+        }
+        _ = quit.notified() => {}
+    }
     stop_desktop.store(true, std::sync::atomic::Ordering::Relaxed);
+    #[cfg(windows)]
+    shell::remove_tray();
     info!("Quitting: goodbye to every device.");
     running.quit().await;
     0
