@@ -211,7 +211,9 @@ impl Store {
 /// Removes the devices whose name or fingerprint (base64url, or a prefix of 6+ characters of it)
 /// is `which`; returns those removed.
 pub fn remove_matching(devices: &mut Vec<PairedDevice>, which: &str) -> Vec<PairedDevice> {
-    let hit = |d: &PairedDevice| d.name == which || d.fingerprint == which || (which.len() >= 6 && d.fingerprint.starts_with(which));
+    let hit = |d: &PairedDevice| {
+        d.name == which || d.fingerprint == which || (which.len() >= 6 && d.fingerprint.starts_with(which))
+    };
     let removed: Vec<PairedDevice> = devices.iter().filter(|d| hit(d)).cloned().collect();
     devices.retain(|d| !hit(d));
     removed
@@ -253,7 +255,7 @@ mod tests {
             paired_at: 1.8e9,
             method: "code".into(),
         };
-        s.save_paired(&[d.clone()]).unwrap();
+        s.save_paired(std::slice::from_ref(&d)).unwrap();
         s.save_settings(&Settings { require_pairing: false }).unwrap();
         assert_eq!(s.paired().unwrap(), vec![d.clone()]);
         assert!(!s.settings().unwrap().require_pairing);

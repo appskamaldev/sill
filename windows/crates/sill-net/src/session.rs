@@ -8,8 +8,8 @@ use crate::video::{ClientVideo, Out};
 use sill_pairing::spki;
 use sill_policy::{device_gate, door::Door, viewport};
 use sill_wire::{
-    decode, encode, ClientStats, FrameReader, Goodbye, Hello, HostSettingsState, InputEvent, Kind, Limits, Message, StreamSettings,
-    StreamSource, Viewport, WindowList, PROTOCOL_CURRENT,
+    decode, encode, ClientStats, FrameReader, Goodbye, Hello, HostSettingsState, InputEvent, Kind, Limits, Message,
+    StreamSettings, StreamSource, Viewport, WindowList, PROTOCOL_CURRENT,
 };
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
@@ -113,7 +113,8 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
     let in_flight = Arc::new(AtomicUsize::new(0));
     let writer = tokio::spawn(writer(w, rx, in_flight.clone()));
     let out = Sender { tx: tx.clone(), last_sent: Arc::new(AtomicU64::new(0)), host: host.clone() };
-    let name = host.paired_name(&fp).filter(|n| !n.is_empty()).unwrap_or_else(|| format!("key {}…", spki::short_name(&fp)));
+    let name =
+        host.paired_name(&fp).filter(|n| !n.is_empty()).unwrap_or_else(|| format!("key {}…", spki::short_name(&fp)));
     let started = Instant::now();
     let mut reader = FrameReader::new(Limits::HostSession);
     let mut buf = vec![0u8; 64 * 1024];
@@ -123,7 +124,10 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
     let mut early: Vec<Message> = Vec::new();
     if host.config.device_floor != sill_wire::SillVersion::ZERO {
         match first_message(&mut r, &mut reader, &mut buf).await {
-            Some(m) if m.kind == Kind::Hello && device_gate::admits(decode::<Hello>(&m.payload).as_ref(), &host.config.device_floor) => {
+            Some(m)
+                if m.kind == Kind::Hello
+                    && device_gate::admits(decode::<Hello>(&m.payload).as_ref(), &host.config.device_floor) =>
+            {
                 early.push(m);
             }
             m => {
@@ -161,7 +165,15 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
     let mut last_heard = Instant::now();
     let mut last_keyframe_request: Option<Instant> = None;
     let mut fps: Option<i64> = None;
-    let mut s = SessionState { host: &host, out: &out, video: &video, peer, name: &name, fps: &mut fps, last_keyframe_request: &mut last_keyframe_request };
+    let mut s = SessionState {
+        host: &host,
+        out: &out,
+        video: &video,
+        peer,
+        name: &name,
+        fps: &mut fps,
+        last_keyframe_request: &mut last_keyframe_request,
+    };
     for m in early {
         s.handle(m);
     }
@@ -216,7 +228,6 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
         }
     };
     host.hub.leave(video_id);
-    drop(s);
     if let End::Goodbye(g) = &end {
         out.send(message(Kind::Goodbye, encode(g)));
     }
@@ -290,7 +301,9 @@ impl SessionState<'_> {
                     info!("{name} at {peer} picked nothing.");
                     self.video.wants.store(false, Ordering::Relaxed);
                 }
-                Some(StreamSource::Window(id)) => info!("{name} at {peer} picked window {id}; this host lists none, the Desktop stays."),
+                Some(StreamSource::Window(id)) => {
+                    info!("{name} at {peer} picked window {id}; this host lists none, the Desktop stays.")
+                }
                 None => debug!("{name} at {peer}: a selectSource that does not decode."),
             },
             Kind::Viewport => match decode::<Viewport>(&m.payload) {

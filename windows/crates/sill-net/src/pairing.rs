@@ -13,7 +13,14 @@ use tracing::{debug, info};
 /// After kind 20, the device's own close is waited for this long at most (upstream 250 ms).
 const AFTER_RESULT: Duration = Duration::from_millis(250);
 
-pub async fn run<S: AsyncRead + AsyncWrite + Unpin>(host: &Host, door: Door, mut s: S, peer: SocketAddr, fp: [u8; 32], deadline: Instant) {
+pub async fn run<S: AsyncRead + AsyncWrite + Unpin>(
+    host: &Host,
+    door: Door,
+    mut s: S,
+    peer: SocketAddr,
+    fp: [u8; 32],
+    deadline: Instant,
+) {
     let mut reader = FrameReader::new(Limits::HostPairing);
     let mut buf = [0u8; 4096];
     let read = async {

@@ -118,7 +118,10 @@ pub fn header(kind: Kind, timestamp: f64, keyframe: bool, len: usize) -> [u8; HE
 pub enum Out {
     Control(Vec<u8>),
     /// Kind 1: counted in flight until written.
-    Frame { header: [u8; HEADER_LENGTH], au: Arc<[u8]> },
+    Frame {
+        header: [u8; HEADER_LENGTH],
+        au: Arc<[u8]>,
+    },
 }
 
 /// One session's place in the fan-out.
@@ -142,7 +145,13 @@ pub struct Hub {
 
 impl Hub {
     pub fn new(clip: Clip, stats: Arc<Stats>) -> Hub {
-        Hub { clip, clients: Mutex::new(HashMap::new()), restart: AtomicBool::new(true), next_id: AtomicU64::new(1), stats }
+        Hub {
+            clip,
+            clients: Mutex::new(HashMap::new()),
+            restart: AtomicBool::new(true),
+            next_id: AtomicU64::new(1),
+            stats,
+        }
     }
 
     /// A new viewer: it waits for a keyframe, and the clip restarts at one.
@@ -250,6 +259,44 @@ mod tests {
         // VPS (32), SPS (33), PPS (34): HEVC nal_unit_type is bits 1..6 of the first byte.
         let types: Vec<u8> = ps.sets.iter().map(|s| (s[0] >> 1) & 0x3F).collect();
         assert_eq!(&types[..3], &[32, 33, 34]);
+    }
+
+    #[test]
+    fn at_most_two_frames_in_flight_then_wait_for_a_keyframe() {
+        let hub = Hub::new(Clip::bundled(), Arc::new(Stats::default()));
+        let (tx, mut rx) = mpsc::unbounded_channel();
+        let c = Arc::new(ClientVideo {
+            tx,
+            in_flight: Arc::new(AtomicUsize::new(0)),
+            needs_keyframe: AtomicBool::new(true),
+            wants: AtomicBool::new(true),
+            last_sent: Arc::new(AtomicU64::new(0)),
+        });
+        hub.join(c.clone());
+        assert!(hub.restart.swap(false, Ordering::SeqCst), "a join asks for a keyframe");
+        // Nothing is written (the writer is stuck): frames 0 (IDR) and 1 go, 2 is dropped.
+        for f in &hub.clip.frames[..4] {
+            hub.deliver(f, 0);
+        }
+        let mut got = Vec::new();
+        while let Ok(o) = rx.try_recv() {
+            got.push(match o {
+                Out::Control(b) => (b[0], false),
+                Out::Frame { header, .. } => (header[0], header[9] == 1),
+            });
+        }
+        assert_eq!(got, vec![(0, false), (1, true), (1, false)]);
+        assert_eq!(c.in_flight.load(Ordering::SeqCst), 2);
+        assert!(c.needs_keyframe.load(Ordering::SeqCst));
+        assert!(hub.restart.load(Ordering::SeqCst), "a drop asks for a keyframe");
+        assert_eq!(hub.stats.take().dropped, 1);
+        // The writer catches up; deltas still wait for the keyframe, which then goes with kind 0.
+        c.in_flight.store(0, Ordering::SeqCst);
+        hub.deliver(&hub.clip.frames[5], 0);
+        assert!(rx.try_recv().is_err());
+        hub.deliver(&hub.clip.frames[0], 0);
+        assert!(matches!(rx.try_recv(), Ok(Out::Control(b)) if b[0] == 0));
+        assert!(matches!(rx.try_recv(), Ok(Out::Frame { header, .. }) if header[9] == 1));
     }
 
     #[test]

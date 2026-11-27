@@ -36,7 +36,11 @@ mod imp {
     // only `status` (an atomic).
     unsafe impl Send for Registration {}
 
-    unsafe extern "system" fn completed(status: u32, context: *const core::ffi::c_void, instance: *const DNS_SERVICE_INSTANCE) {
+    unsafe extern "system" fn completed(
+        status: u32,
+        context: *const core::ffi::c_void,
+        instance: *const DNS_SERVICE_INSTANCE,
+    ) {
         if !context.is_null() {
             // SAFETY: the context is the leaked `&'static AtomicU32` passed in `register`.
             unsafe { &*(context as *const AtomicU32) }.store(status, Ordering::SeqCst);

@@ -71,6 +71,8 @@ struct State {
     home_sessions: usize,
     known: HashMap<IpAddr, Instant>,
     bound: Vec<IpAddr>,
+    /// The remote door's port once listening (the pairing link's `p`).
+    remote_port: u16,
     paired_modified: Option<std::time::SystemTime>,
 }
 
@@ -144,6 +146,7 @@ impl Host {
                 home_sessions: 0,
                 known: HashMap::new(),
                 bound: Vec::new(),
+                remote_port: config.remote_port,
                 paired_modified: store.paired_modified(),
             }),
             shutdown: watch::channel(false).0,
@@ -176,8 +179,10 @@ impl Host {
         self.state.lock().unwrap().paired.clone()
     }
 
-    pub fn set_bound(&self, bound: Vec<IpAddr>) {
-        self.state.lock().unwrap().bound = bound;
+    pub fn set_bound(&self, bound: Vec<IpAddr>, remote_port: u16) {
+        let mut s = self.state.lock().unwrap();
+        s.bound = bound;
+        s.remote_port = remote_port;
     }
 
     pub fn sessions(&self) -> (usize, usize) {
@@ -212,7 +217,13 @@ impl Host {
 
     /// `.ready`'s decision, judged again now; a session is counted at once (the 9th remote one
     /// gets `busy`).
-    pub fn admit(self: &Arc<Self>, door: Door, alpn: Option<&str>, fp: Option<&[u8]>, peer: IpAddr) -> (AtReady, Option<SessionGuard>) {
+    pub fn admit(
+        self: &Arc<Self>,
+        door: Door,
+        alpn: Option<&str>,
+        fp: Option<&[u8]>,
+        peer: IpAddr,
+    ) -> (AtReady, Option<SessionGuard>) {
         let mut s = self.state.lock().unwrap();
         let t = self.trust_locked(&mut s, fp);
         let verdict = door::at_ready(door, alpn, &t, s.remote_sessions);
@@ -243,13 +254,14 @@ impl Host {
         if !sill_store::random(&mut secret) {
             return Err(io::Error::other("random generator failed"));
         }
-        let addresses: Vec<_> = {
+        let (addresses, port): (Vec<_>, u16) = {
             let mut s = self.state.lock().unwrap();
             s.window.open(&secret, &code, self.now(), LIFETIME, None, None, true);
-            crate::bind::reachable_addresses(&s.bound, sill_pairing::link::MAX_ADDRESSES)
+            let addresses = crate::bind::reachable_addresses(&s.bound, sill_pairing::link::MAX_ADDRESSES)
                 .iter()
                 .filter_map(|ip| address::parse(&ip.to_string()).ok())
-                .collect()
+                .collect();
+            (addresses, s.remote_port)
         };
         let host = self.clone();
         let c = code.clone();
@@ -258,7 +270,7 @@ impl Host {
                 host.state.lock().unwrap().window.set_code_key(k, &c);
             }
         });
-        let link = PairLink::new(&self.fingerprint, &secret, &self.config.name, self.config.remote_port, &addresses);
+        let link = PairLink::new(&self.fingerprint, &secret, &self.config.name, port, &addresses);
         Ok(PairingOffer { code, link: link.url(), expires_in: LIFETIME })
     }
 
@@ -331,12 +343,16 @@ impl Host {
                 }
             }
             Verdict::Reject { tries_left } => {
-                warn!("Pairing: a wrong code from {shown} ({tries_left} tr{} left).", if tries_left == 1 { "y" } else { "ies" });
+                warn!(
+                    "Pairing: a wrong code from {shown} ({tries_left} tr{} left).",
+                    if tries_left == 1 { "y" } else { "ies" }
+                );
                 PairResult { tries_left: Some(i64::from(tries_left)), ..PairResult::refusal(PairResult::CODE) }
             }
-            Verdict::Busy { retry_after } => {
-                PairResult { retry_after: Some((retry_after * 10.0).ceil() / 10.0), ..PairResult::refusal(PairResult::BUSY) }
-            }
+            Verdict::Busy { retry_after } => PairResult {
+                retry_after: Some((retry_after * 10.0).ceil() / 10.0),
+                ..PairResult::refusal(PairResult::BUSY)
+            },
             Verdict::Closed(reason) => {
                 if was_open && reason == CloseReason::Stopped {
                     warn!("Pairing stopped after {} wrong codes.", sill_policy::pairing_window::MAX_FAILURES);

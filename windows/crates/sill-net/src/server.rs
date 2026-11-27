@@ -74,7 +74,11 @@ fn bind_both(host: &Arc<Host>, ip: IpAddr, home_port: u16, remote_port: u16) -> 
                 spawn_accept(host.clone(), door, l);
                 any = true;
             }
-            Err(e) => warn!("Could not listen on {} for the {} door: {e}", SocketAddr::new(ip, port), crate::tls::door_word(door)),
+            Err(e) => warn!(
+                "Could not listen on {} for the {} door: {e}",
+                SocketAddr::new(ip, port),
+                crate::tls::door_word(door)
+            ),
         }
     }
     any
@@ -87,7 +91,11 @@ pub async fn start(host: Arc<Host>) -> io::Result<Running> {
     let wanted = if explicit { c.bind.clone() } else { bind::default_addresses(c.allow_internet) };
     for ip in &wanted {
         if !bind::allowed(*ip, c.allow_internet) {
-            let why = if bind::classify(*ip) == AddrClass::Public { "a public address (needs --allow-internet)" } else { "not a usable address" };
+            let why = if bind::classify(*ip) == AddrClass::Public {
+                "a public address (needs --allow-internet)"
+            } else {
+                "not a usable address"
+            };
             return Err(io::Error::new(io::ErrorKind::InvalidInput, format!("--bind {ip}: {why}")));
         }
     }
@@ -114,7 +122,7 @@ pub async fn start(host: Arc<Host>) -> io::Result<Running> {
             SocketAddr::new(*ip, home_port)
         );
     }
-    host.set_bound(bound.clone());
+    host.set_bound(bound.clone(), remote_port);
     let bound = Arc::new(Mutex::new(bound));
 
     // New addresses (Tailscale coming up after launch, a new Wi-Fi) are picked up every 10 s.
@@ -130,7 +138,7 @@ pub async fn start(host: Arc<Host>) -> io::Result<Running> {
                     if !have.contains(&ip) && bind_both(&h, ip, home_port, remote_port) {
                         info!("Listening on {ip} too ({:?}).", bind::classify(ip));
                         b.lock().unwrap().push(ip);
-                        h.set_bound(b.lock().unwrap().clone());
+                        h.set_bound(b.lock().unwrap().clone(), remote_port);
                     }
                 }
             }
@@ -159,19 +167,30 @@ fn advertise(host: &Arc<Host>, home_port: u16) {
         Some(r) => r,
         None => return warn!("Bonjour: no tag (random generator failed); not advertised."),
     };
-    match sill_platform::bonjour::register(&host.config.name, home_port, &[(tag::DOOR_TXT_KEY, p), (tag::TAG_TXT_KEY, &r)]) {
+    match sill_platform::bonjour::register(
+        &host.config.name,
+        home_port,
+        &[(tag::DOOR_TXT_KEY, p), (tag::TAG_TXT_KEY, &r)],
+    ) {
         Ok(reg) => {
-            info!("Bonjour: advertising \"{}\" as {} on port {home_port} (p={p}).", host.config.name, sill_platform::bonjour::SERVICE_TYPE);
+            info!(
+                "Bonjour: advertising \"{}\" as {} on port {home_port} (p={p}).",
+                host.config.name,
+                sill_platform::bonjour::SERVICE_TYPE
+            );
             let mut stop = host.shutdown.subscribe();
             tokio::spawn(async move {
                 tokio::time::sleep(Duration::from_secs(3)).await;
                 match reg.status() {
                     sill_platform::bonjour::Status::Registered => info!("Bonjour: registered."),
-                    sill_platform::bonjour::Status::Pending => warn!("Bonjour: no answer from DnsServiceRegister after 3 s."),
+                    sill_platform::bonjour::Status::Pending => {
+                        warn!("Bonjour: no answer from DnsServiceRegister after 3 s.")
+                    }
                     sill_platform::bonjour::Status::Failed(e) => warn!("Bonjour: registration failed (error {e})."),
                 }
                 let _ = stop.changed().await;
-                drop(reg);
+                // Dropping it deregisters (Windows).
+                let _gone = reg;
             });
         }
         Err(e) => warn!("Bonjour: {e}"),

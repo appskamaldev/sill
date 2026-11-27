@@ -70,7 +70,9 @@ fn parse(mut it: impl Iterator<Item = String>) -> Result<Args, String> {
                     v => return Err(format!("--require-pairing: on or off, not {v}")),
                 })
             }
-            "--remote-port" => a.remote_port = value("--remote-port")?.parse().map_err(|_| "--remote-port: a port number")?,
+            "--remote-port" => {
+                a.remote_port = value("--remote-port")?.parse().map_err(|_| "--remote-port: a port number")?
+            }
             "--home-port" => a.home_port = value("--home-port")?.parse().map_err(|_| "--home-port: a port number")?,
             "--bind" => a.bind.push(value("--bind")?.parse().map_err(|_| "--bind: an IP address")?),
             "--allow-internet" => a.allow_internet = true,
@@ -169,7 +171,10 @@ fn manage(store: &Store, args: &Args) -> i32 {
             return 1;
         }
         for d in removed {
-            println!("Unpaired {} ({}). A running sill-host drops its sessions within a second.", d.name, d.fingerprint);
+            println!(
+                "Unpaired {} ({}). A running sill-host drops its sessions within a second.",
+                d.name, d.fingerprint
+            );
         }
     }
     if args.list {
@@ -232,11 +237,17 @@ async fn run(store: Store, args: Args) -> i32 {
     if args.pair {
         match host.open_pairing() {
             Ok(offer) => {
-                info!("Pairing open for {:.0} minutes. On the device: Add a Mac, Type address and code.", offer.expires_in / 60.0);
+                info!(
+                    "Pairing open for {:.0} minutes. On the device: Add a Mac, Type address and code.",
+                    offer.expires_in / 60.0
+                );
                 info!("  Code: {}", sill_pairing::code::grouped(&offer.code));
                 info!("  Link: {}", offer.link);
                 for ip in running.addresses().iter().filter(|ip| !ip.is_loopback()) {
-                    info!("  Address: {ip} (port {} is the default; type it only if you changed it)", running.remote_port);
+                    info!(
+                        "  Address: {ip} (port {} is the default; type it only if you changed it)",
+                        running.remote_port
+                    );
                 }
             }
             Err(e) => error!("Could not open a pairing window: {e}"),

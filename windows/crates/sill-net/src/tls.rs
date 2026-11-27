@@ -82,7 +82,12 @@ impl ClientCertVerifier for PinVerifier {
         &[]
     }
 
-    fn verify_client_cert(&self, end_entity: &CertificateDer<'_>, _intermediates: &[CertificateDer<'_>], _now: UnixTime) -> Result<ClientCertVerified, Error> {
+    fn verify_client_cert(
+        &self,
+        end_entity: &CertificateDer<'_>,
+        _intermediates: &[CertificateDer<'_>],
+        _now: UnixTime,
+    ) -> Result<ClientCertVerified, Error> {
         let host = &self.host.0;
         let fp = crate::cert::p256_point(end_entity).map(|p| spki::spki_fingerprint(&p));
         *self.fingerprint.lock().unwrap() = fp;
@@ -90,7 +95,8 @@ impl ClientCertVerifier for PinVerifier {
             return Ok(ClientCertVerified::assertion());
         }
         host.stats.refused.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        let key = fp.map(|f| format!("key {}…", spki::short_name(&f))).unwrap_or_else(|| "a key that is not P-256".into());
+        let key =
+            fp.map(|f| format!("key {}…", spki::short_name(&f))).unwrap_or_else(|| "a key that is not P-256".into());
         info!(
             "Refused {} at the {} door: {key} not trusted for {} (TLS alert bad_certificate).",
             self.peer,
@@ -100,14 +106,29 @@ impl ClientCertVerifier for PinVerifier {
         Err(refuse())
     }
 
-    fn verify_tls12_signature(&self, _: &[u8], _: &CertificateDer<'_>, _: &DigitallySignedStruct) -> Result<HandshakeSignatureValid, Error> {
+    fn verify_tls12_signature(
+        &self,
+        _: &[u8],
+        _: &CertificateDer<'_>,
+        _: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, Error> {
         Err(Error::PeerIncompatible(rustls::PeerIncompatible::Tls12NotOffered))
     }
 
-    fn verify_tls13_signature(&self, message: &[u8], cert: &CertificateDer<'_>, dss: &DigitallySignedStruct) -> Result<HandshakeSignatureValid, Error> {
+    fn verify_tls13_signature(
+        &self,
+        message: &[u8],
+        cert: &CertificateDer<'_>,
+        dss: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, Error> {
         let point = crate::cert::p256_point(cert).ok_or_else(refuse)?;
         let spki_der = spki::spki_der(&point);
-        verify_tls13_signature_with_raw_key(message, &SubjectPublicKeyInfoDer::from(spki_der.as_slice()), dss, &algorithms())
+        verify_tls13_signature_with_raw_key(
+            message,
+            &SubjectPublicKeyInfoDer::from(spki_der.as_slice()),
+            dss,
+            &algorithms(),
+        )
     }
 
     fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
