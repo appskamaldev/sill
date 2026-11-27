@@ -118,7 +118,7 @@ Added in Phase 1 task B (`sill-platform`, `sill-store`, `sill-net`, `host/`):
 | `windows` (0.62, Windows only) | MIT/Apache-2.0 | DPAPI (`CryptProtectData`) and Bonjour (`DnsServiceRegister`). |
 | `tracing`, `tracing-subscriber` | MIT | Console and `logs\host.log` lines, level by `--log-level`. |
 
-Licences outside MIT/Apache/BSD, all from the ring provider the task named, **pending Kamal's OK**:
+Licences outside MIT/Apache/BSD, all from the ring provider the task named, **accepted by Kamal on 2026-11-27**:
 `ring` (Apache-2.0 AND ISC), `rustls-webpki` (ISC) and `untrusted` (ISC). ISC is a permissive
 licence equivalent to MIT (keep the notice). The alternative provider, `aws-lc-rs`, is also
 Apache-2.0 AND ISC (and needs CMake/NASM on Windows); a pure-RustCrypto provider is not mature.
@@ -128,9 +128,11 @@ Apache-2.0 AND ISC (and needs CMake/NASM on Windows); a pure-RustCrypto provider
 
 | # | Date | Decision | Status |
 |---|---|---|---|
-| ADR-1 | 2026-11-27 | Rust + windows-rs for the host | Proposed |
-| ADR-2 | 2026-11-27 | Fork upstream, add `windows/`, leave upstream files untouched | Proposed |
-| ADR-3 | 2026-11-27 | Wire compatibility with the unmodified client is the hard constraint; no new protocol | Proposed |
-| ADR-4 | 2026-11-27 | WGC + D3D11 + MF hardware HEVC; no software encoder in MVP | Proposed |
-| ADR-5 | 2026-11-27 | User-session process by default; SYSTEM helper only for secure-desktop features, opt-in | Proposed |
-| ADR-6 | 2026-11-27 | Golden vectors generated from upstream Swift are the conformance oracle | Proposed |
+| ADR-1 | 2026-11-27 | Rust + windows-rs for the host | Accepted |
+| ADR-2 | 2026-11-27 | Fork upstream, add `windows/`, leave upstream files untouched | Accepted |
+| ADR-3 | 2026-11-27 | Wire compatibility with the unmodified client is the hard constraint; no new protocol | Accepted |
+| ADR-4 | 2026-11-27 | WGC + D3D11 + MF hardware HEVC; no software encoder in MVP | Accepted |
+| ADR-5 | 2026-11-27 | User-session process by default; SYSTEM helper only for secure-desktop features, opt-in | Accepted |
+| ADR-6 | 2026-11-27 | Golden vectors generated from upstream Swift are the conformance oracle | Accepted |
+| ADR-7 | 2026-11-27 | Tray flyout and settings window as a separate small C#/WinUI 3 app (Mica, Fluent), started on demand from the tray; the Rust host stays the engine; they talk over a local named pipe. Modern look outweighs ~60–80 MB on disk, paid only while the window is open | Accepted (Kamal) |
+| ADR-8 | 2026-11-27 | From Phase 2 the Windows test session on Kamal's laptop is the only code writer for `windows/`; the Mac session coordinates and owns the iOS client | Accepted (Kamal) |
