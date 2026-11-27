@@ -20,3 +20,5 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 sill-capture = { path = "../crates/sill-capture" }
 sill-encode = { path = "../crates/sill-encode" }
+sill-input = { path = "../crates/sill-input" }
+sill-wire = { path = "../crates/sill-wire" }

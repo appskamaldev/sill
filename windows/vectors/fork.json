@@ -1,0 +1,15 @@
+{
+  "_source": "FORK EXTENSION, NOT UPSTREAM: fields the Windows port adds (PROTOCOL.md §12), written by hand in the shape of json.json; upstream's Swift types do not know them and ignore them on decode",
+  "decode": [
+    {"type": "Hello", "input": "{\"appVersion\":\"0.6.3\",\"pcKeys\":1}", "ok": true, "sorted": "{\"appVersion\":\"0.6.3\",\"pcKeys\":1}"},
+    {"type": "Hello", "input": "{\"pcKeys\":2.0}", "ok": true, "sorted": "{\"pcKeys\":2}"},
+    {"type": "Hello", "input": "{\"pcKeys\":\"1\"}", "ok": false},
+    {"type": "Hello", "input": "{\"pcKeys\":null}", "ok": true, "sorted": "{}"},
+    {"type": "WindowList", "input": "{\"macName\":\"PC\",\"windows\":[],\"active\":{\"desktop\":{}},\"hostPlatform\":\"windows\"}", "ok": true, "sorted": "{\"active\":{\"desktop\":{}},\"hostPlatform\":\"windows\",\"macName\":\"PC\",\"windows\":[]}"},
+    {"type": "WindowList", "input": "{\"macName\":\"PC\",\"windows\":[],\"active\":{\"none\":{}},\"hostPlatform\":7}", "ok": false}
+  ],
+  "encode": [
+    {"type": "Hello", "name": "pcKeys", "json": "{\"device\":\"iPhone (iPhone19,4)\",\"pcKeys\":1}", "sorted": "{\"device\":\"iPhone (iPhone19,4)\",\"pcKeys\":1}"},
+    {"type": "WindowList", "name": "windowsHost", "json": "{\"macName\":\"KAMALELTAYEB\",\"windows\":[],\"active\":{\"desktop\":{}},\"protocol\":1,\"hostPlatform\":\"windows\"}", "sorted": "{\"active\":{\"desktop\":{}},\"hostPlatform\":\"windows\",\"macName\":\"KAMALELTAYEB\",\"protocol\":1,\"windows\":[]}"}
+  ]
+}

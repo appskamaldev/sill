@@ -599,12 +599,22 @@ version = "0.1.0"
 dependencies = [
  "sill-capture",
  "sill-encode",
+ "sill-input",
  "sill-net",
  "sill-pairing",
  "sill-store",
+ "sill-wire",
  "tokio",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "sill-input"
+version = "0.1.0"
+dependencies = [
+ "sill-wire",
+ "windows",
 ]
 
 [[package]]

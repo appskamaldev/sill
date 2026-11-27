@@ -233,6 +233,10 @@ pub struct WindowList {
     pub off_console: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub off_console_view: Option<bool>,
+    /// Fork extension (not upstream): "windows" from the Windows host, never sent by a Mac. A
+    /// client reads absent or any other value as a Mac (PROTOCOL.md §12).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub host_platform: Option<String>,
 }
 
 impl WindowList {
@@ -254,6 +258,7 @@ impl WindowList {
             locked: None,
             off_console: None,
             off_console_view: None,
+            host_platform: None,
         }
     }
 }
@@ -332,6 +337,10 @@ pub struct Hello {
     pub audio: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "opt_int")]
     pub off_console_view: Option<i64>,
+    /// Fork extension (not upstream), generation 1: on a host whose list says `hostPlatform`
+    /// "windows", this client's kind 8 keys are literal PC keys (PROTOCOL.md §12).
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "opt_int")]
+    pub pc_keys: Option<i64>,
 }
 
 /// The settings a device sees (inside kind 16).

@@ -278,3 +278,21 @@ hello lists; today the client lists only `"aac-eld"` (48 kHz stereo, 480/512 fra
   at its IDR for every viewer. Upstream's remote backlog budgets are not ported.
 - **Unpair while connected:** the running host rereads the paired list when its file changes
   (`--unpair` from another process) and sends goodbye `removed` to that key's sessions.
+
+### Fork extensions (not upstream)
+
+Additive fields only this fork's Windows host and iOS client know. Upstream's Swift types ignore
+unknown keys, so a Mac host or an older client skips them unharmed. Vectors: `vectors/fork.json`,
+written by hand (the Swift generator does not know these fields).
+
+- `WindowList.hostPlatform` (String, optional): the Windows host always sends `"windows"`; a Mac
+  host never sends it. A client reads absent or any other value as a Mac.
+- `Hello.pcKeys` (Int, optional, generation 1; the `offConsoleView` pattern): a client that sends
+  `pcKeys: 1` declares that, on a host whose list says `hostPlatform` "windows", its kind 8 keys are
+  literal PC keys. The host then takes HID 0xE3/0xE7 and the Command flag (1<<20) as the Windows
+  key, Control (1<<18) as Ctrl, Option (1<<19) as Alt and Shift (1<<17) as Shift, with no
+  Command→Ctrl mapping and no Command+Space→Win. Without it (older clients, the App Store build),
+  the Mac habits of §9 apply. In literal mode the client owns the hardware-keyboard mapping (for
+  example an iPad keyboard's ⌘ sent as Ctrl, a client preference).
+- Ctrl+Alt+Del is the secure attention sequence and cannot be injected with `SendInput`; the client
+  offers Ctrl+Shift+Esc (Task Manager) instead, and the host does not call `SendSAS` (risk R6).

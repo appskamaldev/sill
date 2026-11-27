@@ -34,6 +34,8 @@ pub fn window_list(host: &Host) -> WindowList {
     l.launch_id = Some(host.launch_id.clone());
     l.host_version = Some(env!("CARGO_PKG_VERSION").to_string());
     l.protocol = Some(PROTOCOL_CURRENT);
+    // Fork extension: the client can show Windows keys (PROTOCOL.md §12).
+    l.host_platform = Some("windows".into());
     l
 }
 
@@ -151,6 +153,8 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
         fps: &mut fps,
         last_keyframe_request: &mut last_keyframe_request,
         picked_desktop: false,
+        session_id: video_id,
+        literal_keys: false,
         settings_arrivals: Vec::new(),
         settings_rx: &mut settings,
     };
@@ -215,6 +219,9 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
         }
     };
     host.hub.leave(video_id);
+    if let Some(sink) = host.input.get() {
+        sink.left(video_id);
+    }
     if let End::Goodbye(g) = &end {
         out.send(message(Kind::Goodbye, encode(g)));
     }
@@ -253,6 +260,10 @@ struct SessionState<'a> {
     /// The Desktop was picked and not unpicked since: a device sends its own pick on the first
     /// window list and its switcher's, often in one read (Checkpoint 1: two lines 6 µs apart).
     picked_desktop: bool,
+    /// The hub's id for this session, also its input state's.
+    session_id: u64,
+    /// Its hello said `pcKeys` ≥ 1: its keys are literal PC keys (fork extension).
+    literal_keys: bool,
     /// When this session's last settings changes came (at most `settings::PER_SECOND` a second).
     settings_arrivals: Vec<Instant>,
     settings_rx: &'a mut tokio::sync::watch::Receiver<crate::settings::Video>,
@@ -270,6 +281,10 @@ impl SessionState<'_> {
             Kind::Hello => match decode::<Hello>(&m.payload) {
                 Some(h) => {
                     info!("{}", device_gate::hello_line(&h, &peer.to_string()));
+                    self.literal_keys = h.pc_keys.is_some_and(|g| g >= 1);
+                    if self.literal_keys {
+                        info!("{name} at {peer} sends literal PC keys (pcKeys {}).", h.pc_keys.unwrap_or(0));
+                    }
                     self.host.note_app(&self.fp, device_gate::app_label(&h));
                 }
                 None => info!("{name} at {peer}: a hello that does not decode."),
@@ -302,6 +317,9 @@ impl SessionState<'_> {
                     info!("{name} at {peer} picked nothing.");
                     self.picked_desktop = false;
                     self.video.wants.store(false, Ordering::Relaxed);
+                    if let Some(sink) = self.host.input.get() {
+                        sink.left(self.session_id);
+                    }
                 }
                 Some(StreamSource::Window(id)) => {
                     info!("{name} at {peer} picked window {id}; this host lists none, the Desktop stays.")
@@ -361,7 +379,14 @@ impl SessionState<'_> {
                 self.out.send(message(Kind::HostSettings, encode(&host_settings(self.host, change.token))));
             }
             Kind::Input => match decode::<InputEvent>(&m.payload) {
-                Some(e) => debug!("Input from {name} (not injected in Phase 1): {e:?}"),
+                Some(e) => match self.host.input.get() {
+                    // Only to the picture this device sees.
+                    Some(sink) if self.video.wants.load(Ordering::Relaxed) => {
+                        debug!("Input from {name}: {e:?}");
+                        sink.event(self.session_id, self.literal_keys, &e);
+                    }
+                    _ => debug!("Input from {name} (not injected): {e:?}"),
+                },
                 None => debug!("Input from {name}: does not decode."),
             },
             k => debug!("{name} at {peer}: kind {} ({}) skipped.", k.as_u8(), k.name()),

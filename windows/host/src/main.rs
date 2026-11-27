@@ -4,6 +4,8 @@
 
 #[cfg(windows)]
 mod desktop;
+#[cfg(windows)]
+mod input;
 
 use sill_net::{Clip, Config, Host};
 use sill_store::Store;
@@ -430,6 +432,7 @@ async fn run(store: Store, args: Args) -> i32 {
     let stop_desktop = Arc::new(std::sync::atomic::AtomicBool::new(false));
     #[cfg(windows)]
     if !args.test_clip {
+        let _ = host.input.set(Arc::new(input::DesktopInput::default()));
         let h = host.clone();
         desktop::spawn(
             host.hub.clone(),

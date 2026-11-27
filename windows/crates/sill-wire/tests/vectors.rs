@@ -346,3 +346,35 @@ fn sill_versions() {
         assert_eq!(SillVersion::from_components(c).to_string(), s(&e["description"]));
     }
 }
+
+// MARK: - fork.json (fork extensions, not upstream: hostPlatform, pcKeys)
+
+#[test]
+fn fork_extensions_round_trip() {
+    let j = load("fork.json");
+    assert!(s(&j["_source"]).starts_with("FORK EXTENSION, NOT UPSTREAM"));
+    for e in arr(&j, "decode") {
+        let (ty, input) = (s(&e["type"]), s(&e["input"]));
+        let got = roundtrip(ty, input);
+        if e["ok"].as_bool().unwrap() {
+            let ours = got.unwrap_or_else(|| panic!("{ty}: refused {input}"));
+            let want: Value = serde_json::from_str(s(&e["sorted"])).unwrap();
+            assert!(same(&ours, &want), "{ty} {input}\n want {want}\n got  {ours}");
+        } else {
+            assert!(got.is_none(), "{ty}: took {input}");
+        }
+    }
+    for e in arr(&j, "encode") {
+        let (ty, name) = (s(&e["type"]), s(&e["name"]));
+        let want: Value = serde_json::from_str(s(&e["sorted"])).unwrap();
+        let ours = roundtrip(ty, s(&e["json"])).unwrap_or_else(|| panic!("{ty} {name}: refused"));
+        assert!(same(&ours, &want), "{ty} {name}");
+    }
+    // What the Windows host builds.
+    let mut l = WindowList::new("KAMALELTAYEB", Vec::new(), StreamSource::Desktop);
+    l.protocol = Some(1);
+    l.host_platform = Some("windows".into());
+    let e = arr(&j, "encode").iter().find(|e| e["name"] == "windowsHost").unwrap();
+    let want: Value = serde_json::from_str(s(&e["json"])).unwrap();
+    assert!(same(&serde_json::from_slice(&encode(&l)).unwrap(), &want));
+}

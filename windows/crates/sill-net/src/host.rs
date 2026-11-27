@@ -90,6 +90,8 @@ pub struct Host {
     /// The test clip, when it is the picture (`start` loops it into `hub`); otherwise the caller
     /// feeds `hub` itself (the desktop encoder).
     pub clip: Option<Arc<Clip>>,
+    /// Where input goes (set once by the host binary); none: input is only logged.
+    pub input: std::sync::OnceLock<Arc<dyn crate::input::InputSink>>,
     started: Instant,
     state: Mutex<State>,
     pub shutdown: watch::Sender<bool>,
@@ -141,6 +143,7 @@ impl Host {
             cert,
             hub: Arc::new(Hub::new(stats.clone())),
             clip,
+            input: std::sync::OnceLock::new(),
             stats,
             started: Instant::now(),
             state: Mutex::new(State {

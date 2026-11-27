@@ -6,6 +6,7 @@ pub mod bind;
 pub mod cert;
 pub mod conn;
 pub mod host;
+pub mod input;
 pub mod pairing;
 pub mod server;
 pub mod session;
