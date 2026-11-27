@@ -585,6 +585,9 @@ enum MockCatalog {
         case pairingrequired // Require pairing turned on while this device was connected without pairing
         case asleep          // the automatic reconnect's dials of a listed row not answered: "Mac mini isn’t answering. It may be asleep…" (issue #69)
         case tiles           // tiles with stored preview pictures and Home / Work / Other groups
+        // The gallery (HomeGallery, 2026-11-27): the hero with its picture, Away, Tap to pair, Removed;
+        // then the same with the Away card connecting, and with a removal's banner.
+        case gallery, galleryconnecting, gallerybanner
     }
 
     /// How the connect screen starts in a case: the card unfolded, on the typed path, and the
@@ -682,6 +685,11 @@ enum MockCatalog {
             let outcome = GoodbyePolicy.outcome(goodbye, mac: "Mac mini", device: StreamClient.deviceWord, saved: false)
             client.status = outcome.text
             client.notice = StreamClient.Notice(text: outcome.text, storeLink: outcome.storeLink)
+            if c == .update {
+                client.banner = HomeGallery.goodbyeBanner(reason: Goodbye.update, mac: "Mac mini", device: StreamClient.deviceWord,
+                                                          source: outcome.text, storeAvailable: SillLinks.appStore != nil,
+                                                          message: GoodbyePolicy.message(goodbye))
+            }
         case .remote:
             // The long name checks that "Remote" never truncates: the title does.
             client.macs = remoteRows
@@ -696,7 +704,14 @@ enum MockCatalog {
             client.status = "Connecting to Mac mini remotely…"
         case .remotefail:
             client.macs = remoteRows
-            client.status = failureCopy(UserDefaults.standard.string(forKey: "SillRemoteFailure") ?? "timeout")
+            let kind = UserDefaults.standard.string(forKey: "SillRemoteFailure") ?? "timeout"
+            client.status = failureCopy(kind)
+            let failure = ["revoked": "revoked", "wrongmac": "wrongMac", "remoteoff": "remoteOff"][kind]
+            if let failure {
+                client.banner = HomeGallery.dialBanner(failure: failure, mac: "Mac mini", device: device, source: client.status)
+            } else if kind == "removed" {
+                client.banner = HomeGallery.banner(.removed, mac: "Mac mini", device: device, source: client.status)
+            }
         case .externalpair:
             client.pendingLink = mockLink
         case .homerows:
@@ -730,6 +745,7 @@ enum MockCatalog {
         case .homerevoked:
             client.macs = [home("Mac mini", .wifi, saved: true, revoked: true, homeTLS: true), studio]
             client.status = Copy.removed(mac: "Mac mini", device: device)
+            client.banner = HomeGallery.banner(.removed, mac: "Mac mini", device: device, source: client.status)
         case .homecabledone:
             client.macs = [home("Mac mini", .wired, saved: true, homeTLS: true), studio]
             client.status = Copy.pairedOverCable(mac: "Mac mini")
@@ -744,6 +760,17 @@ enum MockCatalog {
             // dials have not connected: the line after DiscoveryPolicy.reconnectQuietAfter of them.
             client.macs = [home("Mac mini", .wifi, saved: true, homeTLS: true), studio]
             client.status = DiscoveryPolicy.reconnectLine(mac: "Mac mini", failed: DiscoveryPolicy.reconnectQuietAfter, direct: false)
+        case .gallery, .galleryconnecting, .gallerybanner:
+            let pro = home("Kamal\u{2019}s MacBook Pro", .wifi, saved: true, homeTLS: true)
+            client.macs = [pro, remote("KAMALELTAYEB", "A3C5HR4RBV67YR21"), home("Office Mac mini", .wifi),
+                           home("Studio", .wired, saved: true, revoked: true, homeTLS: true)]
+            client.macPreviews = [pro.macID ?? "": thumbnail(seed: 0, size: CGSize(width: 320, height: 200)),
+                                  "A3C5HR4RBV67YR21": thumbnail(seed: 2, size: CGSize(width: 320, height: 200))]
+            if c == .galleryconnecting { client.status = "Connecting to KAMALELTAYEB remotely\u{2026}" }
+            if c == .gallerybanner {
+                client.status = GoodbyePolicy.outcome(Goodbye(reason: Goodbye.removed), mac: "KAMALELTAYEB", device: device, saved: true).text
+                client.banner = HomeGallery.goodbyeBanner(reason: Goodbye.removed, mac: "KAMALELTAYEB", device: device, source: client.status)
+            }
         case .tiles:
             // The Mac mini twice, as on Noah's iPad (2026-10-27): its Wired row, taken for it by its Bonjour
             // name (no tag of a saved Mac's, so its Remote row stays listed), and that Remote row. Both show

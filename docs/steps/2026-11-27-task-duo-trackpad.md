@@ -112,3 +112,20 @@ touch, the Mac's pointer jumping to the finger and a touch clicking there.
 - **Verified.** full-screen check (101,652 checks; 75 of 75 mutants, four new), pointer-presence, trackpad-taps,
   repo-rules; the simulator (both switch states). Not run: the touch rig (it makes a simulator of its own), the
   Duo's and the iPad's glass.
+
+**Use Picture as Trackpad: every layout, the controls shown or hidden (2026-11-27, same branch, for build 9).**
+Kamal, on the Duo (build 8): it worked as built, a trackpad only in Full Screen; he had tested the cover and open
+flat with the bar shown, and wants the switch to hold everywhere.
+
+- **What it does now.** Settings › This iPhone (This iPad) › **Use Picture as Trackpad** (was "Trackpad in Full
+  Screen"; the key is still `Sill.trackpadInFullScreen`, so the choice carries over; off unless turned on). On, the
+  picture is the relative trackpad in every layout whose picture takes touches, the bar shown or in full screen:
+  `FullScreenPolicy.pictureIsTrackpad(switchOn:)` (no `hidden` any more), read by both picture panes as before, so
+  `surface(for:padOverPicture:)` and the always-drawn pointer (`PointerPresence.padOverPicture`) hold in every
+  layout. The laptop pose keeps its pad below the fold; its picture above follows the switch too. Off: direct
+  touch, as always. The footnote: "The whole picture works as a trackpad, with the controls shown or in full
+  screen: …". No tour card names the switch, so the tour's words are unchanged.
+- **The cost.** With the switch on the pad takes the pinch, so the picture's own zoom is not offered (it resets as
+  the switch comes on), now with the bar shown too; an iPad's pointer or Pencil hovering over the picture moves
+  nothing.
+- **Verified.** `Tests/checks/run-all.sh full-screen pointer-presence`; full-screen's mutants. Not run: the glass.

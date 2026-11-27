@@ -505,6 +505,8 @@ extension StreamClient {
         // connected at home is still named ("…or Tailscale may be off on the Mac").
         let vpn = savedMac(macID).flatMap { RemoteCopy.vpnName($0.allAddresses + SavedMacs.remembered($0, now: Date().timeIntervalSince1970)) }
         let words = RemoteCopy.dialFailure(failure, mac: name, candidate: candidate, vpnName: vpn, device: Self.deviceWord)
+        // What the Mac answered for good, and Local Network refused: the connect screen's banner.
+        if let b = HomeGallery.dialBanner(failure: failure.rawValue, mac: name, device: Self.deviceWord, source: words) { banner = b }
         #if DEBUG
         print("remote: dial of \(name) failed: \(failure)\(candidate.map { " (\($0.key)\($0.remembered ? ", remembered" : ""))" } ?? ""): “\(words)”")
         #endif
@@ -589,6 +591,8 @@ extension StreamClient {
             persistSavedMacs()
         }
         tearDown(status: outcome.text)
+        if let reason = goodbye?.reason,
+           let b = HomeGallery.goodbyeBanner(reason: reason, mac: name, device: Self.deviceWord, source: outcome.text) { banner = b }
         reconnect = outcome.reconnect ? lostReconnect(session: s, saved: saved, name: name, remoteAllowed: outcome.remoteAllowed,
                                                       afterQuit: goodbye?.reason == Goodbye.quit) : nil
         updateDiscovery()
@@ -635,6 +639,9 @@ extension StreamClient {
         let outcome = GoodbyePolicy.outcome(goodbye, mac: name, device: Self.deviceWord, saved: saved != nil)
         tearDown(status: outcome.text, restartSearch: connected)
         notice = Notice(text: outcome.text, storeLink: outcome.storeLink)
+        if let b = HomeGallery.goodbyeBanner(reason: goodbye.reason, mac: name, device: Self.deviceWord, source: outcome.text,
+                                             storeAvailable: outcome.storeLink && SillLinks.appStore != nil,
+                                             message: GoodbyePolicy.message(goodbye)) { banner = b }
         if s?.why == .afterPairing {
             afterPairingWatch?.cancel()
             afterPairingWatch = nil

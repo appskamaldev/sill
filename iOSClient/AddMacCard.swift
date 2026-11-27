@@ -113,15 +113,15 @@ struct AddMacCard: View {
                 .foregroundStyle(Palette.text)
                 .fixedSize(horizontal: false, vertical: true)
         } else if editing && (layout.compactPortrait || layout.short) {
-            Text("Type the address and code from your Mac.")
+            Text("Type the address and code from your Mac or PC.")
                 .font(.system(size: 13))
                 .foregroundStyle(Palette.muted)
         } else {
-            Text("Pair once, and Sill reaches your Mac from anywhere, through your VPN or the internet.")
+            Text("Pair once, and Sill reaches your computer from anywhere, through your VPN or the internet.")
                 .font(.system(size: 13))
                 .foregroundStyle(Palette.muted)
                 .fixedSize(horizontal: false, vertical: true)
-            Text(typed ? "Type the address and code that Sill shows on your Mac."
+            Text(typed ? "Type the address and code that Sill shows on your Mac or PC."
                        : "On your Mac, choose Pair iPhone or iPad… in the Sill menu, then point this \(device) at the code.")
                 .font(.system(size: 13))
                 .foregroundStyle(Palette.text)
@@ -135,7 +135,7 @@ struct AddMacCard: View {
         VStack(alignment: .leading, spacing: 8) {
             // The home card dials the door its ask reached: the code alone.
             if home == nil {
-                PairingField(prompt: "100.101.102.103 or mac.example.net", label: "Address", text: $address,
+                PairingField(prompt: "100.x.y.z (Tailscale) or name.local", label: "Address", text: $address,
                              keyboard: .URL, submit: .next)
                     .focused($focus, equals: .address)
                     .onSubmit { focus = .code }
@@ -152,7 +152,7 @@ struct AddMacCard: View {
             Button(action: pair) {
                 Text("Pair")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Color.black)
+                    .foregroundStyle(Color(.systemBackground))   // on the accent, in light and dark
                     .frame(minWidth: 88, minHeight: 44)
                     .padding(.horizontal, 12)
                     .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Palette.accent.opacity(working ? 0.4 : 1)))
@@ -413,7 +413,7 @@ struct LinkConfirmation: View {
                 Button(action: pair) {
                     Text("Pair")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color.black)
+                        .foregroundStyle(Color(.systemBackground))   // on the accent, in light and dark
                         .frame(minWidth: 88, minHeight: 44)
                         .padding(.horizontal, 12)
                         .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Palette.accent))

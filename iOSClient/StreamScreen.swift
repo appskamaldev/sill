@@ -15,14 +15,27 @@ extension Color {
     }
 }
 
+extension Color {
+    /// One colour in light mode, another in dark. The stream screen is always dark (ContentView), so there it is
+    /// `dark`; the connect screen and its cards follow the system (the gallery, 2026-11-27).
+    init(light: UInt32, dark: UInt32) {
+        func ui(_ hex: UInt32) -> UIColor {
+            UIColor(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,
+                    blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+        }
+        self.init(UIColor { $0.userInterfaceStyle == .dark ? ui(dark) : ui(light) })
+    }
+}
+
 enum Palette {
     static let bar = Color(hex: 0x16181C)          // top bar and drawer background
-    static let control = Color(hex: 0x23262C)      // bar buttons, search field, selected row
+    static let control = Color(light: 0xE5E5EA, dark: 0x23262C)  // bar buttons, search field, selected row
     static let controlOpen = Color(hex: 0x2C3550)  // a bar button whose thing is showing
-    static let accent = Color(hex: 0x9BB7FF)
-    static let text = Color(hex: 0xEEF0F3)
+    /// The asset SillAccent: #2D5BD6 light, #9BB7FF dark (the stream screen's, always).
+    static let accent = Color("SillAccent")
+    static let text = Color(light: 0x000000, dark: 0xEEF0F3)
     static let barLabel = Color(hex: 0xC4C9D1)     // the 11pt labels under the bar icons
-    static let muted = Color(hex: 0xA4ABB5)        // section headers, window counts, placeholder
+    static let muted = Color(light: 0x6C6C70, dark: 0xA4ABB5)  // section headers, window counts, placeholder
     static let panel = Color(hex: 0x1F2126)        // the stream panel behind the video
     static let trackpad = Color(hex: 0x101215)     // the portrait trackpad's well
     static let thumbBody = Color(hex: 0x26282D)    // thumbnail placeholder
@@ -278,7 +291,7 @@ struct StreamScreen: View {
     /// This device's Larger Picture switch (the Settings panel's This iPhone; docs/larger-picture-plan.md).
     /// It acts only while a window streams (`largerPictureNow`).
     @AppStorage(StreamClient.largerPictureKey) private var largerPicture = false
-    /// This device's Trackpad in Full Screen (FullScreenPolicy.trackpadKey): off unless turned on.
+    /// This device's Use Picture as Trackpad (FullScreenPolicy.trackpadKey): off unless turned on.
     @AppStorage(FullScreenPolicy.trackpadKey) private var trackpadInFullScreen = FullScreenPolicy.trackpadDefault
     /// Larger Picture as it was in effect when the Settings panel opened (`largerPictureNow`), which
     /// the arrangement keeps until the panel closes; nil while it is closed. The panel hangs under row
@@ -402,15 +415,15 @@ struct StreamScreen: View {
                 .modifier(HiddenUnderSettings(hidden: settingsOpen))
                 // The pointer sprite follows the layout: the trackpad's arrow shows in the laptop layout,
                 // and a rotation re-renders it at once; the Mac's arrow stays. Full screen hides the
-                // trackpad, so none of its arrow either, unless the picture is the trackpad (Trackpad in
-                // Full Screen).
+                // trackpad, so none of its arrow either, unless the picture is the trackpad (Use Picture
+                // as Trackpad).
                 .onChangeCompat(of: FullScreenPolicy.showsOwnPointer(portrait: DuoLayout.of(geo.size).isPortrait, hidden: hidden,
                                                                switchOn: trackpadInFullScreen), initial: true) { _, show in
                     client.setPointerLayout(portrait: show)
                 }
                 // The pad over the picture takes the pinch, so no pinch could undo a zoom made before it; and a
                 // pointer always shows on it, the Mac's or the pad's (PointerPresence.padOverPicture).
-                .onChangeCompat(of: FullScreenPolicy.pictureIsTrackpad(hidden: hidden, switchOn: trackpadInFullScreen),
+                .onChangeCompat(of: FullScreenPolicy.pictureIsTrackpad(switchOn: trackpadInFullScreen),
                           initial: true) { _, pad in
                     if pad { zoom.reset() }
                     client.setPictureIsTrackpad(pad)
@@ -1865,10 +1878,10 @@ struct StreamScreen: View {
                              macRepeatsKeys: { KeyTyping.macRepeats(keyRepeat: client.hostKeyRepeat) },
                              readZoom: { [zoom] in zoom.zoom },
                              writeZoom: { [zoom] in zoom.set($0) },
-                             padOverPicture: FullScreenPolicy.pictureIsTrackpad(hidden: hidden, switchOn: trackpadInFullScreen))
-                // Trackpad in Full Screen (FullScreenPolicy.pictureIsTrackpad): while hidden, the whole picture
+                             padOverPicture: FullScreenPolicy.pictureIsTrackpad(switchOn: trackpadInFullScreen))
+                // Use Picture as Trackpad (FullScreenPolicy.pictureIsTrackpad): shown or hidden, the whole picture
                 // is the Mac's trackpad, the portrait pad's own surface over the input view.
-                if FullScreenPolicy.pictureIsTrackpad(hidden: hidden, switchOn: trackpadInFullScreen) {
+                if FullScreenPolicy.pictureIsTrackpad(switchOn: trackpadInFullScreen) {
                     TrackpadView(send: { client.sendInput($0) },
                              setPointer: { client.setOwnPointer($0, from: .trackpad) },
                              feed: { let f = client.pointerFeedState; return (f.anchor, f.reseeds) },
