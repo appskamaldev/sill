@@ -417,6 +417,10 @@ the normal app and under `-SillLive 1` `-SillPairURL '<sill://pair…>'` (pair
 at launch, no confirmation, at the link's own addresses only: a confirmed link
 tries the home rows first, which `-SillTapRow` and `-SillHomeLink` below reach),
 `-SillPairCode <12 digits> -SillPairAddress host:port`,
+(fork) `-SillAutoConnect <saved name or address>` (dial that saved computer as its row's
+tap does) and `-SillInputScript windows` with `-SillAllowRemoteInputTest 1` (the Windows
+rig's input sequence, also to a host whose list says `hostPlatform` "windows"), each
+logged to Documents/sill-rig.log (Tests/windowsrig/README.md),
 `-SillDialSaved 1`, `-SillForgetMacs 1`, `-Sill.savedMacs '<JSON>'` (one run;
 `'[]'` empties), `-SillRemoteRoute vpn|internet` (a loopback session counts as
 that route), `-SillHelloVersion <v>` (the version the hello gives, against a

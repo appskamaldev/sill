@@ -297,7 +297,18 @@ extension StreamClient {
         if let url = d.string(forKey: "SillPairURL") {
             if case .success(let link) = PairLink.parse(url) { pair(link: link, overlay: false) } else { pairing = .failed(.notALink) }
         } else if let code = d.string(forKey: "SillPairCode"), let address = d.string(forKey: "SillPairAddress") {
+            WindowsRig.log("pair: by code at \(address)")
             pairTyped(code: code, address: address, overlay: false)
+        } else if let query = d.string(forKey: "SillAutoConnect") {
+            // The Windows rig (WindowsRig): a saved computer by name or address, dialled as its row's tap
+            // would, pinned to its saved key, at its remote door.
+            let saved = savedMacs.map { (id: $0.macID, name: displayName($0.macID), hosts: $0.allAddresses.map(\.host)) }
+            if let id = WindowsRig.autoConnectTarget(query, saved: saved) {
+                WindowsRig.log("autoconnect: dialing \(displayName(id)) (\(id))")
+                dialSaved(id, why: .launchArgument)
+            } else {
+                WindowsRig.log("autoconnect: FAILED: no saved computer matches \(query.debugDescription); saved: \(saved.map { "\($0.name) \($0.hosts)" })")
+            }
         } else if d.string(forKey: "SillDialSaved") == "remotely", let first = savedMacs.first {
             // As Connect Remotely dials it: a session that never moves home (S5).
             dialSaved(first.macID, why: .connectRemotely)

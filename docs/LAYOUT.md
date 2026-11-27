@@ -1252,6 +1252,10 @@ Below, "this file" means CLAUDE.md, and "Build and run below" means docs/BUILD-A
   UDID pose <closed-upright|closed-side|flat-portrait|flat-landscape|laptop|book>`,
   `run.sh UDID shot <pose> FILE.png`, `hinge`, `orient`, `watch`; only a
   booted iPhone Duo simulator, by UDID (its README).
+- `Tests/windowsrig/` — TEST ONLY, a fork extension: Sill Dev on the simulator
+  Sill-Duo against a host with no hands (`run.sh pair HOST CODE | connect | input
+  | shot`; it makes Sill-Duo when missing and shuts it down after); the app's side
+  is `iOSClient/WindowsRig.swift` (DEBUG; checked by `Tests/checks/windows-rig`).
 - `Tests/keyrig/` — TEST ONLY, private interfaces, simulator only: a hardware
   keyboard and a mouse for the iOS Simulator, key presses, pointer moves and
   wheel scrolls posted from a virtual HID device inside the simulator (`xcrun

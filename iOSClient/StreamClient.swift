@@ -128,6 +128,7 @@ final class StreamClient: ObservableObject {
         didSet {
             #if DEBUG
             if status != oldValue { print("status: \(status)") }    // the simulator tests read the status line here
+            if status != oldValue, WindowsRig.active { WindowsRig.log("status: \(status)") }
             #endif
         }
     }
@@ -193,6 +194,14 @@ final class StreamClient: ObservableObject {
             #if DEBUG
             // The simulator gates read what the card or the overlay says here.
             if pairing != oldValue, case .failed(let p) = pairing { print("pairing: \(p.text)") }
+            if pairing != oldValue, WindowsRig.active {
+                switch pairing {
+                case .idle: break
+                case .working(let to): WindowsRig.log("pair: working: \(to)")
+                case .failed(let p): WindowsRig.log("pair: FAILED: \(p.text)")
+                case .paired(let name): WindowsRig.log("pair: OK: paired with \(name) (saved)")
+                }
+            }
             #endif
         }
     }
@@ -4562,6 +4571,9 @@ final class StreamClient: ObservableObject {
                     case (nil, nil): print("host: no version (a Mac from before 2026-09-25)")
                     case (nil, let p?): print("host: no version, protocol \(p)")
                     case (let v?, let p): print("host: Sill \(v), protocol \(p.map(String.init) ?? "?")")
+                    }
+                    if WindowsRig.active {
+                        WindowsRig.log("session: CONNECTED to \(list.macName) at \(self.connection.map { "\($0.endpoint)" } ?? "?"), hostPlatform \(list.hostPlatform ?? "none"), version \(list.hostVersion ?? "none"), \(list.windows.count) windows")
                     }
                     #endif
                     self.moveToNetworkIfListed()
