@@ -451,7 +451,7 @@ private struct RingPulse: ViewModifier {
     let on: Bool
 
     func body(content: Content) -> some View {
-        if on {
+        if on, #available(iOS 17, *) {
             content.phaseAnimator([0.0, 1.0, 0.0], trigger: step) { ring, phase in
                 ring.scaleEffect(x: 1 + 8 * phase / max(hole.width, 1), y: 1 + 8 * phase / max(hole.height, 1),
                                  anchor: UnitPoint(x: hole.midX / max(size.width, 1), y: hole.midY / max(size.height, 1)))
@@ -505,12 +505,12 @@ private struct TourCard: View {
                 words
                 ScrollViewReader { reader in
                     ScrollView { words.id(Self.wordsTop).padding(.bottom, 16) }
-                        .scrollIndicatorsFlash(onAppear: true)
+                        .flashesScrollIndicatorsOnAppear()
                         // Each step's words start at their top, and show there is more below: the card
                         // keeps its identity from step to step (it slides), and so would the place a
                         // reader scrolled the last step's words to.
-                        .scrollIndicatorsFlash(trigger: run.at)
-                        .onChange(of: run.at) { _, _ in
+                        .flashesScrollIndicators(trigger: run.at)
+                        .onChangeCompat(of: run.at) { _, _ in
                             var top = Transaction()
                             top.disablesAnimations = true
                             withTransaction(top) { reader.scrollTo(Self.wordsTop, anchor: .top) }
@@ -539,15 +539,15 @@ private struct TourCard: View {
         // In: from 0.94 about where its tail is, as the panel grows from its button.
         .scaleEffect(appeared || reduceMotion ? 1 : 0.94, anchor: appearAnchor)
         .onAppear {
-            withAnimation(.spring(duration: 0.25, bounce: 0.15)) { appeared = true }
+            withAnimation(.springCompat(duration: 0.25, bounce: 0.15)) { appeared = true }
             titleFocused = true
         }
         // Each step: VoiceOver's focus on the new title, and a tick on an iPhone.
-        .onChange(of: run.at) { _, _ in
+        .onChangeCompat(of: run.at) { _, _ in
             titleFocused = true
-            AccessibilityNotification.LayoutChanged().post()
+            UIAccessibility.post(notification: .layoutChanged, argument: nil)
         }
-        .sensoryFeedback(.selection, trigger: run.at)
+        .selectionFeedback(trigger: run.at)
     }
 
     private var appearAnchor: UnitPoint {
@@ -615,9 +615,7 @@ private struct TourCard: View {
         Image(systemName: row.symbol)
             .font(.subheadline)
             .foregroundStyle(Palette.accent)
-            .contentTransition(.symbolEffect(.replace))
-            .symbolEffect(.bounce, value: run.at)
-            .symbolEffectsRemoved(reduceMotion)
+            .modifier(SymbolMotion(at: run.at, reduceMotion: reduceMotion))
             .accessibilityHidden(true)
     }
 
@@ -691,14 +689,8 @@ private struct TourCard: View {
         }
         .buttonStyle(.plain)
         .keyboardShortcut(.defaultAction)
-        // A tap on the dim: Next grows a little and back (brightens, under Reduce Motion).
-        .phaseAnimator([0.0, 1.0, 0.0], trigger: nudges) { button, phase in
-            button
-                .scaleEffect(reduceMotion ? 1 : 1 + 0.06 * phase)
-                .brightness(reduceMotion ? 0.15 * phase : 0)
-        } animation: { _ in
-            .easeInOut(duration: 0.125)
-        }
+        // A tap on the dim: Next grows a little and back (brightens, under Reduce Motion). iOS 17 on.
+        .modifier(NextNudge(nudges: nudges, reduceMotion: reduceMotion))
     }
 
     /// The step's place in the run: none on a one-card run. The title says it to VoiceOver.
@@ -816,3 +808,40 @@ struct TourDebug {
     }()
 }
 #endif
+
+/// The step's symbol: replaced and bounced at each step (iOS 17 on; still on iOS 16).
+private struct SymbolMotion<T: Equatable>: ViewModifier {
+    let at: T
+    let reduceMotion: Bool
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if #available(iOS 17, *) {
+            content
+                .contentTransition(.symbolEffect(.replace))
+                .symbolEffect(.bounce, value: at)
+                .symbolEffectsRemoved(reduceMotion)
+        } else {
+            content
+        }
+    }
+}
+
+/// Next's nudge at a tap on the dim (iOS 17 on; none on iOS 16).
+private struct NextNudge<T: Equatable>: ViewModifier {
+    let nudges: T
+    let reduceMotion: Bool
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if #available(iOS 17, *) {
+            content.phaseAnimator([0.0, 1.0, 0.0], trigger: nudges) { button, phase in
+                button
+                    .scaleEffect(reduceMotion ? 1 : 1 + 0.06 * phase)
+                    .brightness(reduceMotion ? 0.15 * phase : 0)
+            } animation: { _ in
+                .easeInOut(duration: 0.125)
+            }
+        } else {
+            content
+        }
+    }
+}

@@ -114,7 +114,7 @@ struct CodeScanner: View {
         } else if !notSill {
             notSill = true
             notSillToken += 1
-            AccessibilityNotification.Announcement("That’s not a Sill code.").post()
+            UIAccessibility.post(notification: .announcement, argument: "That’s not a Sill code.")
         }
     }
 

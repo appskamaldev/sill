@@ -805,7 +805,8 @@ final class InputOverlayView: UIView, UITextInput, UIGestureRecognizerDelegate {
     @objc var smartQuotesType: UITextSmartQuotesType = .no
     @objc var smartDashesType: UITextSmartDashesType = .no
     @objc var spellCheckingType: UITextSpellCheckingType = .no
-    @objc var inlinePredictionType: UITextInlinePredictionType = .no
+    @available(iOS 17.0, *)
+    @objc var inlinePredictionType: UITextInlinePredictionType { get { .no } set {} }
     // Nor any of iPadOS's newer helpers that rewrite text already typed: what this view remembers is the
     // Mac's (TextComposition), and a rewrite of it would go out as backspaces and retyping there. Only an
     // input method or dictation revises it.

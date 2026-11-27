@@ -46,6 +46,7 @@
 		A1000001000000000000A113 /* ThumbnailHold.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001000000000000F113 /* ThumbnailHold.swift */; };
 		A1000001000000000000A178 /* TouchHold.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001000000000000F178 /* TouchHold.swift */; };
 		A1000001000000000000A427 /* TrackpadTaps.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001000000000000F427 /* TrackpadTaps.swift */; };
+		A1000001000000000000A430 /* IOS16Compat.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001000000000000F430 /* IOS16Compat.swift */; };
 		A1000001000000000000AE01 /* VersionLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001000000000000FE01 /* VersionLabel.swift */; };
 		A1000001000000000000A5E1 /* SettingsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001000000000000F5E1 /* SettingsPane.swift */; };
 		A1000001000000000000A014 /* DiscoveryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001000000000000F014 /* DiscoveryPolicy.swift */; };
@@ -120,6 +121,7 @@
 		A1000001000000000000F113 /* ThumbnailHold.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailHold.swift; sourceTree = "<group>"; };
 		A1000001000000000000F178 /* TouchHold.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TouchHold.swift; sourceTree = "<group>"; };
 		A1000001000000000000F427 /* TrackpadTaps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackpadTaps.swift; sourceTree = "<group>"; };
+		A1000001000000000000F430 /* IOS16Compat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOS16Compat.swift; sourceTree = "<group>"; };
 		A1000001000000000000FE01 /* VersionLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionLabel.swift; sourceTree = "<group>"; };
 		A1000001000000000000F5E1 /* SettingsPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPane.swift; sourceTree = "<group>"; };
 		A1000001000000000000F014 /* DiscoveryPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryPolicy.swift; sourceTree = "<group>"; };
@@ -193,6 +195,7 @@
 				A1000001000000000000F113 /* ThumbnailHold.swift */,
 				A1000001000000000000F178 /* TouchHold.swift */,
 				A1000001000000000000F427 /* TrackpadTaps.swift */,
+				A1000001000000000000F430 /* IOS16Compat.swift */,
 				A1000001000000000000FE01 /* VersionLabel.swift */,
 				A1000001000000000000F5E1 /* SettingsPane.swift */,
 				A1000001000000000000F402 /* TourOverlay.swift */,
@@ -359,6 +362,7 @@
 				A1000001000000000000A113 /* ThumbnailHold.swift in Sources */,
 				A1000001000000000000A178 /* TouchHold.swift in Sources */,
 				A1000001000000000000A427 /* TrackpadTaps.swift in Sources */,
+				A1000001000000000000A430 /* IOS16Compat.swift in Sources */,
 				A1000001000000000000AE01 /* VersionLabel.swift in Sources */,
 				A1000001000000000000A5E1 /* SettingsPane.swift in Sources */,
 				A1000001000000000000A402 /* TourOverlay.swift in Sources */,
@@ -458,7 +462,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -517,7 +521,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
