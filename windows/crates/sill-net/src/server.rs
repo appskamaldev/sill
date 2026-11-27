@@ -217,6 +217,7 @@ async fn chores(host: Arc<Host>) {
     let mut stop = host.shutdown.subscribe();
     let mut every = tokio::time::interval(Duration::from_secs(1));
     let mut window_was_open = host.pairing_open();
+    let mut meter = sill_platform::meter::Meter::new();
     loop {
         tokio::select! { _ = every.tick() => {}, _ = stop.changed() => return }
         host.reload_paired_if_changed();
@@ -226,10 +227,11 @@ async fn chores(host: Arc<Host>) {
         }
         window_was_open = open;
         let s = host.stats.take();
+        let cost = meter.read().map(|r| r.words()).unwrap_or_default();
         let (home, remote) = host.sessions();
         if home + remote > 0 {
             info!(
-                "stats: sessions {} (home {home}, remote {remote}) | frames sent {} dropped {} waitKey {} keyframes {} | {} kbit/s | pongs {} ticks {} refused {}{}",
+                "stats: sessions {} (home {home}, remote {remote}) | frames sent {} dropped {} waitKey {} keyframes {} | {} kbit/s | pongs {} ticks {} refused {}{}{}",
                 home + remote,
                 s.sent,
                 s.dropped,
@@ -239,7 +241,8 @@ async fn chores(host: Arc<Host>) {
                 s.pongs,
                 s.ticks,
                 s.refused,
-                s.media_words()
+                s.media_words(),
+                cost
             );
         }
     }

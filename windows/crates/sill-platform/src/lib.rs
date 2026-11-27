@@ -4,4 +4,5 @@
 
 pub mod adapters;
 pub mod bonjour;
+pub mod meter;
 pub mod protect;
