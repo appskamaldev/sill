@@ -166,10 +166,7 @@ fn main() {
         }
     };
     #[cfg(windows)]
-    {
-        sill_capture::set_dpi_awareness();
-        sill_capture::fine_timer();
-    }
+    sill_capture::set_dpi_awareness();
     if args.probe_encoder {
         std::process::exit(probe_encoder());
     }

@@ -193,7 +193,7 @@ impl Encoder {
         set(&CODECAPI_AVEncMPVDefaultBPictureCount, u32_variant(0));
         set(&CODECAPI_AVEncMPVGOPSize, u32_variant(s.fps.saturating_mul(4)));
         // 0 is fastest, 100 best quality. Intel Arc at 1920×1200: 0 encodes in 17 ms, 33-50 in
-        // 27 ms and 100 in 60 ms (with the 1 ms timer, `sill_capture::fine_timer`).
+        // 27 ms and 100 in 60 ms (with the 1 ms timer, `sill_capture::FineTimer`).
         set(&CODECAPI_AVEncCommonQualityVsSpeed, u32_variant(0));
         let frame_size = (u64::from(s.width) << 32) | u64::from(s.height);
         let frame_rate = (u64::from(s.fps) << 32) | 1;

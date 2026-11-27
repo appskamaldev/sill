@@ -8,7 +8,7 @@ fn main() {
     use std::collections::VecDeque;
     use std::time::{Duration, Instant};
     sill_capture::set_dpi_awareness();
-    sill_capture::fine_timer();
+    let _timer = sill_capture::FineTimer::new();
     sill_encode::mf::startup().unwrap();
     let fps: u32 = std::env::var("FPS").ok().and_then(|v| v.parse().ok()).unwrap_or(60);
     let gpu = sill_capture::Gpu::new().unwrap();

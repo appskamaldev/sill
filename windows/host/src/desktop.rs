@@ -114,6 +114,8 @@ pub fn spawn(
 }
 
 struct Pipeline {
+    /// The 1 ms timer the encoder needs, released with the pipeline (3 s after the last viewer).
+    _timer: sill_capture::FineTimer,
     gpu: Gpu,
     monitor: Monitor,
     capture: Capture,
@@ -148,6 +150,7 @@ impl Pipeline {
             mf::Encoder::new(&gpu.device, mf::Settings { width: size.0, height: size.1, fps, bitrate: per_stream })
                 .map_err(|e| format!("no hardware HEVC encoder took {}×{} at {fps} fps ({e})", size.0, size.1))?;
         Ok(Pipeline {
+            _timer: sill_capture::FineTimer::new(),
             gpu,
             monitor: monitor.clone(),
             capture,

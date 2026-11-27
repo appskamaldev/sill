@@ -33,12 +33,32 @@ pub fn set_dpi_awareness() {
     }
 }
 
-/// A 1 ms system timer while the host runs (it ends with the process). Media Foundation's
-/// hardware encoder waits on timers internally: at Windows' default 15.6 ms tick a 720p frame came
-/// out 14.5 ms after it went in, at 1 ms 8.6 ms (Intel Arc, 2026-11-27).
-pub fn fine_timer() {
-    unsafe {
-        let _ = windows::Win32::Media::timeBeginPeriod(1);
+/// A 1 ms system timer for as long as this lives; hold it only while a picture streams (a fine
+/// timer costs battery). Media Foundation's hardware encoder waits on timers internally: at
+/// Windows' default 15.6 ms tick a 720p frame came out 14.5 ms after it went in, at 1 ms 8.6 ms
+/// (Intel Arc, 2026-11-27).
+pub struct FineTimer(());
+
+impl FineTimer {
+    pub fn new() -> FineTimer {
+        unsafe {
+            let _ = windows::Win32::Media::timeBeginPeriod(1);
+        }
+        FineTimer(())
+    }
+}
+
+impl Default for FineTimer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Drop for FineTimer {
+    fn drop(&mut self) {
+        unsafe {
+            let _ = windows::Win32::Media::timeEndPeriod(1);
+        }
     }
 }
 
