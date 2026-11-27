@@ -290,10 +290,35 @@ impl Pipeline {
         us: u64,
         captured: Instant,
     ) {
-        let r = annexb::repack(annexb_bytes);
+        let mut r = annexb::repack(annexb_bytes);
+        if self.bgra {
+            // The MFT's own RGB → YUV conversion writes limited range (Y 16–235) but its SPS says
+            // full range, so the device showed black as 16 and white as 235 (colour chart, rig,
+            // 2026-11-27). Say limited, and the device expands it back to 0–255.
+            for n in r.parameter_sets.iter_mut() {
+                if annexb::nal_type(n) == Some(annexb::SPS) {
+                    if let Some(fixed) = sill_encode::sps::set_full_range(n, false) {
+                        *n = fixed;
+                    }
+                }
+            }
+        }
         if !r.parameter_sets.is_empty() {
             match annexb::kind0(&r.parameter_sets) {
-                Some(k0) => self.parameter_sets = Some(Arc::from(k0)),
+                Some(k0) => {
+                    if self.parameter_sets.as_deref() != Some(&k0[..]) {
+                        let sps = r.parameter_sets.iter().find(|n| annexb::nal_type(n) == Some(annexb::SPS));
+                        match sps.and_then(|n| sill_encode::sps::vui(n)) {
+                            Some(v) => info!(
+                                "Encoder signals {} ({}).",
+                                v.words(),
+                                if self.bgra { "BGRA input" } else { "NV12 input" }
+                            ),
+                            None => warn!("The encoder's SPS did not parse; its colour signalling is unknown."),
+                        }
+                    }
+                    self.parameter_sets = Some(Arc::from(k0));
+                }
                 None => warn!("The encoder's parameter sets are incomplete; waiting for the next keyframe."),
             }
         }
