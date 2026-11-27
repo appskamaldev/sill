@@ -1,0 +1,664 @@
+{
+  "_source" : "upstream Sources/StreamProtocol, written by windows/tools/make-vectors.sh; do not edit",
+  "appIcon" : {
+    "decode" : [
+      {
+        "bytes" : "0000",
+        "ok" : false
+      },
+      {
+        "bundleID" : "",
+        "bytes" : "000041",
+        "ok" : true,
+        "png" : "41"
+      },
+      {
+        "bytes" : "0003616263",
+        "ok" : false
+      },
+      {
+        "bundleID" : "abc",
+        "bytes" : "000361626389",
+        "ok" : true,
+        "png" : "89"
+      },
+      {
+        "bytes" : "0001ff00",
+        "ok" : false
+      },
+      {
+        "bytes" : "00",
+        "ok" : false
+      },
+      {
+        "bytes" : "",
+        "ok" : false
+      },
+      {
+        "bundleID" : "é",
+        "bytes" : "0002c3a989",
+        "ok" : true,
+        "png" : "89"
+      },
+      {
+        "bundleID" : "com.apple.Safari",
+        "bytes" : "0010636f6d2e6170706c652e53616661726989504e47",
+        "ok" : true,
+        "png" : "89504e47"
+      }
+    ],
+    "encode" : [
+      {
+        "bundleID" : "com.apple.Safari",
+        "encoded" : "0010636f6d2e6170706c652e53616661726989504e47",
+        "png" : "89504e47"
+      },
+      {
+        "bundleID" : "",
+        "encoded" : "000089",
+        "png" : "89"
+      },
+      {
+        "bundleID" : "é.app",
+        "encoded" : "0006c3a92e617070",
+        "png" : ""
+      }
+    ]
+  },
+  "caps" : {
+    "headerLength" : 14,
+    "maxClientPayload" : 1048576,
+    "maxFramePayload" : 33554432,
+    "maxOtherHostPayload" : 4194304,
+    "maxPairingPayload" : 4096
+  },
+  "cursorShape" : {
+    "decode" : [
+      {
+        "bytes" : "00000000000000000000000000000000",
+        "ok" : false
+      },
+      {
+        "bytes" : "0000000000000000000000000000000089",
+        "heightBits" : "00000000",
+        "hotXBits" : "00000000",
+        "hotYBits" : "00000000",
+        "ok" : true,
+        "png" : "89",
+        "widthBits" : "00000000"
+      },
+      {
+        "bytes" : "40600000408000004180000041c0000089504e47",
+        "heightBits" : "41c00000",
+        "hotXBits" : "40600000",
+        "hotYBits" : "40800000",
+        "ok" : true,
+        "png" : "89504e47",
+        "widthBits" : "41800000"
+      },
+      {
+        "bytes" : "3dcccccd3eaaaaab420000004200000000",
+        "heightBits" : "42000000",
+        "hotXBits" : "3dcccccd",
+        "hotYBits" : "3eaaaaab",
+        "ok" : true,
+        "png" : "00",
+        "widthBits" : "42000000"
+      },
+      {
+        "bytes" : "00",
+        "ok" : false
+      }
+    ],
+    "encode" : [
+      {
+        "encoded" : "40600000408000004180000041c0000089504e47",
+        "height" : 24,
+        "hotX" : 3.5,
+        "hotY" : 4,
+        "png" : "89504e47",
+        "width" : 16
+      },
+      {
+        "encoded" : "3dcccccd3eaaaaab420000004200000000",
+        "height" : 32,
+        "hotX" : 0.10000000000000001,
+        "hotY" : 0.33333333333333331,
+        "png" : "00",
+        "width" : 32
+      },
+      {
+        "encoded" : "00000000000000000000000000000000",
+        "height" : 0,
+        "hotX" : 0,
+        "hotY" : 0,
+        "png" : "",
+        "width" : 0
+      }
+    ]
+  },
+  "headers" : [
+    {
+      "keyframe" : false,
+      "kind" : 10,
+      "name" : "ping",
+      "payload" : "41da4a0140100000",
+      "serialized" : "0a41da4a0140100000000000000841da4a0140100000",
+      "timestampBits" : "41da4a0140100000"
+    },
+    {
+      "keyframe" : true,
+      "kind" : 1,
+      "name" : "keyframe",
+      "payload" : "0000000526010af0ff",
+      "serialized" : "0141da4a014007e6b701000000090000000526010af0ff",
+      "timestampBits" : "41da4a014007e6b7"
+    },
+    {
+      "keyframe" : false,
+      "kind" : 1,
+      "name" : "delta frame",
+      "payload" : "00000003020100",
+      "serialized" : "0141da4a0140200000000000000700000003020100",
+      "timestampBits" : "41da4a0140200000"
+    },
+    {
+      "keyframe" : false,
+      "kind" : 0,
+      "name" : "parameter sets at time 0",
+      "payload" : "0401000340010c",
+      "serialized" : "00000000000000000000000000070401000340010c",
+      "timestampBits" : "0000000000000000"
+    },
+    {
+      "keyframe" : false,
+      "kind" : 13,
+      "name" : "tick, empty",
+      "payload" : "",
+      "serialized" : "0d3ff80000000000000000000000",
+      "timestampBits" : "3ff8000000000000"
+    },
+    {
+      "keyframe" : false,
+      "kind" : 23,
+      "name" : "hello",
+      "payload" : "7b2261707056657273696f6e223a22312e30227d",
+      "serialized" : "1741da4a014040000000000000147b2261707056657273696f6e223a22312e30227d",
+      "timestampBits" : "41da4a0140400000"
+    },
+    {
+      "keyframe" : false,
+      "kind" : 22,
+      "name" : "goodbye",
+      "payload" : "7b22726561736f6e223a2271756974227d",
+      "serialized" : "1641da4a0140b0000000000000117b22726561736f6e223a2271756974227d",
+      "timestampBits" : "41da4a0140b00000"
+    },
+    {
+      "keyframe" : false,
+      "kind" : 44,
+      "name" : "negative zero time",
+      "payload" : "",
+      "serialized" : "2c80000000000000000000000000",
+      "timestampBits" : "8000000000000000"
+    },
+    {
+      "keyframe" : false,
+      "kind" : 47,
+      "name" : "next display",
+      "payload" : "",
+      "serialized" : "2f3fb999999999999a0000000000",
+      "timestampBits" : "3fb999999999999a"
+    },
+    {
+      "keyframe" : false,
+      "kind" : 32,
+      "name" : "tiny fraction",
+      "payload" : "7b7d",
+      "serialized" : "20000000000000000100000000027b7d",
+      "timestampBits" : "0000000000000001"
+    }
+  ],
+  "kinds" : [
+    {
+      "name" : "parameterSets",
+      "raw" : 0
+    },
+    {
+      "name" : "frame",
+      "raw" : 1
+    },
+    {
+      "name" : "windowList",
+      "raw" : 2
+    },
+    {
+      "name" : "thumbnail",
+      "raw" : 3
+    },
+    {
+      "name" : "appIcon",
+      "raw" : 4
+    },
+    {
+      "name" : "appList",
+      "raw" : 5
+    },
+    {
+      "name" : "selectSource",
+      "raw" : 6
+    },
+    {
+      "name" : "launchApp",
+      "raw" : 7
+    },
+    {
+      "name" : "input",
+      "raw" : 8
+    },
+    {
+      "name" : "viewport",
+      "raw" : 9
+    },
+    {
+      "name" : "ping",
+      "raw" : 10
+    },
+    {
+      "name" : "pong",
+      "raw" : 11
+    },
+    {
+      "name" : "clientStats",
+      "raw" : 12
+    },
+    {
+      "name" : "tick",
+      "raw" : 13
+    },
+    {
+      "name" : "cursorShape",
+      "raw" : 14
+    },
+    {
+      "name" : "windowCommand",
+      "raw" : 15
+    },
+    {
+      "name" : "hostSettings",
+      "raw" : 16
+    },
+    {
+      "name" : "changeSettings",
+      "raw" : 17
+    },
+    {
+      "name" : "macInfo",
+      "raw" : 18
+    },
+    {
+      "name" : "pairRequest",
+      "raw" : 19
+    },
+    {
+      "name" : "pairResult",
+      "raw" : 20
+    },
+    {
+      "name" : "pairingWanted",
+      "raw" : 21
+    },
+    {
+      "name" : "goodbye",
+      "raw" : 22
+    },
+    {
+      "name" : "hello",
+      "raw" : 23
+    },
+    {
+      "name" : "macMenu",
+      "raw" : 24
+    },
+    {
+      "name" : "pressMenuItem",
+      "raw" : 25
+    },
+    {
+      "name" : "macPointer",
+      "raw" : 26
+    },
+    {
+      "name" : "fetchMenu",
+      "raw" : 27
+    },
+    {
+      "name" : "gesture",
+      "raw" : 28
+    },
+    {
+      "name" : "clipboard",
+      "raw" : 32
+    },
+    {
+      "name" : "audio",
+      "raw" : 43
+    },
+    {
+      "name" : "keyframeRequest",
+      "raw" : 44
+    },
+    {
+      "name" : "nextDisplay",
+      "raw" : 47
+    },
+    {
+      "name" : "unknown",
+      "raw" : 255
+    }
+  ],
+  "parameterSets" : {
+    "decode" : [
+      {
+        "bytes" : "0403000640010c01ffff000642010101600000054401c172b4",
+        "nalLen" : 4,
+        "name" : "valid",
+        "ok" : true,
+        "sets" : [
+          "40010c01ffff",
+          "420101016000",
+          "4401c172b4"
+        ]
+      },
+      {
+        "bytes" : "04",
+        "name" : "one byte",
+        "ok" : false
+      },
+      {
+        "bytes" : "0400",
+        "nalLen" : 4,
+        "name" : "zero sets",
+        "ok" : true,
+        "sets" : [
+
+        ]
+      },
+      {
+        "bytes" : "040100",
+        "name" : "truncated length",
+        "ok" : false
+      },
+      {
+        "bytes" : "0401000340",
+        "name" : "truncated body",
+        "ok" : false
+      },
+      {
+        "bytes" : "04010001aaffff",
+        "nalLen" : 4,
+        "name" : "trailing bytes ignored",
+        "ok" : true,
+        "sets" : [
+          "aa"
+        ]
+      },
+      {
+        "bytes" : "04020001aa",
+        "name" : "count 2, one set",
+        "ok" : false
+      },
+      {
+        "bytes" : "04010000",
+        "nalLen" : 4,
+        "name" : "empty set",
+        "ok" : true,
+        "sets" : [
+          ""
+        ]
+      }
+    ],
+    "encode" : [
+      {
+        "encoded" : "0403000640010c01ffff000642010101600000054401c172b4",
+        "nalLen" : 4,
+        "sets" : [
+          "40010c01ffff",
+          "420101016000",
+          "4401c172b4"
+        ]
+      },
+      {
+        "encoded" : "0400",
+        "nalLen" : 4,
+        "sets" : [
+
+        ]
+      },
+      {
+        "encoded" : "02010000",
+        "nalLen" : 2,
+        "sets" : [
+          ""
+        ]
+      }
+    ]
+  },
+  "parseHeader" : [
+    {
+      "bytes" : "0a41da4a01401000000000000008",
+      "keyframe" : false,
+      "kind" : 10,
+      "name" : "header of ping",
+      "ok" : true,
+      "payloadLength" : 8,
+      "timestampBits" : "41da4a0140100000"
+    },
+    {
+      "bytes" : "0141da4a014007e6b70100000009",
+      "keyframe" : true,
+      "kind" : 1,
+      "name" : "header of keyframe",
+      "ok" : true,
+      "payloadLength" : 9,
+      "timestampBits" : "41da4a014007e6b7"
+    },
+    {
+      "bytes" : "0141da4a01402000000000000007",
+      "keyframe" : false,
+      "kind" : 1,
+      "name" : "header of delta frame",
+      "ok" : true,
+      "payloadLength" : 7,
+      "timestampBits" : "41da4a0140200000"
+    },
+    {
+      "bytes" : "0000000000000000000000000007",
+      "keyframe" : false,
+      "kind" : 0,
+      "name" : "header of parameter sets at time 0",
+      "ok" : true,
+      "payloadLength" : 7,
+      "timestampBits" : "0000000000000000"
+    },
+    {
+      "bytes" : "0d3ff80000000000000000000000",
+      "keyframe" : false,
+      "kind" : 13,
+      "name" : "header of tick, empty",
+      "ok" : true,
+      "payloadLength" : 0,
+      "timestampBits" : "3ff8000000000000"
+    },
+    {
+      "bytes" : "1741da4a01404000000000000014",
+      "keyframe" : false,
+      "kind" : 23,
+      "name" : "header of hello",
+      "ok" : true,
+      "payloadLength" : 20,
+      "timestampBits" : "41da4a0140400000"
+    },
+    {
+      "bytes" : "1641da4a0140b000000000000011",
+      "keyframe" : false,
+      "kind" : 22,
+      "name" : "header of goodbye",
+      "ok" : true,
+      "payloadLength" : 17,
+      "timestampBits" : "41da4a0140b00000"
+    },
+    {
+      "bytes" : "2c80000000000000000000000000",
+      "keyframe" : false,
+      "kind" : 44,
+      "name" : "header of negative zero time",
+      "ok" : true,
+      "payloadLength" : 0,
+      "timestampBits" : "8000000000000000"
+    },
+    {
+      "bytes" : "2f3fb999999999999a0000000000",
+      "keyframe" : false,
+      "kind" : 47,
+      "name" : "header of next display",
+      "ok" : true,
+      "payloadLength" : 0,
+      "timestampBits" : "3fb999999999999a"
+    },
+    {
+      "bytes" : "2000000000000000010000000002",
+      "keyframe" : false,
+      "kind" : 32,
+      "name" : "header of tiny fraction",
+      "ok" : true,
+      "payloadLength" : 2,
+      "timestampBits" : "0000000000000001"
+    },
+    {
+      "bytes" : "c841da4a01400000000100000005",
+      "keyframe" : true,
+      "kind" : 255,
+      "name" : "unknown kind 200",
+      "ok" : true,
+      "payloadLength" : 5,
+      "timestampBits" : "41da4a0140000000"
+    },
+    {
+      "bytes" : "1d3ff8000000000000000000000a",
+      "keyframe" : false,
+      "kind" : 255,
+      "name" : "reserved kind 29 reads as unknown",
+      "ok" : true,
+      "payloadLength" : 10,
+      "timestampBits" : "3ff8000000000000"
+    },
+    {
+      "bytes" : "ff00000000000000000000000000",
+      "keyframe" : false,
+      "kind" : 255,
+      "name" : "kind 255",
+      "ok" : true,
+      "payloadLength" : 0,
+      "timestampBits" : "0000000000000000"
+    },
+    {
+      "bytes" : "010000000000000000020000000a",
+      "keyframe" : false,
+      "kind" : 1,
+      "name" : "keyframe byte 2 is not a keyframe",
+      "ok" : true,
+      "payloadLength" : 10,
+      "timestampBits" : "0000000000000000"
+    },
+    {
+      "bytes" : "010000000000000000010000000a",
+      "keyframe" : true,
+      "kind" : 1,
+      "name" : "keyframe byte 1",
+      "ok" : true,
+      "payloadLength" : 10,
+      "timestampBits" : "0000000000000000"
+    },
+    {
+      "bytes" : "01000000000000000000ffffffff",
+      "keyframe" : false,
+      "kind" : 1,
+      "name" : "length 0xffffffff",
+      "ok" : true,
+      "payloadLength" : 4294967295,
+      "timestampBits" : "0000000000000000"
+    },
+    {
+      "bytes" : "0b7ff80000000000010000000008",
+      "keyframe" : false,
+      "kind" : 11,
+      "name" : "NaN timestamp bits kept",
+      "ok" : true,
+      "payloadLength" : 8,
+      "timestampBits" : "7ff8000000000001"
+    },
+    {
+      "bytes" : "01000000000000000000000000",
+      "name" : "13 bytes",
+      "ok" : false
+    },
+    {
+      "bytes" : "",
+      "name" : "empty",
+      "ok" : false
+    },
+    {
+      "bytes" : "0b3ff00000000000000000000008aabb",
+      "keyframe" : false,
+      "kind" : 11,
+      "name" : "trailing bytes after the header are ignored",
+      "ok" : true,
+      "payloadLength" : 8,
+      "timestampBits" : "3ff0000000000000"
+    }
+  ],
+  "protocol" : {
+    "current" : 1
+  },
+  "thumbnail" : {
+    "decode" : [
+      {
+        "bytes" : "00000001",
+        "ok" : false
+      },
+      {
+        "bytes" : "00000001ff",
+        "jpeg" : "ff",
+        "ok" : true,
+        "windowID" : 1
+      },
+      {
+        "bytes" : "deadbeefffd8ffd9",
+        "jpeg" : "ffd8ffd9",
+        "ok" : true,
+        "windowID" : 3735928559
+      },
+      {
+        "bytes" : "",
+        "ok" : false
+      },
+      {
+        "bytes" : "000000",
+        "ok" : false
+      }
+    ],
+    "encode" : [
+      {
+        "encoded" : "deadbeefffd8ffd9",
+        "jpeg" : "ffd8ffd9",
+        "windowID" : 3735928559
+      },
+      {
+        "encoded" : "00000001",
+        "jpeg" : "",
+        "windowID" : 1
+      }
+    ]
+  }
+}

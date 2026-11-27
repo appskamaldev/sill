@@ -1,0 +1,1592 @@
+{
+  "_source" : "upstream Sources/StreamProtocol, written by windows/tools/make-vectors.sh; do not edit",
+  "addresses" : [
+    {
+      "input" : "100.101.102.103",
+      "ok" : {
+        "host" : "100.101.102.103",
+        "kind" : "ipv4",
+        "port" : null,
+        "text" : "100.101.102.103"
+      }
+    },
+    {
+      "input" : "100.101.102.103:7455",
+      "ok" : {
+        "host" : "100.101.102.103",
+        "kind" : "ipv4",
+        "port" : 7455,
+        "text" : "100.101.102.103:7455"
+      }
+    },
+    {
+      "input" : " 100.64.0.1 ",
+      "ok" : {
+        "host" : "100.64.0.1",
+        "kind" : "ipv4",
+        "port" : null,
+        "text" : "100.64.0.1"
+      }
+    },
+    {
+      "failure" : "port",
+      "input" : "192.168.1.1:0"
+    },
+    {
+      "input" : "192.168.1.1:65535",
+      "ok" : {
+        "host" : "192.168.1.1",
+        "kind" : "ipv4",
+        "port" : 65535,
+        "text" : "192.168.1.1:65535"
+      }
+    },
+    {
+      "failure" : "port",
+      "input" : "192.168.1.1:65536"
+    },
+    {
+      "input" : "192.168.1.1:00080",
+      "ok" : {
+        "host" : "192.168.1.1",
+        "kind" : "ipv4",
+        "port" : 80,
+        "text" : "192.168.1.1:80"
+      }
+    },
+    {
+      "failure" : "port",
+      "input" : "192.168.1.1:000080"
+    },
+    {
+      "failure" : "port",
+      "input" : "192.168.1.1:"
+    },
+    {
+      "failure" : "port",
+      "input" : "192.168.1.1:abc"
+    },
+    {
+      "failure" : "port",
+      "input" : "192.168.1.1:+80"
+    },
+    {
+      "failure" : "malformed",
+      "input" : ":7455"
+    },
+    {
+      "input" : "0.0.0.0",
+      "ok" : {
+        "host" : "0.0.0.0",
+        "kind" : "ipv4",
+        "port" : null,
+        "text" : "0.0.0.0"
+      }
+    },
+    {
+      "input" : "255.255.255.255",
+      "ok" : {
+        "host" : "255.255.255.255",
+        "kind" : "ipv4",
+        "port" : null,
+        "text" : "255.255.255.255"
+      }
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "1.2.3"
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "1.2.3.4.5"
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "01.2.3.4"
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "00.1.2.3"
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "256.1.1.1"
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "1.2.3.4."
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "123"
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "4294967295"
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "0x64.0x65.1.2"
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "0x1"
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "0X1"
+    },
+    {
+      "input" : "0xg",
+      "ok" : {
+        "host" : "0xg",
+        "kind" : "name",
+        "port" : null,
+        "text" : "0xg"
+      }
+    },
+    {
+      "input" : "0x",
+      "ok" : {
+        "host" : "0x",
+        "kind" : "name",
+        "port" : null,
+        "text" : "0x"
+      }
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "0x.1"
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "1.0x2"
+    },
+    {
+      "input" : "017.1.1.1x",
+      "ok" : {
+        "host" : "017.1.1.1x",
+        "kind" : "name",
+        "port" : null,
+        "text" : "017.1.1.1x"
+      }
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "0177.1"
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "08.1"
+    },
+    {
+      "input" : "1e3",
+      "ok" : {
+        "host" : "1e3",
+        "kind" : "name",
+        "port" : null,
+        "text" : "1e3"
+      }
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "100.1"
+    },
+    {
+      "failure" : "malformed",
+      "input" : "100.1. 1.1"
+    },
+    {
+      "input" : "1.2.3.4x",
+      "ok" : {
+        "host" : "1.2.3.4x",
+        "kind" : "name",
+        "port" : null,
+        "text" : "1.2.3.4x"
+      }
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "0xffffffff"
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "0x100000000"
+    },
+    {
+      "input" : "0x1.0x1000000",
+      "ok" : {
+        "host" : "0x1.0x1000000",
+        "kind" : "name",
+        "port" : null,
+        "text" : "0x1.0x1000000"
+      }
+    },
+    {
+      "input" : "1.0x1000000",
+      "ok" : {
+        "host" : "1.0x1000000",
+        "kind" : "name",
+        "port" : null,
+        "text" : "1.0x1000000"
+      }
+    },
+    {
+      "input" : "1.2.0x10000",
+      "ok" : {
+        "host" : "1.2.0x10000",
+        "kind" : "name",
+        "port" : null,
+        "text" : "1.2.0x10000"
+      }
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "1.2.0xffff"
+    },
+    {
+      "input" : "[fd7a:115c:a1e0::1234]:7455",
+      "ok" : {
+        "host" : "fd7a:115c:a1e0::1234",
+        "kind" : "ipv6",
+        "port" : 7455,
+        "text" : "[fd7a:115c:a1e0::1234]:7455"
+      }
+    },
+    {
+      "input" : "[fd7a:115c:a1e0::1234]",
+      "ok" : {
+        "host" : "fd7a:115c:a1e0::1234",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[fd7a:115c:a1e0::1234]"
+      }
+    },
+    {
+      "input" : "fd7a:115c:a1e0::1234",
+      "ok" : {
+        "host" : "fd7a:115c:a1e0::1234",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[fd7a:115c:a1e0::1234]"
+      }
+    },
+    {
+      "input" : "FD7A:115C:A1E0:0:0:0:0:1234",
+      "ok" : {
+        "host" : "fd7a:115c:a1e0::1234",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[fd7a:115c:a1e0::1234]"
+      }
+    },
+    {
+      "input" : "2001:DB8::0:1",
+      "ok" : {
+        "host" : "2001:db8::1",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[2001:db8::1]"
+      }
+    },
+    {
+      "input" : "2001:db8:0:0:1:0:0:1",
+      "ok" : {
+        "host" : "2001:db8::1:0:0:1",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[2001:db8::1:0:0:1]"
+      }
+    },
+    {
+      "input" : "2001:db8::1:0:0:1",
+      "ok" : {
+        "host" : "2001:db8::1:0:0:1",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[2001:db8::1:0:0:1]"
+      }
+    },
+    {
+      "input" : "2001:0:0:1:0:0:0:1",
+      "ok" : {
+        "host" : "2001:0:0:1::1",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[2001:0:0:1::1]"
+      }
+    },
+    {
+      "input" : "1:0:0:0:0:0:0:0",
+      "ok" : {
+        "host" : "1::",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[1::]"
+      }
+    },
+    {
+      "input" : "0:0:0:0:0:0:0:1",
+      "ok" : {
+        "host" : "::1",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[::1]"
+      }
+    },
+    {
+      "input" : "1:2:3:4:5:6:7:8",
+      "ok" : {
+        "host" : "1:2:3:4:5:6:7:8",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[1:2:3:4:5:6:7:8]"
+      }
+    },
+    {
+      "input" : "1:2:3:4:5:6:0:8",
+      "ok" : {
+        "host" : "1:2:3:4:5:6:0:8",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[1:2:3:4:5:6:0:8]"
+      }
+    },
+    {
+      "input" : "::",
+      "ok" : {
+        "host" : "::",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[::]"
+      }
+    },
+    {
+      "input" : "[::]",
+      "ok" : {
+        "host" : "::",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[::]"
+      }
+    },
+    {
+      "input" : "::1",
+      "ok" : {
+        "host" : "::1",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[::1]"
+      }
+    },
+    {
+      "input" : "[::1]:80",
+      "ok" : {
+        "host" : "::1",
+        "kind" : "ipv6",
+        "port" : 80,
+        "text" : "[::1]:80"
+      }
+    },
+    {
+      "input" : "::ffff:192.168.1.1",
+      "ok" : {
+        "host" : "192.168.1.1",
+        "kind" : "ipv4",
+        "port" : null,
+        "text" : "192.168.1.1"
+      }
+    },
+    {
+      "input" : "[::ffff:192.168.1.1]:80",
+      "ok" : {
+        "host" : "192.168.1.1",
+        "kind" : "ipv4",
+        "port" : 80,
+        "text" : "192.168.1.1:80"
+      }
+    },
+    {
+      "input" : "::ffff:c0a8:101",
+      "ok" : {
+        "host" : "192.168.1.1",
+        "kind" : "ipv4",
+        "port" : null,
+        "text" : "192.168.1.1"
+      }
+    },
+    {
+      "input" : "::1.2.3.4",
+      "ok" : {
+        "host" : "::1.2.3.4",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[::1.2.3.4]"
+      }
+    },
+    {
+      "input" : "::ffff:0:1.2.3.4",
+      "ok" : {
+        "host" : "::ffff:0:102:304",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[::ffff:0:102:304]"
+      }
+    },
+    {
+      "input" : "64:ff9b::1.2.3.4",
+      "ok" : {
+        "host" : "64:ff9b::102:304",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[64:ff9b::102:304]"
+      }
+    },
+    {
+      "failure" : "zone",
+      "input" : "fe80::1%en0"
+    },
+    {
+      "failure" : "zone",
+      "input" : "[fe80::1%25en0]:80"
+    },
+    {
+      "input" : "fd7a::1:7455",
+      "ok" : {
+        "host" : "fd7a::1:7455",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[fd7a::1:7455]"
+      }
+    },
+    {
+      "failure" : "ipv6",
+      "input" : "1::2::3"
+    },
+    {
+      "failure" : "ipv6",
+      "input" : "12345::1"
+    },
+    {
+      "failure" : "ipv6",
+      "input" : "[fd7a::1"
+    },
+    {
+      "failure" : "malformed",
+      "input" : "[fd7a::1]x"
+    },
+    {
+      "failure" : "port",
+      "input" : "[fd7a::1]:"
+    },
+    {
+      "failure" : "port",
+      "input" : "[fd7a::1]:0"
+    },
+    {
+      "failure" : "ipv6",
+      "input" : "[1.2.3.4]"
+    },
+    {
+      "failure" : "ipv6",
+      "input" : "[]"
+    },
+    {
+      "failure" : "ipv6",
+      "input" : "[pc.local]"
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "1:2"
+    },
+    {
+      "input" : "mac-mini.tail1234.ts.net",
+      "ok" : {
+        "host" : "mac-mini.tail1234.ts.net",
+        "kind" : "name",
+        "port" : null,
+        "text" : "mac-mini.tail1234.ts.net"
+      }
+    },
+    {
+      "input" : "mac-mini.tail1234.ts.net:7455",
+      "ok" : {
+        "host" : "mac-mini.tail1234.ts.net",
+        "kind" : "name",
+        "port" : 7455,
+        "text" : "mac-mini.tail1234.ts.net:7455"
+      }
+    },
+    {
+      "input" : "mac-mini",
+      "ok" : {
+        "host" : "mac-mini",
+        "kind" : "name",
+        "port" : null,
+        "text" : "mac-mini"
+      }
+    },
+    {
+      "input" : "localhost",
+      "ok" : {
+        "host" : "localhost",
+        "kind" : "name",
+        "port" : null,
+        "text" : "localhost"
+      }
+    },
+    {
+      "input" : "localhost.",
+      "ok" : {
+        "host" : "localhost.",
+        "kind" : "name",
+        "port" : null,
+        "text" : "localhost."
+      }
+    },
+    {
+      "input" : "pc.local.",
+      "ok" : {
+        "host" : "pc.local.",
+        "kind" : "name",
+        "port" : null,
+        "text" : "pc.local."
+      }
+    },
+    {
+      "failure" : "name",
+      "input" : "-bad.com"
+    },
+    {
+      "failure" : "name",
+      "input" : "bad-.com"
+    },
+    {
+      "failure" : "name",
+      "input" : "a..b"
+    },
+    {
+      "failure" : "name",
+      "input" : ".a"
+    },
+    {
+      "failure" : "name",
+      "input" : "a_b.com"
+    },
+    {
+      "failure" : "name",
+      "input" : "ünïcode.com"
+    },
+    {
+      "input" : "12.ts.net",
+      "ok" : {
+        "host" : "12.ts.net",
+        "kind" : "name",
+        "port" : null,
+        "text" : "12.ts.net"
+      }
+    },
+    {
+      "input" : "1.2.3.a",
+      "ok" : {
+        "host" : "1.2.3.a",
+        "kind" : "name",
+        "port" : null,
+        "text" : "1.2.3.a"
+      }
+    },
+    {
+      "input" : "a.1.2.3",
+      "ok" : {
+        "host" : "a.1.2.3",
+        "kind" : "name",
+        "port" : null,
+        "text" : "a.1.2.3"
+      }
+    },
+    {
+      "input" : "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.com",
+      "ok" : {
+        "host" : "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.com",
+        "kind" : "name",
+        "port" : null,
+        "text" : "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.com"
+      }
+    },
+    {
+      "failure" : "name",
+      "input" : "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.com"
+    },
+    {
+      "input" : "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "ok" : {
+        "host" : "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "kind" : "name",
+        "port" : null,
+        "text" : "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "failure" : "name",
+      "input" : "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "failure" : "empty",
+      "input" : ""
+    },
+    {
+      "failure" : "empty",
+      "input" : "   "
+    },
+    {
+      "failure" : "empty",
+      "input" : "\n"
+    },
+    {
+      "failure" : "pairingLink",
+      "input" : "sill://pair?v=1"
+    },
+    {
+      "failure" : "pairingLink",
+      "input" : "SILL:x"
+    },
+    {
+      "failure" : "malformed",
+      "input" : "a\u0000b"
+    },
+    {
+      "failure" : "malformed",
+      "input" : "ab"
+    },
+    {
+      "failure" : "malformed",
+      "input" : "a b"
+    },
+    {
+      "failure" : "malformed",
+      "input" : "a b"
+    },
+    {
+      "failure" : "malformed",
+      "input" : "a b"
+    },
+    {
+      "failure" : "port",
+      "input" : "host:65536"
+    },
+    {
+      "failure" : "port",
+      "input" : "host:abc"
+    },
+    {
+      "failure" : "zone",
+      "input" : "100.101.102.103%en0"
+    },
+    {
+      "failure" : "zone",
+      "input" : "a%b"
+    },
+    {
+      "input" : "xn--bcher-kva.example",
+      "ok" : {
+        "host" : "xn--bcher-kva.example",
+        "kind" : "name",
+        "port" : null,
+        "text" : "xn--bcher-kva.example"
+      }
+    },
+    {
+      "failure" : "ipv6",
+      "input" : "1.2.3.4:5:6"
+    },
+    {
+      "failure" : "ipv6",
+      "input" : "host:port:x"
+    },
+    {
+      "input" : "Mac-Mini.Tail1234.TS.NET",
+      "ok" : {
+        "host" : "Mac-Mini.Tail1234.TS.NET",
+        "kind" : "name",
+        "port" : null,
+        "text" : "Mac-Mini.Tail1234.TS.NET"
+      }
+    },
+    {
+      "input" : " 100.1.1.1 ",
+      "ok" : {
+        "host" : "100.1.1.1",
+        "kind" : "ipv4",
+        "port" : null,
+        "text" : "100.1.1.1"
+      }
+    },
+    {
+      "input" : "::2",
+      "ok" : {
+        "host" : "::2",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[::2]"
+      }
+    },
+    {
+      "input" : "::0.1.0.0",
+      "ok" : {
+        "host" : "::0.1.0.0",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[::0.1.0.0]"
+      }
+    },
+    {
+      "input" : "::5:0:0:0:0",
+      "ok" : {
+        "host" : "0:0:0:5::",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[0:0:0:5::]"
+      }
+    },
+    {
+      "input" : "0:0:0:0:0:1:1.2.3.4",
+      "ok" : {
+        "host" : "::1:102:304",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[::1:102:304]"
+      }
+    },
+    {
+      "input" : "::0.0.1.0",
+      "ok" : {
+        "host" : "::100",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[::100]"
+      }
+    },
+    {
+      "input" : "::ffff:0:0",
+      "ok" : {
+        "host" : "0.0.0.0",
+        "kind" : "ipv4",
+        "port" : null,
+        "text" : "0.0.0.0"
+      }
+    },
+    {
+      "input" : "1:2:3:4:5:6:7::",
+      "ok" : {
+        "host" : "1:2:3:4:5:6:7:0",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[1:2:3:4:5:6:7:0]"
+      }
+    },
+    {
+      "input" : "::1:2:3:4:5:6:7",
+      "ok" : {
+        "host" : "0:1:2:3:4:5:6:7",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[0:1:2:3:4:5:6:7]"
+      }
+    },
+    {
+      "failure" : "ipv6",
+      "input" : "1:2:3:4:5:6:7:8::"
+    },
+    {
+      "failure" : "ipv6",
+      "input" : "1::2:3:4:5:6:7:8"
+    },
+    {
+      "input" : "0001::",
+      "ok" : {
+        "host" : "1::",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[1::]"
+      }
+    },
+    {
+      "input" : "00001::",
+      "ok" : {
+        "host" : "1::",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[1::]"
+      }
+    },
+    {
+      "failure" : "ipv6",
+      "input" : ":1::2"
+    },
+    {
+      "failure" : "ipv6",
+      "input" : "1::2:"
+    },
+    {
+      "input" : "1:2:3:4:5:6:1.2.3.4",
+      "ok" : {
+        "host" : "1:2:3:4:5:6:102:304",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[1:2:3:4:5:6:102:304]"
+      }
+    },
+    {
+      "failure" : "ipv6",
+      "input" : "::1.2.3"
+    },
+    {
+      "input" : "::01.2.3.4",
+      "ok" : {
+        "host" : "::1.2.3.4",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[::1.2.3.4]"
+      }
+    },
+    {
+      "failure" : "ipv6",
+      "input" : "1.2.3.4::"
+    },
+    {
+      "failure" : "ipv6",
+      "input" : "::256.1.1.1"
+    },
+    {
+      "failure" : "ipv6",
+      "input" : "g::1"
+    },
+    {
+      "failure" : "ipv6",
+      "input" : "::ffff:1.2.3.4.5"
+    },
+    {
+      "failure" : "ipv6",
+      "input" : "1:2:3:4:5:6:7:8:9"
+    },
+    {
+      "failure" : "ipv6",
+      "input" : "::1.2.3.4:5"
+    },
+    {
+      "input" : "[::1]:65535",
+      "ok" : {
+        "host" : "::1",
+        "kind" : "ipv6",
+        "port" : 65535,
+        "text" : "[::1]:65535"
+      }
+    },
+    {
+      "input" : "::fffe:1.2.3.4",
+      "ok" : {
+        "host" : "::fffe:102:304",
+        "kind" : "ipv6",
+        "port" : null,
+        "text" : "[::fffe:102:304]"
+      }
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "0x1.2.3.4"
+    },
+    {
+      "input" : "0x100.1",
+      "ok" : {
+        "host" : "0x100.1",
+        "kind" : "name",
+        "port" : null,
+        "text" : "0x100.1"
+      }
+    },
+    {
+      "failure" : "ipv4",
+      "input" : "0xff.0xffffff"
+    },
+    {
+      "input" : "0xff.0x1000000",
+      "ok" : {
+        "host" : "0xff.0x1000000",
+        "kind" : "name",
+        "port" : null,
+        "text" : "0xff.0x1000000"
+      }
+    },
+    {
+      "input" : "00x1",
+      "ok" : {
+        "host" : "00x1",
+        "kind" : "name",
+        "port" : null,
+        "text" : "00x1"
+      }
+    },
+    {
+      "input" : "0x0x1",
+      "ok" : {
+        "host" : "0x0x1",
+        "kind" : "name",
+        "port" : null,
+        "text" : "0x0x1"
+      }
+    },
+    {
+      "input" : "1.2.3.04x",
+      "ok" : {
+        "host" : "1.2.3.04x",
+        "kind" : "name",
+        "port" : null,
+        "text" : "1.2.3.04x"
+      }
+    }
+  ],
+  "safeText" : {
+    "labelLimit" : 64,
+    "labels" : [
+      {
+        "label" : "iPad",
+        "limit" : null,
+        "text" : "iPad"
+      },
+      {
+        "label" : "Kamal's iPad",
+        "limit" : null,
+        "text" : "  Kamal's\tiPad\n"
+      },
+      {
+        "label" : "ab",
+        "limit" : null,
+        "text" : "a‮b"
+      },
+      {
+        "label" : "xy",
+        "limit" : null,
+        "text" : "‪x‬⁦y⁩"
+      },
+      {
+        "label" : "zerowidth",
+        "limit" : null,
+        "text" : "​zero‍width﻿"
+      },
+      {
+        "label" : "line sep para",
+        "limit" : null,
+        "text" : "line sep para"
+      },
+      {
+        "label" : "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "limit" : null,
+        "text" : "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "label" : "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+        "limit" : null,
+        "text" : "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"
+      },
+      {
+        "label" : "👨👩👧👨👩👧👨👩👧👨👩👧👨👩👧👨👩👧👨👩👧👨👩👧👨👩👧👨👩👧👨👩👧👨👩👧👨👩👧👨👩👧👨👩👧👨👩👧👨👩👧👨👩👧👨👩👧👨👩👧👨👩👧👨",
+        "limit" : null,
+        "text" : "👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧"
+      },
+      {
+        "label" : "[31mred",
+        "limit" : null,
+        "text" : "\u0000\u0007\u001b[31mred"
+      },
+      {
+        "label" : "",
+        "limit" : null,
+        "text" : ""
+      },
+      {
+        "label" : "",
+        "limit" : null,
+        "text" : "   "
+      },
+      {
+        "label" : "private",
+        "limit" : null,
+        "text" : "private"
+      },
+      {
+        "label" : "unassigned",
+        "limit" : null,
+        "text" : "͸unassigned"
+      },
+      {
+        "label" : "a b",
+        "limit" : null,
+        "text" : "a 　b"
+      },
+      {
+        "label" : "a b",
+        "limit" : null,
+        "text" : "a \t \n b"
+      },
+      {
+        "label" : "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "limit" : null,
+        "text" : "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa b"
+      },
+      {
+        "label" : "Noah’s MacBook Pro",
+        "limit" : null,
+        "text" : "Noah’s MacBook Pro"
+      },
+      {
+        "label" : "forged: line",
+        "limit" : null,
+        "text" : "\r\nforged: line"
+      },
+      {
+        "label" : "🇸🇩 flag",
+        "limit" : null,
+        "text" : "🇸🇩 flag"
+      },
+      {
+        "label" : "a b",
+        "limit" : null,
+        "text" : "ab"
+      },
+      {
+        "label" : "ab",
+        "limit" : null,
+        "text" : "a᠎b"
+      },
+      {
+        "label" : "👨💻",
+        "limit" : null,
+        "text" : "👨‍💻"
+      },
+      {
+        "label" : "ㄱㅏ",
+        "limit" : null,
+        "text" : "ㄱㅏ"
+      },
+      {
+        "label" : "soft",
+        "limit" : null,
+        "text" : "­soft"
+      },
+      {
+        "label" : "abcd",
+        "limit" : 5,
+        "text" : "abcd efgh"
+      },
+      {
+        "label" : "",
+        "limit" : 0,
+        "text" : "abcdefgh"
+      },
+      {
+        "label" : "a b",
+        "limit" : 3,
+        "text" : "a b c"
+      },
+      {
+        "label" : "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "limit" : 300,
+        "text" : "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      }
+    ]
+  },
+  "versions" : {
+    "compare" : [
+      {
+        "a" : "0.10",
+        "b" : "0.9",
+        "order" : "greater"
+      },
+      {
+        "a" : "1.0.1",
+        "b" : "1.0",
+        "order" : "greater"
+      },
+      {
+        "a" : "v0.4.0",
+        "b" : "0.4",
+        "order" : "equal"
+      },
+      {
+        "a" : "1",
+        "b" : "1.0.0",
+        "order" : "equal"
+      },
+      {
+        "a" : "0",
+        "b" : "0.0.1",
+        "order" : "less"
+      },
+      {
+        "a" : "2.0",
+        "b" : "10.0",
+        "order" : "less"
+      },
+      {
+        "a" : "1.2",
+        "b" : "1.10",
+        "order" : "less"
+      },
+      {
+        "a" : "1.2.3",
+        "b" : "1.2.3.0.1",
+        "order" : "less"
+      }
+    ],
+    "describe" : [
+      {
+        "components" : [
+
+        ],
+        "description" : "0.0"
+      },
+      {
+        "components" : [
+          0,
+          4,
+          0
+        ],
+        "description" : "0.4"
+      },
+      {
+        "components" : [
+          1
+        ],
+        "description" : "1.0"
+      },
+      {
+        "components" : [
+          1,
+          0,
+          1
+        ],
+        "description" : "1.0.1"
+      },
+      {
+        "components" : [
+          2,
+          0,
+          0,
+          0
+        ],
+        "description" : "2.0"
+      }
+    ],
+    "parse" : [
+      {
+        "components" : [
+          0,
+          4
+        ],
+        "description" : "0.4",
+        "text" : "v0.4.0"
+      },
+      {
+        "components" : [
+          0,
+          4
+        ],
+        "description" : "0.4",
+        "text" : "0.4"
+      },
+      {
+        "components" : [
+          0,
+          4
+        ],
+        "description" : "0.4",
+        "text" : "0.4.0"
+      },
+      {
+        "components" : [
+          1,
+          2,
+          3
+        ],
+        "description" : "1.2.3",
+        "text" : "1.2.3-beta.1"
+      },
+      {
+        "components" : [
+          0,
+          3
+        ],
+        "description" : "0.3",
+        "text" : "0.3.0 (85)"
+      },
+      {
+        "components" : [
+          1,
+          2
+        ],
+        "description" : "1.2",
+        "text" : " 1.2 "
+      },
+      {
+        "components" : [
+          2
+        ],
+        "description" : "2.0",
+        "text" : "V2"
+      },
+      {
+        "components" : null,
+        "text" : "vv1"
+      },
+      {
+        "components" : null,
+        "text" : ""
+      },
+      {
+        "components" : null,
+        "text" : ".1"
+      },
+      {
+        "components" : null,
+        "text" : "1..2"
+      },
+      {
+        "components" : [
+          1
+        ],
+        "description" : "1.0",
+        "text" : "1."
+      },
+      {
+        "components" : [
+          1
+        ],
+        "description" : "1.0",
+        "text" : "1..."
+      },
+      {
+        "components" : [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "description" : "1.2.3.4.5.6.7.8",
+        "text" : "1.2.3.4.5.6.7.8"
+      },
+      {
+        "components" : null,
+        "text" : "1.2.3.4.5.6.7.8.9"
+      },
+      {
+        "components" : null,
+        "text" : "1234567890"
+      },
+      {
+        "components" : [
+          123456789
+        ],
+        "description" : "123456789.0",
+        "text" : "123456789"
+      },
+      {
+        "components" : null,
+        "text" : "٣"
+      },
+      {
+        "components" : [
+          1
+        ],
+        "description" : "1.0",
+        "text" : "1.0"
+      },
+      {
+        "components" : [
+
+        ],
+        "description" : "0.0",
+        "text" : "0"
+      },
+      {
+        "components" : [
+
+        ],
+        "description" : "0.0",
+        "text" : "0.0.0"
+      },
+      {
+        "components" : [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "description" : "1.2.3.4.5.6.7.8",
+        "text" : "1.2.3.4.5.6.7.8."
+      },
+      {
+        "components" : [
+          1,
+          2
+        ],
+        "description" : "1.2",
+        "text" : "01.02"
+      },
+      {
+        "components" : [
+          1,
+          2
+        ],
+        "description" : "1.2",
+        "text" : "1.2a.3"
+      },
+      {
+        "components" : [
+          1
+        ],
+        "description" : "1.0",
+        "text" : "1.-2"
+      },
+      {
+        "components" : [
+          1,
+          2
+        ],
+        "description" : "1.2",
+        "text" : " v1.2"
+      },
+      {
+        "components" : null,
+        "text" : "v 1.2"
+      },
+      {
+        "components" : [
+          0,
+          9
+        ],
+        "description" : "0.9",
+        "text" : "\n0.9\n"
+      },
+      {
+        "components" : null,
+        "text" : "1.00000000001"
+      },
+      {
+        "components" : [
+          999999999,
+          1
+        ],
+        "description" : "999999999.1",
+        "text" : "999999999.1"
+      },
+      {
+        "components" : null,
+        "text" : "x1"
+      }
+    ]
+  },
+  "viewportBounds" : {
+    "number" : [
+      {
+        "number" : "-1",
+        "xBits" : "bff0000000000000"
+      },
+      {
+        "number" : "16385",
+        "xBits" : "40d0004000000000"
+      },
+      {
+        "number" : "0.1",
+        "xBits" : "3fb999999999999a"
+      },
+      {
+        "number" : "1e-300",
+        "xBits" : "01a56e1fc2f8f359"
+      },
+      {
+        "number" : "nan",
+        "xBits" : "7ff8000000000000"
+      },
+      {
+        "number" : "1",
+        "xBits" : "3ff0000000000000"
+      },
+      {
+        "number" : "0.25",
+        "xBits" : "3fd0000000000000"
+      },
+      {
+        "number" : "1e+300",
+        "xBits" : "7e37e43c8800759c"
+      },
+      {
+        "number" : "10000000000000000",
+        "xBits" : "4341c37937e08000"
+      },
+      {
+        "number" : "123456.5",
+        "xBits" : "40fe240800000000"
+      },
+      {
+        "number" : "0",
+        "xBits" : "8000000000000000"
+      }
+    ],
+    "viewports" : [
+      {
+        "heightBits" : "408a600000000000",
+        "held" : {
+          "heightBits" : "408a600000000000",
+          "scaleBits" : null,
+          "widthBits" : "4078600000000000"
+        },
+        "name" : "phone",
+        "refusal" : null,
+        "scaleBits" : null,
+        "widthBits" : "4078600000000000"
+      },
+      {
+        "heightBits" : "40d0000000000000",
+        "held" : {
+          "heightBits" : "40d0000000000000",
+          "scaleBits" : "3fd0000000000000",
+          "widthBits" : "3ff0000000000000"
+        },
+        "name" : "edges",
+        "refusal" : null,
+        "scaleBits" : "3fd0000000000000",
+        "widthBits" : "3ff0000000000000"
+      },
+      {
+        "heightBits" : "40d0004000000000",
+        "held" : {
+          "heightBits" : "40d0000000000000",
+          "scaleBits" : "4010000000000000",
+          "widthBits" : "3ff0000000000000"
+        },
+        "name" : "outside",
+        "refusal" : "width 0.5 (1 to 16384 points), height 16385 (1 to 16384 points), scale 4.5 (0.25 to 4)",
+        "scaleBits" : "4012000000000000",
+        "widthBits" : "3fe0000000000000"
+      },
+      {
+        "heightBits" : "3ff0000000000000",
+        "held" : {
+          "heightBits" : "3ff0000000000000",
+          "scaleBits" : "3fd0000000000000",
+          "widthBits" : "40d0000000000000"
+        },
+        "name" : "huge and tiny",
+        "refusal" : "width 1e+300 (1 to 16384 points), scale 1e-300 (0.25 to 4)",
+        "scaleBits" : "01a56e1fc2f8f359",
+        "widthBits" : "7e37e43c8800759c"
+      },
+      {
+        "heightBits" : "0000000000000000",
+        "held" : null,
+        "name" : "negative and zero",
+        "refusal" : "width -1 (1 to 16384 points), height 0 (1 to 16384 points), scale 0 (0.25 to 4)",
+        "scaleBits" : "0000000000000000",
+        "widthBits" : "bff0000000000000"
+      },
+      {
+        "heightBits" : "4024000000000000",
+        "held" : null,
+        "name" : "nan",
+        "refusal" : "width nan (1 to 16384 points), scale nan (0.25 to 4)",
+        "scaleBits" : "7ff8000000000000",
+        "widthBits" : "7ff8000000000000"
+      },
+      {
+        "heightBits" : "4024000000000000",
+        "held" : null,
+        "name" : "infinite",
+        "refusal" : "width inf (1 to 16384 points), scale -inf (0.25 to 4)",
+        "scaleBits" : "fff0000000000000",
+        "widthBits" : "7ff0000000000000"
+      },
+      {
+        "heightBits" : "408da9999999999a",
+        "held" : {
+          "heightBits" : "408da9999999999a",
+          "scaleBits" : "3ff8000000000000",
+          "widthBits" : "4097a2cccccccccd"
+        },
+        "name" : "fractional",
+        "refusal" : null,
+        "scaleBits" : "3ff8000000000000",
+        "widthBits" : "4097a2cccccccccd"
+      },
+      {
+        "heightBits" : "4059000000000000",
+        "held" : {
+          "heightBits" : "4059000000000000",
+          "scaleBits" : "3fd0000000000000",
+          "widthBits" : "3ff0000000000000"
+        },
+        "name" : "point one",
+        "refusal" : "width 0.1 (1 to 16384 points), scale 0.1 (0.25 to 4)",
+        "scaleBits" : "3fb999999999999a",
+        "widthBits" : "3fb999999999999a"
+      },
+      {
+        "heightBits" : "4059000000000000",
+        "held" : {
+          "heightBits" : "4059000000000000",
+          "scaleBits" : null,
+          "widthBits" : "4059000000000000"
+        },
+        "name" : "negative scale",
+        "refusal" : "scale -2 (0.25 to 4)",
+        "scaleBits" : "c000000000000000",
+        "widthBits" : "4059000000000000"
+      }
+    ],
+    "whole" : [
+      {
+        "whole" : "1512",
+        "xBits" : "4097a2cccccccccd"
+      },
+      {
+        "whole" : "-3",
+        "xBits" : "c00f333333333333"
+      },
+      {
+        "whole" : "0",
+        "xBits" : "0000000000000000"
+      },
+      {
+        "whole" : "1e+300",
+        "xBits" : "7e37e43c8800759c"
+      },
+      {
+        "whole" : "nan",
+        "xBits" : "7ff8000000000000"
+      },
+      {
+        "whole" : "inf",
+        "xBits" : "7ff0000000000000"
+      },
+      {
+        "whole" : "-inf",
+        "xBits" : "fff0000000000000"
+      },
+      {
+        "whole" : "9.3e+18",
+        "xBits" : "43e02207973f6440"
+      },
+      {
+        "whole" : "0",
+        "xBits" : "8000000000000000"
+      }
+    ]
+  }
+}

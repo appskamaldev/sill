@@ -1,0 +1,1135 @@
+{
+  "_source" : "upstream Sources/StreamProtocol, written by windows/tools/make-vectors.sh; do not edit",
+  "alpn" : {
+    "pairing" : "sill-pair/1",
+    "server" : [
+      "sill/1",
+      "sill-pair/1"
+    ],
+    "serverName" : "sill",
+    "session" : "sill/1"
+  },
+  "base64url" : {
+    "decode" : [
+      {
+        "bytes" : "",
+        "text" : ""
+      },
+      {
+        "bytes" : "fbff",
+        "text" : "-_8"
+      },
+      {
+        "bytes" : null,
+        "text" : "+/8"
+      },
+      {
+        "bytes" : null,
+        "text" : "Zg=="
+      },
+      {
+        "bytes" : "66",
+        "text" : "Zg"
+      },
+      {
+        "bytes" : null,
+        "text" : "Zh"
+      },
+      {
+        "bytes" : null,
+        "text" : "Z"
+      },
+      {
+        "bytes" : "666f6f",
+        "text" : "Zm9v"
+      },
+      {
+        "bytes" : null,
+        "text" : " Zg"
+      },
+      {
+        "bytes" : null,
+        "text" : "Zm9v\n"
+      },
+      {
+        "bytes" : "666f6f62",
+        "text" : "Zm9vYg"
+      },
+      {
+        "bytes" : null,
+        "text" : "Zm9vYh"
+      },
+      {
+        "bytes" : "666f6f6261",
+        "text" : "Zm9vYmE"
+      },
+      {
+        "bytes" : null,
+        "text" : "Zm9vYmF"
+      },
+      {
+        "bytes" : null,
+        "text" : "é"
+      }
+    ],
+    "encode" : [
+      {
+        "bytes" : "",
+        "text" : ""
+      },
+      {
+        "bytes" : "66",
+        "text" : "Zg"
+      },
+      {
+        "bytes" : "666f",
+        "text" : "Zm8"
+      },
+      {
+        "bytes" : "666f6f",
+        "text" : "Zm9v"
+      },
+      {
+        "bytes" : "fbff",
+        "text" : "-_8"
+      },
+      {
+        "bytes" : "fbffbf",
+        "text" : "-_-_"
+      },
+      {
+        "bytes" : "00",
+        "text" : "AA"
+      },
+      {
+        "bytes" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+        "text" : "doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc"
+      }
+    ]
+  },
+  "check" : [
+    {
+      "input" : "482913557208",
+      "ok" : "482913557208"
+    },
+    {
+      "input" : "4829 1355 7208",
+      "ok" : "482913557208"
+    },
+    {
+      "input" : "4829-1355-7208",
+      "ok" : "482913557208"
+    },
+    {
+      "input" : "4829 1355 7208",
+      "ok" : "482913557208"
+    },
+    {
+      "input" : "482913557209",
+      "problem" : "typo"
+    },
+    {
+      "input" : "48291355720",
+      "problem" : "length"
+    },
+    {
+      "input" : "4829135572080",
+      "problem" : "length"
+    },
+    {
+      "input" : "48291355720a",
+      "problem" : "length"
+    },
+    {
+      "input" : "",
+      "problem" : "length"
+    },
+    {
+      "input" : "４８２９１３５５７２０８",
+      "problem" : "length"
+    },
+    {
+      "input" : "4829\t1355 7208",
+      "problem" : "length"
+    },
+    {
+      "input" : "000000000000",
+      "ok" : "000000000000"
+    },
+    {
+      "input" : "  482913557208  ",
+      "ok" : "482913557208"
+    },
+    {
+      "input" : "١٢٣٤٥٦٧٨٩٠١٢",
+      "problem" : "length"
+    }
+  ],
+  "codeKeys" : [
+    {
+      "code" : "482913557208",
+      "fpMac" : "348a629f5ceed032c3e8706ec47d9bfafb00fb4250b018dd965435ca50cb836e",
+      "key" : "e9baf879a1cc4ac8b21554df480b6c1621671319107c91e7cb05d154f649d31d"
+    },
+    {
+      "code" : "000000000000",
+      "fpMac" : "263a4dbe41488fb87214b0032339dbb9f0c8da14c16dfcf13084bf3c2552eca5",
+      "key" : "6247f976c98a669b952cc9a8810f5161be51790ad2cea3486fa5e14944476ef0"
+    },
+    {
+      "code" : "48291355720",
+      "fpMac" : "348a629f5ceed032c3e8706ec47d9bfafb00fb4250b018dd965435ca50cb836e",
+      "key" : null
+    },
+    {
+      "code" : "48291355720a",
+      "fpMac" : "348a629f5ceed032c3e8706ec47d9bfafb00fb4250b018dd965435ca50cb836e",
+      "key" : null
+    },
+    {
+      "code" : "４８２９１３５５７２０８",
+      "fpMac" : "348a629f5ceed032c3e8706ec47d9bfafb00fb4250b018dd965435ca50cb836e",
+      "key" : null
+    }
+  ],
+  "codeLength" : 12,
+  "damm" : [
+    {
+      "check" : 0,
+      "digits" : [
+
+      ]
+    },
+    {
+      "check" : 4,
+      "digits" : [
+        5,
+        7,
+        2
+      ]
+    },
+    {
+      "check" : 8,
+      "digits" : [
+        4,
+        8,
+        2,
+        9,
+        1,
+        3,
+        5,
+        5,
+        7,
+        2,
+        0
+      ]
+    },
+    {
+      "check" : 0,
+      "digits" : [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "check" : 9,
+      "digits" : [
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9
+      ]
+    },
+    {
+      "check" : 8,
+      "digits" : [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        0,
+        1
+      ]
+    }
+  ],
+  "grouped" : [
+    {
+      "code" : "482913557208",
+      "grouped" : "4829 1355 7208"
+    },
+    {
+      "code" : "12345",
+      "grouped" : "1234 5"
+    },
+    {
+      "code" : "",
+      "grouped" : ""
+    },
+    {
+      "code" : "1234",
+      "grouped" : "1234"
+    },
+    {
+      "code" : "123456789",
+      "grouped" : "1234 5678 9"
+    }
+  ],
+  "homeDoorTXT" : {
+    "doors" : [
+      {
+        "door" : "plain",
+        "txt" : {
+
+        }
+      },
+      {
+        "door" : "pairingRequired",
+        "txt" : {
+          "p" : "1"
+        }
+      },
+      {
+        "door" : "open",
+        "txt" : {
+          "p" : "0"
+        }
+      },
+      {
+        "door" : "open",
+        "txt" : {
+          "P" : "0"
+        }
+      },
+      {
+        "door" : "pairingRequired",
+        "txt" : {
+          "p" : ""
+        }
+      },
+      {
+        "door" : "pairingRequired",
+        "txt" : {
+          "p" : "yes"
+        }
+      },
+      {
+        "door" : "open",
+        "txt" : {
+          "p" : "0",
+          "P" : "1"
+        }
+      },
+      {
+        "door" : "open",
+        "txt" : {
+          "p" : "0",
+          "P" : "1"
+        }
+      },
+      {
+        "door" : "plain",
+        "txt" : {
+          "r" : "x"
+        }
+      },
+      {
+        "door" : "pairingRequired",
+        "txt" : {
+          "p" : " 0"
+        }
+      },
+      {
+        "door" : "pairingRequired",
+        "txt" : {
+          "P" : ""
+        }
+      }
+    ],
+    "key" : "p",
+    "valueOff" : "0",
+    "valueOn" : "1"
+  },
+  "knownReasons" : [
+    "busy",
+    "closed",
+    "code",
+    "expired",
+    "locked",
+    "openOnMac",
+    "shown",
+    "stopped"
+  ],
+  "macID" : [
+    {
+      "fingerprint" : "50d858e0985ecc7f60418aaf0cc5ab587f42c2570a884095a9e8ccacd0f6545c",
+      "macID" : "A3C5HR4RBV67YR21",
+      "wellFormed" : true
+    },
+    {
+      "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+      "macID" : "ET05MRX6K061G1TM",
+      "wellFormed" : true
+    },
+    {
+      "fingerprint" : "00112233445566778899",
+      "macID" : "008J4CT4ANK7F24S",
+      "wellFormed" : true
+    },
+    {
+      "fingerprint" : "001122334455667788",
+      "macID" : "",
+      "wellFormed" : false
+    },
+    {
+      "fingerprint" : "ffffffffffffffffffff",
+      "macID" : "ZZZZZZZZZZZZZZZZ",
+      "wellFormed" : true
+    }
+  ],
+  "macIDWellFormed" : [
+    {
+      "text" : "0123456789ABCDEF",
+      "wellFormed" : true
+    },
+    {
+      "text" : "0123456789abcdef",
+      "wellFormed" : false
+    },
+    {
+      "text" : "0123456789ABCDEI",
+      "wellFormed" : false
+    },
+    {
+      "text" : "0123456789ABCDE",
+      "wellFormed" : false
+    },
+    {
+      "text" : "0123456789ABCDEFG",
+      "wellFormed" : false
+    },
+    {
+      "text" : "ILOU0123456789AB",
+      "wellFormed" : false
+    }
+  ],
+  "pairLink" : {
+    "maxAddresses" : 5,
+    "nameLimit" : 64,
+    "parse" : [
+      {
+        "ok" : {
+          "addresses" : [
+            {
+              "host" : "100.101.102.103",
+              "kind" : "ipv4",
+              "port" : null,
+              "text" : "100.101.102.103"
+            },
+            {
+              "host" : "fd7a:115c:a1e0::1234",
+              "kind" : "ipv6",
+              "port" : 7456,
+              "text" : "[fd7a:115c:a1e0::1234]:7456"
+            },
+            {
+              "host" : "pc.tail1234.ts.net",
+              "kind" : "name",
+              "port" : null,
+              "text" : "pc.tail1234.ts.net"
+            }
+          ],
+          "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+          "macID" : "ET05MRX6K061G1TM",
+          "name" : "PC",
+          "port" : 7455,
+          "secret" : "22222222222222222222222222222222"
+        },
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&n=PC&p=7455&a=100.101.102.103&a=%5Bfd7a:115c:a1e0::1234%5D:7456&a=pc.tail1234.ts.net"
+      },
+      {
+        "ok" : {
+          "addresses" : [
+            {
+              "host" : "100.101.102.103",
+              "kind" : "ipv4",
+              "port" : null,
+              "text" : "100.101.102.103"
+            },
+            {
+              "host" : "fd7a:115c:a1e0::1234",
+              "kind" : "ipv6",
+              "port" : 7456,
+              "text" : "[fd7a:115c:a1e0::1234]:7456"
+            },
+            {
+              "host" : "pc.tail1234.ts.net",
+              "kind" : "name",
+              "port" : null,
+              "text" : "pc.tail1234.ts.net"
+            },
+            {
+              "host" : "192.168.1.20",
+              "kind" : "ipv4",
+              "port" : null,
+              "text" : "192.168.1.20"
+            },
+            {
+              "host" : "10.0.0.2",
+              "kind" : "ipv4",
+              "port" : null,
+              "text" : "10.0.0.2"
+            }
+          ],
+          "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+          "macID" : "ET05MRX6K061G1TM",
+          "name" : "Tom & Jerry = 100% ü/?#",
+          "port" : 1,
+          "secret" : "22222222222222222222222222222222"
+        },
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&n=Tom%20%26%20Jerry%20%3D%20100%25%20%C3%BC%2F%3F%23&p=1&a=100.101.102.103&a=%5Bfd7a:115c:a1e0::1234%5D:7456&a=pc.tail1234.ts.net&a=192.168.1.20&a=10.0.0.2"
+      },
+      {
+        "ok" : {
+          "addresses" : [
+
+          ],
+          "fingerprint" : "50d858e0985ecc7f60418aaf0cc5ab587f42c2570a884095a9e8ccacd0f6545c",
+          "macID" : "A3C5HR4RBV67YR21",
+          "name" : "Mac",
+          "port" : 65535,
+          "secret" : "ffffffffffffffffffffffffffffffff"
+        },
+        "text" : "sill://pair?v=1&m=A3C5HR4RBV67YR21&k=UNhY4JhezH9gQYqvDMWrWH9CwlcKiECVqejMrND2VFw&s=_____________________w&n=Mac&p=65535"
+      },
+      {
+        "ok" : {
+          "addresses" : [
+            {
+              "host" : "100.101.102.103",
+              "kind" : "ipv4",
+              "port" : null,
+              "text" : "100.101.102.103"
+            },
+            {
+              "host" : "fd7a:115c:a1e0::1234",
+              "kind" : "ipv6",
+              "port" : 7456,
+              "text" : "[fd7a:115c:a1e0::1234]:7456"
+            },
+            {
+              "host" : "pc.tail1234.ts.net",
+              "kind" : "name",
+              "port" : null,
+              "text" : "pc.tail1234.ts.net"
+            }
+          ],
+          "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+          "macID" : "ET05MRX6K061G1TM",
+          "name" : "PC",
+          "port" : 7455,
+          "secret" : "22222222222222222222222222222222"
+        },
+        "text" : "  sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&n=PC&p=7455&a=100.101.102.103&a=%5Bfd7a:115c:a1e0::1234%5D:7456&a=pc.tail1234.ts.net\n"
+      },
+      {
+        "ok" : {
+          "addresses" : [
+            {
+              "host" : "100.101.102.103",
+              "kind" : "ipv4",
+              "port" : null,
+              "text" : "100.101.102.103"
+            },
+            {
+              "host" : "fd7a:115c:a1e0::1234",
+              "kind" : "ipv6",
+              "port" : 7456,
+              "text" : "[fd7a:115c:a1e0::1234]:7456"
+            },
+            {
+              "host" : "pc.tail1234.ts.net",
+              "kind" : "name",
+              "port" : null,
+              "text" : "pc.tail1234.ts.net"
+            }
+          ],
+          "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+          "macID" : "ET05MRX6K061G1TM",
+          "name" : "PC",
+          "port" : 7455,
+          "secret" : "22222222222222222222222222222222"
+        },
+        "text" : "SILL://PAIR?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&n=PC&p=7455&a=100.101.102.103&a=%5Bfd7a:115c:a1e0::1234%5D:7456&a=pc.tail1234.ts.net"
+      },
+      {
+        "ok" : {
+          "addresses" : [
+            {
+              "host" : "100.101.102.103",
+              "kind" : "ipv4",
+              "port" : null,
+              "text" : "100.101.102.103"
+            },
+            {
+              "host" : "fd7a:115c:a1e0::1234",
+              "kind" : "ipv6",
+              "port" : 7456,
+              "text" : "[fd7a:115c:a1e0::1234]:7456"
+            },
+            {
+              "host" : "pc.tail1234.ts.net",
+              "kind" : "name",
+              "port" : null,
+              "text" : "pc.tail1234.ts.net"
+            }
+          ],
+          "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+          "macID" : "ET05MRX6K061G1TM",
+          "name" : "PC",
+          "port" : 7455,
+          "secret" : "22222222222222222222222222222222"
+        },
+        "text" : "sill://pair/?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&n=PC&p=7455&a=100.101.102.103&a=%5Bfd7a:115c:a1e0::1234%5D:7456&a=pc.tail1234.ts.net"
+      },
+      {
+        "failure" : "notALink",
+        "text" : "sill://pair/x?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&n=PC&p=7455&a=100.101.102.103&a=%5Bfd7a:115c:a1e0::1234%5D:7456&a=pc.tail1234.ts.net"
+      },
+      {
+        "failure" : "notALink",
+        "text" : "https://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&n=PC&p=7455&a=100.101.102.103&a=%5Bfd7a:115c:a1e0::1234%5D:7456&a=pc.tail1234.ts.net"
+      },
+      {
+        "failure" : "notALink",
+        "text" : "sill://other?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&n=PC&p=7455&a=100.101.102.103&a=%5Bfd7a:115c:a1e0::1234%5D:7456&a=pc.tail1234.ts.net"
+      },
+      {
+        "failure" : "notALink",
+        "text" : "sill://pair"
+      },
+      {
+        "failure" : "version",
+        "text" : "sill://pair?"
+      },
+      {
+        "failure" : "notALink",
+        "text" : "sill:pair?v=1"
+      },
+      {
+        "failure" : "notALink",
+        "text" : "not a link"
+      },
+      {
+        "failure" : "notALink",
+        "text" : ""
+      },
+      {
+        "failure" : "version",
+        "text" : "sill://pair?m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455"
+      },
+      {
+        "failure" : "version",
+        "text" : "sill://pair?v=2&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455"
+      },
+      {
+        "failure" : "version",
+        "text" : "sill://pair?v=1&v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455"
+      },
+      {
+        "failure" : "version",
+        "text" : "sill://pair?v=&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455"
+      },
+      {
+        "failure" : "field:m",
+        "text" : "sill://pair?v=1&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455"
+      },
+      {
+        "failure" : "field:m",
+        "text" : "sill://pair?v=1&m=et05mrx6k061g1tm&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455"
+      },
+      {
+        "failure" : "field:m",
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455"
+      },
+      {
+        "failure" : "field:k",
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc=&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455"
+      },
+      {
+        "failure" : "field:k",
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAy&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455"
+      },
+      {
+        "failure" : "field:s",
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=AQEBAQEBAQEBAQEBAQEB&p=7455"
+      },
+      {
+        "failure" : "field:p",
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg"
+      },
+      {
+        "failure" : "field:p",
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=0"
+      },
+      {
+        "failure" : "field:p",
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=65536"
+      },
+      {
+        "failure" : "field:p",
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=007455"
+      },
+      {
+        "failure" : "field:p",
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=+7455"
+      },
+      {
+        "ok" : {
+          "addresses" : [
+
+          ],
+          "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+          "macID" : "ET05MRX6K061G1TM",
+          "name" : "Mac",
+          "port" : 7455,
+          "secret" : "22222222222222222222222222222222"
+        },
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=07455"
+      },
+      {
+        "failure" : "macIDMismatch",
+        "text" : "sill://pair?v=1&m=0123456789ABCDEF&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455"
+      },
+      {
+        "failure" : "address:1.2.3",
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455&a=1.2.3"
+      },
+      {
+        "failure" : "address:",
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455&a="
+      },
+      {
+        "failure" : "address:",
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455&a"
+      },
+      {
+        "ok" : {
+          "addresses" : [
+            {
+              "host" : "fd7a::1",
+              "kind" : "ipv6",
+              "port" : 80,
+              "text" : "[fd7a::1]:80"
+            },
+            {
+              "host" : "host.example",
+              "kind" : "name",
+              "port" : null,
+              "text" : "host.example"
+            }
+          ],
+          "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+          "macID" : "ET05MRX6K061G1TM",
+          "name" : "Mac",
+          "port" : 7455,
+          "secret" : "22222222222222222222222222222222"
+        },
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455&a=%5Bfd7a::1%5D:80&a=host.example"
+      },
+      {
+        "ok" : {
+          "addresses" : [
+
+          ],
+          "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+          "macID" : "ET05MRX6K061G1TM",
+          "name" : "Café",
+          "port" : 7455,
+          "secret" : "22222222222222222222222222222222"
+        },
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455&n=Caf%C3%A9&n=Second&x=ignored"
+      },
+      {
+        "ok" : {
+          "addresses" : [
+
+          ],
+          "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+          "macID" : "ET05MRX6K061G1TM",
+          "name" : "a+b",
+          "port" : 7455,
+          "secret" : "22222222222222222222222222222222"
+        },
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455&n=a+b"
+      },
+      {
+        "ok" : {
+          "addresses" : [
+
+          ],
+          "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+          "macID" : "ET05MRX6K061G1TM",
+          "name" : "Mac",
+          "port" : 7455,
+          "secret" : "22222222222222222222222222222222"
+        },
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455&n="
+      },
+      {
+        "ok" : {
+          "addresses" : [
+
+          ],
+          "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+          "macID" : "ET05MRX6K061G1TM",
+          "name" : "bad%zz",
+          "port" : 7455,
+          "secret" : "22222222222222222222222222222222"
+        },
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455&n=bad%zz"
+      },
+      {
+        "ok" : {
+          "addresses" : [
+
+          ],
+          "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+          "macID" : "ET05MRX6K061G1TM",
+          "name" : "sp ace",
+          "port" : 7455,
+          "secret" : "22222222222222222222222222222222"
+        },
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455&n=sp ace"
+      },
+      {
+        "ok" : {
+          "addresses" : [
+
+          ],
+          "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+          "macID" : "ET05MRX6K061G1TM",
+          "name" : "Mac",
+          "port" : 7455,
+          "secret" : "22222222222222222222222222222222"
+        },
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455#frag"
+      },
+      {
+        "ok" : {
+          "addresses" : [
+
+          ],
+          "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+          "macID" : "ET05MRX6K061G1TM",
+          "name" : "Mac",
+          "port" : 7455,
+          "secret" : "22222222222222222222222222222222"
+        },
+        "text" : "sill://user@pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455"
+      },
+      {
+        "ok" : {
+          "addresses" : [
+
+          ],
+          "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+          "macID" : "ET05MRX6K061G1TM",
+          "name" : "Mac",
+          "port" : 7455,
+          "secret" : "22222222222222222222222222222222"
+        },
+        "text" : "sill://pair:80?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455"
+      },
+      {
+        "ok" : {
+          "addresses" : [
+            {
+              "host" : "1.1.1.1",
+              "kind" : "ipv4",
+              "port" : null,
+              "text" : "1.1.1.1"
+            },
+            {
+              "host" : "1.1.1.2",
+              "kind" : "ipv4",
+              "port" : null,
+              "text" : "1.1.1.2"
+            },
+            {
+              "host" : "1.1.1.3",
+              "kind" : "ipv4",
+              "port" : null,
+              "text" : "1.1.1.3"
+            },
+            {
+              "host" : "1.1.1.4",
+              "kind" : "ipv4",
+              "port" : null,
+              "text" : "1.1.1.4"
+            },
+            {
+              "host" : "1.1.1.5",
+              "kind" : "ipv4",
+              "port" : null,
+              "text" : "1.1.1.5"
+            }
+          ],
+          "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+          "macID" : "ET05MRX6K061G1TM",
+          "name" : "Mac",
+          "port" : 7455,
+          "secret" : "22222222222222222222222222222222"
+        },
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455&a=1.1.1.1&a=1.1.1.2&a=1.1.1.3&a=1.1.1.4&a=1.1.1.5&a=1.1.1.6"
+      },
+      {
+        "failure" : "address:bad..name",
+        "text" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455&a=1.1.1.1&a=1.1.1.2&a=1.1.1.3&a=1.1.1.4&a=1.1.1.5&a=bad..name"
+      },
+      {
+        "failure" : "version",
+        "text" : "sill://pair?V=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455"
+      },
+      {
+        "ok" : {
+          "addresses" : [
+
+          ],
+          "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+          "macID" : "ET05MRX6K061G1TM",
+          "name" : "Mac",
+          "port" : 7455,
+          "secret" : "22222222222222222222222222222222"
+        },
+        "text" : "sill://pair?v=1&&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455"
+      },
+      {
+        "ok" : {
+          "addresses" : [
+
+          ],
+          "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+          "macID" : "ET05MRX6K061G1TM",
+          "name" : "Mac",
+          "port" : 7455,
+          "secret" : "22222222222222222222222222222222"
+        },
+        "text" : "sill://pair?v=%31&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&p=7455"
+      }
+    ],
+    "urls" : [
+      {
+        "addresses" : [
+          {
+            "host" : "100.101.102.103",
+            "kind" : "ipv4",
+            "port" : null,
+            "text" : "100.101.102.103"
+          },
+          {
+            "host" : "fd7a:115c:a1e0::1234",
+            "kind" : "ipv6",
+            "port" : 7456,
+            "text" : "[fd7a:115c:a1e0::1234]:7456"
+          },
+          {
+            "host" : "pc.tail1234.ts.net",
+            "kind" : "name",
+            "port" : null,
+            "text" : "pc.tail1234.ts.net"
+          }
+        ],
+        "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+        "macID" : "ET05MRX6K061G1TM",
+        "name" : "PC",
+        "port" : 7455,
+        "secret" : "22222222222222222222222222222222",
+        "url" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&n=PC&p=7455&a=100.101.102.103&a=%5Bfd7a:115c:a1e0::1234%5D:7456&a=pc.tail1234.ts.net"
+      },
+      {
+        "addresses" : [
+          {
+            "host" : "100.101.102.103",
+            "kind" : "ipv4",
+            "port" : null,
+            "text" : "100.101.102.103"
+          },
+          {
+            "host" : "fd7a:115c:a1e0::1234",
+            "kind" : "ipv6",
+            "port" : 7456,
+            "text" : "[fd7a:115c:a1e0::1234]:7456"
+          },
+          {
+            "host" : "pc.tail1234.ts.net",
+            "kind" : "name",
+            "port" : null,
+            "text" : "pc.tail1234.ts.net"
+          },
+          {
+            "host" : "192.168.1.20",
+            "kind" : "ipv4",
+            "port" : null,
+            "text" : "192.168.1.20"
+          },
+          {
+            "host" : "10.0.0.2",
+            "kind" : "ipv4",
+            "port" : null,
+            "text" : "10.0.0.2"
+          }
+        ],
+        "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+        "macID" : "ET05MRX6K061G1TM",
+        "name" : "Tom & Jerry = 100% ü/?#",
+        "port" : 1,
+        "secret" : "22222222222222222222222222222222",
+        "url" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&n=Tom%20%26%20Jerry%20%3D%20100%25%20%C3%BC%2F%3F%23&p=1&a=100.101.102.103&a=%5Bfd7a:115c:a1e0::1234%5D:7456&a=pc.tail1234.ts.net&a=192.168.1.20&a=10.0.0.2"
+      },
+      {
+        "addresses" : [
+
+        ],
+        "fingerprint" : "50d858e0985ecc7f60418aaf0cc5ab587f42c2570a884095a9e8ccacd0f6545c",
+        "macID" : "A3C5HR4RBV67YR21",
+        "name" : "Mac",
+        "port" : 65535,
+        "secret" : "ffffffffffffffffffffffffffffffff",
+        "url" : "sill://pair?v=1&m=A3C5HR4RBV67YR21&k=UNhY4JhezH9gQYqvDMWrWH9CwlcKiECVqejMrND2VFw&s=_____________________w&n=Mac&p=65535"
+      },
+      {
+        "addresses" : [
+
+        ],
+        "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+        "macID" : "ET05MRX6K061G1TM",
+        "name" : "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
+        "port" : 7455,
+        "secret" : "22222222222222222222222222222222",
+        "url" : "sill://pair?v=1&m=ET05MRX6K061G1TM&k=doBaY6aYDBgHVCShPzJ3LQLXxxtJZXVMHOhPWEEiAyc&s=IiIiIiIiIiIiIiIiIiIiIg&n=NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN&p=7455"
+      }
+    ]
+  },
+  "pairRequestVersion" : 1,
+  "proofs" : [
+    {
+      "deviceProof" : "03264026a3535399d2284687c7a45939fd0ae5d39eca047ff094ab095fe034ea",
+      "deviceProofB64" : "AyZAJqNTU5nSKEaHx6RZOf0K5dOeygR_8JSrCV_gNOo",
+      "deviceValid" : true,
+      "fpDevice" : "263a4dbe41488fb87214b0032339dbb9f0c8da14c16dfcf13084bf3c2552eca5",
+      "fpMac" : "348a629f5ceed032c3e8706ec47d9bfafb00fb4250b018dd965435ca50cb836e",
+      "key" : "22222222222222222222222222222222",
+      "macAsDeviceValid" : false,
+      "macProof" : "5c05feb993ecabf031f1fbc8fec57b131d1af913a2d7dac8f855beca43e1f531",
+      "macProofB64" : "XAX-uZPsq_Ax8fvI_sV7Ex0a-ROi19rI-FW-ykPh9TE",
+      "macValid" : true,
+      "name" : "qr",
+      "swappedValid" : false,
+      "truncatedValid" : false
+    },
+    {
+      "deviceProof" : "764ecf663e2f1ec0318fefb5bbd560ede8529fc6b5b567344421b8e98a4554ef",
+      "deviceProofB64" : "dk7PZj4vHsAxj--1u9Vg7ehSn8a1tWc0RCG46YpFVO8",
+      "deviceValid" : true,
+      "fpDevice" : "263a4dbe41488fb87214b0032339dbb9f0c8da14c16dfcf13084bf3c2552eca5",
+      "fpMac" : "348a629f5ceed032c3e8706ec47d9bfafb00fb4250b018dd965435ca50cb836e",
+      "key" : "e9baf879a1cc4ac8b21554df480b6c1621671319107c91e7cb05d154f649d31d",
+      "macAsDeviceValid" : false,
+      "macProof" : "e81986582f574fc27c398f29861abd6c04a0a129e85a947105ea99b6f46b5a69",
+      "macProofB64" : "6BmGWC9XT8J8OY8phhq9bASgoSnoWpRxBeqZtvRrWmk",
+      "macValid" : true,
+      "name" : "code",
+      "swappedValid" : false,
+      "truncatedValid" : false
+    }
+  ],
+  "recognitionTag" : {
+    "key" : "1111111111111111111111111111111111111111111111111111111111111111",
+    "key2" : "3333333333333333333333333333333333333333333333333333333333333333",
+    "matches" : [
+      {
+        "key" : "1111111111111111111111111111111111111111111111111111111111111111",
+        "matches" : true,
+        "tag" : "oaKjpKWmL4V47Ctm"
+      },
+      {
+        "key" : "1212121212121212121212121212121212121212121212121212121212121212",
+        "matches" : false,
+        "tag" : "oaKjpKWmL4V47Ctm"
+      },
+      {
+        "key" : "3333333333333333333333333333333333333333333333333333333333333333",
+        "matches" : true,
+        "tag" : "AAAAAAAAkSlcZawQ"
+      },
+      {
+        "key" : "1111111111111111111111111111111111111111111111111111111111111111",
+        "matches" : false,
+        "tag" : "short"
+      },
+      {
+        "key" : "1111111111111111111111111111111111111111111111111111111111111111",
+        "matches" : false,
+        "tag" : "oaKjpKWmL4V47Ctm=="
+      },
+      {
+        "key" : "1111111111111111111111111111111111111111111111111111111111111111",
+        "matches" : false,
+        "tag" : "oaKjpKWmL4V47Ctn"
+      },
+      {
+        "key" : "1111111111111111111111111111111111111111111111111111111111111111",
+        "matches" : false,
+        "tag" : ""
+      },
+      {
+        "key" : "",
+        "matches" : false,
+        "tag" : "oaKjpKWmL4V47Ctm"
+      }
+    ],
+    "nonce" : "a1a2a3a4a5a6",
+    "nonce2" : "000000000000",
+    "tag" : "oaKjpKWmL4V47Ctm",
+    "tag2" : "AAAAAAAAkSlcZawQ",
+    "txtKey" : "r"
+  },
+  "rounds" : 600000,
+  "spki" : [
+    {
+      "der" : "3059301306072a8648ce3d020106082a8648ce3d030107034200040217e617f0b6443928278f96999e69a23a4f2c152bdf6d6cdf66e5b80282d4ed194a7debcb97712d2dda3ca85aa8765a56f45fc758599652f2897c65306e5794",
+      "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+      "macID" : "ET05MRX6K061G1TM",
+      "point" : "040217e617f0b6443928278f96999e69a23a4f2c152bdf6d6cdf66e5b80282d4ed194a7debcb97712d2dda3ca85aa8765a56f45fc758599652f2897c65306e5794",
+      "shortName" : "ET05MR"
+    },
+    {
+      "der" : "3059301306072a8648ce3d020106082a8648ce3d0301070342000460fed4ba255a9d31c961eb74c6356d68c049b8923b61fa6ce669622e60f29fb67903fe1008b8bc99a41ae9e95628bc64f2f1b20c2d7e9f5177a3c294d4462299",
+      "fingerprint" : "5a7a78cca4a0f420d9bc62bb669c3c2759e39f723d3ae10dcbe0f0815a07ecd4",
+      "macID" : "B9X7HK54M3T21PDW",
+      "point" : "0460fed4ba255a9d31c961eb74c6356d68c049b8923b61fa6ce669622e60f29fb67903fe1008b8bc99a41ae9e95628bc64f2f1b20c2d7e9f5177a3c294d4462299",
+      "shortName" : "B9X7HK"
+    }
+  ]
+}

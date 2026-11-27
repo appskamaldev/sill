@@ -1,0 +1,1025 @@
+{
+  "_source" : "upstream Sources/StreamProtocol, written by windows/tools/make-vectors.sh; do not edit",
+  "decode" : [
+    {
+      "input" : "{\"none\":{}}",
+      "ok" : true,
+      "sorted" : "{\"none\":{}}",
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"desktop\":{}}",
+      "ok" : true,
+      "sorted" : "{\"desktop\":{}}",
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"window\":{\"_0\":42}}",
+      "ok" : true,
+      "sorted" : "{\"window\":{\"_0\":42}}",
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"window\":{\"_0\":42,\"extra\":true}}",
+      "ok" : true,
+      "sorted" : "{\"window\":{\"_0\":42}}",
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"window\":{\"_0\":-1}}",
+      "ok" : false,
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"window\":{\"_0\":4294967296}}",
+      "ok" : false,
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"window\":{\"_0\":42.0}}",
+      "ok" : true,
+      "sorted" : "{\"window\":{\"_0\":42}}",
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"window\":{\"_0\":42.5}}",
+      "ok" : false,
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"window\":{}}",
+      "ok" : false,
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"window\":{\"_0\":\"42\"}}",
+      "ok" : false,
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{}",
+      "ok" : false,
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"none\":{},\"desktop\":{}}",
+      "ok" : false,
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"desktop\":{},\"x\":1}",
+      "ok" : true,
+      "sorted" : "{\"desktop\":{}}",
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"bogus\":{}}",
+      "ok" : false,
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "\"desktop\"",
+      "ok" : false,
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"none\":5}",
+      "ok" : false,
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"none\":null}",
+      "ok" : false,
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"none\":[]}",
+      "ok" : false,
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"desktop\":{\"_0\":1}}",
+      "ok" : true,
+      "sorted" : "{\"desktop\":{}}",
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"window\":{\"_0\":4294967295}}",
+      "ok" : true,
+      "sorted" : "{\"window\":{\"_0\":4294967295}}",
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"window\":{\"_0\":1e3}}",
+      "ok" : true,
+      "sorted" : "{\"window\":{\"_0\":1000}}",
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"window\":{\"_0\":null}}",
+      "ok" : false,
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "null",
+      "ok" : false,
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "[]",
+      "ok" : false,
+      "type" : "StreamSource"
+    },
+    {
+      "input" : "{\"pointer\":{\"_0\":\"leftDown\",\"x\":0.25,\"y\":0.5}}",
+      "ok" : true,
+      "sorted" : "{\"pointer\":{\"_0\":\"leftDown\",\"x\":0.25,\"y\":0.5}}",
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"pointer\":{\"_0\":\"move\",\"x\":0,\"y\":1}}",
+      "ok" : true,
+      "sorted" : "{\"pointer\":{\"_0\":\"move\",\"x\":0,\"y\":1}}",
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"pointer\":{\"_0\":\"drag\",\"x\":0,\"y\":0}}",
+      "ok" : false,
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"pointer\":{\"x\":0,\"y\":0}}",
+      "ok" : false,
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"pointer\":{\"_0\":\"move\",\"x\":0}}",
+      "ok" : false,
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"scroll\":{\"x\":0.5,\"y\":0.5,\"dx\":0,\"dy\":1}}",
+      "ok" : true,
+      "sorted" : "{\"scroll\":{\"dx\":0,\"dy\":1,\"x\":0.5,\"y\":0.5}}",
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"scroll\":{\"x\":0.5,\"y\":0.5,\"dy\":1}}",
+      "ok" : false,
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"text\":{\"_0\":\"\"}}",
+      "ok" : true,
+      "sorted" : "{\"text\":{\"_0\":\"\"}}",
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"text\":{\"_0\":\"a\\nb\"}}",
+      "ok" : true,
+      "sorted" : "{\"text\":{\"_0\":\"a\\nb\"}}",
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"text\":{}}",
+      "ok" : false,
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"text\":\"a\"}",
+      "ok" : false,
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"scrollGesture\":{\"_0\":\"began\",\"x\":0.5,\"y\":0.5}}",
+      "ok" : true,
+      "sorted" : "{\"scrollGesture\":{\"_0\":\"began\",\"x\":0.5,\"y\":0.5}}",
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"scrollGesture\":{\"_0\":\"cancelled\",\"x\":0.5,\"y\":0.5}}",
+      "ok" : false,
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"key\":{\"hidUsage\":4,\"down\":true,\"modifiers\":1048576}}",
+      "ok" : true,
+      "sorted" : "{\"key\":{\"down\":true,\"hidUsage\":4,\"modifiers\":1048576}}",
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"key\":{\"hidUsage\":4,\"down\":true}}",
+      "ok" : false,
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"key\":{\"hidUsage\":65536,\"down\":true,\"modifiers\":0}}",
+      "ok" : false,
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"key\":{\"hidUsage\":4,\"down\":1,\"modifiers\":0}}",
+      "ok" : false,
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"key\":{\"hidUsage\":4,\"down\":true,\"modifiers\":18446744073709551615}}",
+      "ok" : true,
+      "sorted" : "{\"key\":{\"down\":true,\"hidUsage\":4,\"modifiers\":18446744073709551615}}",
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"key\":{\"hidUsage\":4,\"down\":true,\"modifiers\":-1}}",
+      "ok" : false,
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"key\":{\"hidUsage\":4,\"down\":true,\"modifiers\":0,\"repeat\":true}}",
+      "ok" : true,
+      "sorted" : "{\"key\":{\"down\":true,\"hidUsage\":4,\"modifiers\":0}}",
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"tap\":{}}",
+      "ok" : false,
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"pointer\":{\"_0\":\"leftDown\",\"x\":0.25,\"y\":0.5},\"text\":{\"_0\":\"x\"}}",
+      "ok" : false,
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"pointer\":{\"_0\":\"leftDown\",\"x\":\"0.25\",\"y\":0.5}}",
+      "ok" : false,
+      "type" : "InputEvent"
+    },
+    {
+      "input" : "{\"width\":390,\"height\":844}",
+      "ok" : true,
+      "sorted" : "{\"height\":844,\"width\":390}",
+      "type" : "Viewport"
+    },
+    {
+      "input" : "{\"width\":390,\"height\":844,\"scale\":null}",
+      "ok" : true,
+      "sorted" : "{\"height\":844,\"width\":390}",
+      "type" : "Viewport"
+    },
+    {
+      "input" : "{\"width\":390}",
+      "ok" : false,
+      "type" : "Viewport"
+    },
+    {
+      "input" : "{\"width\":390,\"height\":844,\"scale\":1.5,\"localCursor\":false,\"fps\":60,\"future\":[1,2]}",
+      "ok" : true,
+      "sorted" : "{\"fps\":60,\"height\":844,\"localCursor\":false,\"scale\":1.5,\"width\":390}",
+      "type" : "Viewport"
+    },
+    {
+      "input" : "{\"width\":390,\"height\":844,\"fps\":59.5}",
+      "ok" : false,
+      "type" : "Viewport"
+    },
+    {
+      "input" : "{\"width\":1e300,\"height\":-5}",
+      "ok" : true,
+      "sorted" : "{\"height\":-5,\"width\":1e+300}",
+      "type" : "Viewport"
+    },
+    {
+      "input" : "{\"width\":\"390\",\"height\":844}",
+      "ok" : false,
+      "type" : "Viewport"
+    },
+    {
+      "input" : "{\"fps\":60,\"frameAgeMs\":18,\"rttMs\":4,\"device\":\"iPad\"}",
+      "ok" : true,
+      "sorted" : "{\"device\":\"iPad\",\"fps\":60,\"frameAgeMs\":18,\"rttMs\":4}",
+      "type" : "ClientStats"
+    },
+    {
+      "input" : "{\"fps\":60,\"frameAgeMs\":18,\"rttMs\":4}",
+      "ok" : false,
+      "type" : "ClientStats"
+    },
+    {
+      "input" : "{\"fps\":60,\"frameAgeMs\":18,\"rttMs\":4,\"device\":\"iPad\",\"frameAgeMaxMs\":null,\"audioLate\":3}",
+      "ok" : true,
+      "sorted" : "{\"audioLate\":3,\"device\":\"iPad\",\"fps\":60,\"frameAgeMs\":18,\"rttMs\":4}",
+      "type" : "ClientStats"
+    },
+    {
+      "input" : "{}",
+      "ok" : true,
+      "sorted" : "{}",
+      "type" : "Hello"
+    },
+    {
+      "input" : "{\"appVersion\":\"1.0\",\"build\":\"42\",\"protocol\":1,\"device\":\"iPad\",\"audio\":[\"aac-eld\"],\"offConsoleView\":1}",
+      "ok" : true,
+      "sorted" : "{\"appVersion\":\"1.0\",\"audio\":[\"aac-eld\"],\"build\":\"42\",\"device\":\"iPad\",\"offConsoleView\":1,\"protocol\":1}",
+      "type" : "Hello"
+    },
+    {
+      "input" : "{\"protocol\":\"1\"}",
+      "ok" : false,
+      "type" : "Hello"
+    },
+    {
+      "input" : "{\"appVersion\":1}",
+      "ok" : false,
+      "type" : "Hello"
+    },
+    {
+      "input" : "{\"audio\":\"aac-eld\"}",
+      "ok" : false,
+      "type" : "Hello"
+    },
+    {
+      "input" : "{\"device\":\"x\",\"later\":{\"a\":1}}",
+      "ok" : true,
+      "sorted" : "{\"device\":\"x\"}",
+      "type" : "Hello"
+    },
+    {
+      "input" : "[]",
+      "ok" : false,
+      "type" : "Hello"
+    },
+    {
+      "input" : "{\"macName\":\"PC\",\"windows\":[],\"active\":{\"none\":{}}}",
+      "ok" : true,
+      "sorted" : "{\"active\":{\"none\":{}},\"macName\":\"PC\",\"windows\":[]}",
+      "type" : "WindowList"
+    },
+    {
+      "input" : "{\"macName\":\"PC\",\"windows\":[]}",
+      "ok" : false,
+      "type" : "WindowList"
+    },
+    {
+      "input" : "{\"macName\":\"PC\",\"windows\":[{\"id\":1,\"title\":\"t\",\"appName\":\"a\",\"bundleID\":\"b\",\"width\":1,\"height\":2}],\"active\":{\"window\":{\"_0\":1}},\"protocol\":1,\"later\":true}",
+      "ok" : true,
+      "sorted" : "{\"active\":{\"window\":{\"_0\":1}},\"macName\":\"PC\",\"protocol\":1,\"windows\":[{\"appName\":\"a\",\"bundleID\":\"b\",\"height\":2,\"id\":1,\"title\":\"t\",\"width\":1}]}",
+      "type" : "WindowList"
+    },
+    {
+      "input" : "{\"macName\":\"PC\",\"windows\":[{\"id\":1,\"title\":\"t\",\"appName\":\"a\",\"bundleID\":\"b\",\"width\":1}],\"active\":{\"desktop\":{}}}",
+      "ok" : false,
+      "type" : "WindowList"
+    },
+    {
+      "input" : "{\"macName\":\"PC\",\"windows\":[],\"active\":{\"desktop\":{}},\"clipboard\":true}",
+      "ok" : false,
+      "type" : "WindowList"
+    },
+    {
+      "input" : "{\"id\":1,\"action\":\"close\"}",
+      "ok" : true,
+      "sorted" : "{\"action\":\"close\",\"id\":1}",
+      "type" : "WindowCommand"
+    },
+    {
+      "input" : "{\"id\":1,\"action\":\"maximize\"}",
+      "ok" : false,
+      "type" : "WindowCommand"
+    },
+    {
+      "input" : "{\"action\":\"close\"}",
+      "ok" : false,
+      "type" : "WindowCommand"
+    },
+    {
+      "input" : "{\"bundleID\":\"x\"}",
+      "ok" : true,
+      "sorted" : "{\"bundleID\":\"x\"}",
+      "type" : "LaunchApp"
+    },
+    {
+      "input" : "{}",
+      "ok" : false,
+      "type" : "LaunchApp"
+    },
+    {
+      "input" : "{\"settings\":{\"maxFPS\":60,\"bitrate\":15000000,\"captureScale\":1,\"prioritizeSpeed\":true,\"virtualDisplay\":false},\"persistent\":false,\"virtualDisplayAvailable\":false,\"softwareEncoder\":false}",
+      "ok" : true,
+      "sorted" : "{\"persistent\":false,\"settings\":{\"bitrate\":15000000,\"captureScale\":1,\"maxFPS\":60,\"prioritizeSpeed\":true,\"virtualDisplay\":false},\"softwareEncoder\":false,\"virtualDisplayAvailable\":false}",
+      "type" : "HostSettingsState"
+    },
+    {
+      "input" : "{\"settings\":{\"maxFPS\":60,\"bitrate\":15000000,\"captureScale\":1,\"prioritizeSpeed\":true,\"virtualDisplay\":false},\"persistent\":false,\"virtualDisplayAvailable\":false}",
+      "ok" : false,
+      "type" : "HostSettingsState"
+    },
+    {
+      "input" : "{\"settings\":{\"maxFPS\":60,\"bitrate\":15000000,\"captureScale\":1,\"prioritizeSpeed\":true},\"persistent\":false,\"virtualDisplayAvailable\":false,\"softwareEncoder\":false}",
+      "ok" : false,
+      "type" : "HostSettingsState"
+    },
+    {
+      "input" : "{\"settings\":{\"maxFPS\":60,\"bitrate\":15000000,\"captureScale\":1,\"prioritizeSpeed\":true,\"virtualDisplay\":false,\"directWireless\":null},\"persistent\":false,\"virtualDisplayAvailable\":false,\"softwareEncoder\":false,\"link\":{\"state\":\"weird\",\"withheldPerSecond\":0,\"bitrate\":1}}",
+      "ok" : true,
+      "sorted" : "{\"link\":{\"bitrate\":1,\"state\":\"weird\",\"withheldPerSecond\":0},\"persistent\":false,\"settings\":{\"bitrate\":15000000,\"captureScale\":1,\"maxFPS\":60,\"prioritizeSpeed\":true,\"virtualDisplay\":false},\"softwareEncoder\":false,\"virtualDisplayAvailable\":false}",
+      "type" : "HostSettingsState"
+    },
+    {
+      "input" : "{}",
+      "ok" : true,
+      "sorted" : "{}",
+      "type" : "HostSettingsChange"
+    },
+    {
+      "input" : "{\"token\":3,\"maxFPS\":60}",
+      "ok" : true,
+      "sorted" : "{\"maxFPS\":60,\"token\":3}",
+      "type" : "HostSettingsChange"
+    },
+    {
+      "input" : "{\"token\":\"3\"}",
+      "ok" : false,
+      "type" : "HostSettingsChange"
+    },
+    {
+      "input" : "{\"captureScale\":2,\"unknown\":1}",
+      "ok" : true,
+      "sorted" : "{\"captureScale\":2}",
+      "type" : "HostSettingsChange"
+    },
+    {
+      "input" : "{\"reason\":\"quit\"}",
+      "ok" : true,
+      "sorted" : "{\"reason\":\"quit\"}",
+      "type" : "Goodbye"
+    },
+    {
+      "input" : "{}",
+      "ok" : false,
+      "type" : "Goodbye"
+    },
+    {
+      "input" : "{\"reason\":\"later\",\"message\":\"m\",\"reconnect\":true,\"x\":0}",
+      "ok" : true,
+      "sorted" : "{\"message\":\"m\",\"reason\":\"later\",\"reconnect\":true}",
+      "type" : "Goodbye"
+    },
+    {
+      "input" : "{\"v\":1,\"method\":\"code\",\"proof\":\"abc\",\"name\":\"iPad\"}",
+      "ok" : true,
+      "sorted" : "{\"method\":\"code\",\"name\":\"iPad\",\"proof\":\"abc\",\"v\":1}",
+      "type" : "PairRequest"
+    },
+    {
+      "input" : "{\"v\":1,\"method\":\"code\",\"proof\":\"abc\"}",
+      "ok" : false,
+      "type" : "PairRequest"
+    },
+    {
+      "input" : "{\"method\":\"code\",\"proof\":\"abc\",\"name\":\"iPad\"}",
+      "ok" : false,
+      "type" : "PairRequest"
+    },
+    {
+      "input" : "{\"v\":2,\"method\":\"qr\",\"proof\":\"\",\"name\":\"\",\"model\":\"m\",\"cable\":false,\"later\":1}",
+      "ok" : true,
+      "sorted" : "{\"cable\":false,\"method\":\"qr\",\"model\":\"m\",\"name\":\"\",\"proof\":\"\",\"v\":2}",
+      "type" : "PairRequest"
+    },
+    {
+      "input" : "{\"ok\":false,\"reason\":\"code\",\"triesLeft\":4}",
+      "ok" : true,
+      "sorted" : "{\"ok\":false,\"reason\":\"code\",\"triesLeft\":4}",
+      "type" : "PairResult"
+    },
+    {
+      "input" : "{\"reason\":\"code\"}",
+      "ok" : false,
+      "type" : "PairResult"
+    },
+    {
+      "input" : "{\"ok\":true,\"retryAfter\":2}",
+      "ok" : true,
+      "sorted" : "{\"ok\":true,\"retryAfter\":2}",
+      "type" : "PairResult"
+    },
+    {
+      "input" : "{\"v\":1,\"macID\":\"X\",\"name\":\"n\",\"issuedAt\":1,\"remoteAccess\":false,\"remotePort\":7455,\"internet\":false,\"addresses\":[]}",
+      "ok" : true,
+      "sorted" : "{\"addresses\":[],\"internet\":false,\"issuedAt\":1,\"macID\":\"X\",\"name\":\"n\",\"remoteAccess\":false,\"remotePort\":7455,\"v\":1}",
+      "type" : "MacInfo"
+    },
+    {
+      "input" : "{\"v\":1,\"macID\":\"X\",\"name\":\"n\",\"issuedAt\":1,\"remoteAccess\":false,\"remotePort\":7455,\"internet\":false}",
+      "ok" : false,
+      "type" : "MacInfo"
+    },
+    {
+      "input" : "{\"info\":\"e30=\",\"key\":\"\",\"sig\":\"\"}",
+      "ok" : true,
+      "sorted" : "{\"info\":\"e30=\",\"key\":\"\",\"sig\":\"\"}",
+      "type" : "SignedMacInfo"
+    },
+    {
+      "input" : "{\"info\":\"e30=\",\"key\":\"\"}",
+      "ok" : false,
+      "type" : "SignedMacInfo"
+    },
+    {
+      "input" : "{\"gesture\":\"swipeUp\",\"fingers\":3}",
+      "ok" : true,
+      "sorted" : "{\"fingers\":3,\"gesture\":\"swipeUp\"}",
+      "type" : "TrackpadGesture"
+    },
+    {
+      "input" : "{\"gesture\":\"pinch\"}",
+      "ok" : true,
+      "sorted" : "{\"gesture\":\"pinch\"}",
+      "type" : "TrackpadGesture"
+    },
+    {
+      "input" : "{}",
+      "ok" : false,
+      "type" : "TrackpadGesture"
+    },
+    {
+      "input" : "{\"gesture\":\"spin\",\"fingers\":5}",
+      "ok" : true,
+      "sorted" : "{\"fingers\":5,\"gesture\":\"spin\"}",
+      "type" : "TrackpadGesture"
+    },
+    {
+      "input" : "{}",
+      "ok" : true,
+      "sorted" : "{}",
+      "type" : "Clipboard"
+    },
+    {
+      "input" : "{\"text\":\"hi\"}",
+      "ok" : true,
+      "sorted" : "{\"text\":\"hi\"}",
+      "type" : "Clipboard"
+    },
+    {
+      "input" : "{\"image\":\"iVBORw0KGgo=\"}",
+      "ok" : true,
+      "sorted" : "{\"image\":\"iVBORw0KGgo=\"}",
+      "type" : "Clipboard"
+    },
+    {
+      "input" : "{\"image\":\"iVBORw0KGgo\"}",
+      "ok" : false,
+      "type" : "Clipboard"
+    },
+    {
+      "input" : "{\"image\":\"not base64!\"}",
+      "ok" : false,
+      "type" : "Clipboard"
+    },
+    {
+      "input" : "{\"image\":\"\"}",
+      "ok" : true,
+      "sorted" : "{\"image\":\"\"}",
+      "type" : "Clipboard"
+    },
+    {
+      "input" : "{\"stop\":true,\"text\":null}",
+      "ok" : true,
+      "sorted" : "{\"stop\":true}",
+      "type" : "Clipboard"
+    },
+    {
+      "input" : "{\"image\":\"iVBO\\/w==\"}",
+      "ok" : true,
+      "sorted" : "{\"image\":\"iVBO\\/w==\"}",
+      "type" : "Clipboard"
+    },
+    {
+      "input" : "{}",
+      "ok" : true,
+      "sorted" : "{}",
+      "type" : "MacPointer"
+    },
+    {
+      "input" : "{\"x\":0.5,\"y\":0.25,\"inside\":true,\"seen\":3}",
+      "ok" : true,
+      "sorted" : "{\"inside\":true,\"seen\":3,\"x\":0.5,\"y\":0.25}",
+      "type" : "MacPointer"
+    },
+    {
+      "input" : "{\"seen\":1.5}",
+      "ok" : false,
+      "type" : "MacPointer"
+    }
+  ],
+  "encode" : [
+    {
+      "json" : "{\"none\":{}}",
+      "name" : "none",
+      "sorted" : "{\"none\":{}}",
+      "type" : "StreamSource"
+    },
+    {
+      "json" : "{\"desktop\":{}}",
+      "name" : "desktop",
+      "sorted" : "{\"desktop\":{}}",
+      "type" : "StreamSource"
+    },
+    {
+      "json" : "{\"window\":{\"_0\":1234}}",
+      "name" : "window",
+      "sorted" : "{\"window\":{\"_0\":1234}}",
+      "type" : "StreamSource"
+    },
+    {
+      "json" : "{\"window\":{\"_0\":4294967295}}",
+      "name" : "window max",
+      "sorted" : "{\"window\":{\"_0\":4294967295}}",
+      "type" : "StreamSource"
+    },
+    {
+      "json" : "{\"pointer\":{\"x\":0.25,\"y\":0.5,\"_0\":\"leftDown\"}}",
+      "name" : "pointer leftDown",
+      "sorted" : "{\"pointer\":{\"_0\":\"leftDown\",\"x\":0.25,\"y\":0.5}}",
+      "type" : "InputEvent"
+    },
+    {
+      "json" : "{\"pointer\":{\"x\":0,\"y\":1,\"_0\":\"move\"}}",
+      "name" : "pointer move at corners",
+      "sorted" : "{\"pointer\":{\"_0\":\"move\",\"x\":0,\"y\":1}}",
+      "type" : "InputEvent"
+    },
+    {
+      "json" : "{\"pointer\":{\"x\":0.123456789,\"y\":0.987654321,\"_0\":\"rightUp\"}}",
+      "name" : "pointer rightUp",
+      "sorted" : "{\"pointer\":{\"_0\":\"rightUp\",\"x\":0.123456789,\"y\":0.987654321}}",
+      "type" : "InputEvent"
+    },
+    {
+      "json" : "{\"pointer\":{\"x\":0.1,\"y\":0.2,\"_0\":\"leftUp\"}}",
+      "name" : "pointer leftUp",
+      "sorted" : "{\"pointer\":{\"_0\":\"leftUp\",\"x\":0.1,\"y\":0.2}}",
+      "type" : "InputEvent"
+    },
+    {
+      "json" : "{\"pointer\":{\"x\":1e-07,\"y\":0.3,\"_0\":\"rightDown\"}}",
+      "name" : "pointer rightDown",
+      "sorted" : "{\"pointer\":{\"_0\":\"rightDown\",\"x\":1e-07,\"y\":0.3}}",
+      "type" : "InputEvent"
+    },
+    {
+      "json" : "{\"scroll\":{\"x\":0.5,\"dx\":0,\"dy\":0.03,\"y\":0.5}}",
+      "name" : "scroll",
+      "sorted" : "{\"scroll\":{\"dx\":0,\"dy\":0.03,\"x\":0.5,\"y\":0.5}}",
+      "type" : "InputEvent"
+    },
+    {
+      "json" : "{\"scroll\":{\"x\":0.5,\"dx\":-0.015625,\"dy\":-1.5,\"y\":0.5}}",
+      "name" : "scroll negative",
+      "sorted" : "{\"scroll\":{\"dx\":-0.015625,\"dy\":-1.5,\"x\":0.5,\"y\":0.5}}",
+      "type" : "InputEvent"
+    },
+    {
+      "json" : "{\"text\":{\"_0\":\"hé\"}}",
+      "name" : "text",
+      "sorted" : "{\"text\":{\"_0\":\"hé\"}}",
+      "type" : "InputEvent"
+    },
+    {
+      "json" : "{\"text\":{\"_0\":\"\\n\\t\\b\\\"\\\\\\/\"}}",
+      "name" : "text controls",
+      "sorted" : "{\"text\":{\"_0\":\"\\n\\t\\b\\\"\\\\\\/\"}}",
+      "type" : "InputEvent"
+    },
+    {
+      "json" : "{\"text\":{\"_0\":\"👍🏽\"}}",
+      "name" : "text emoji",
+      "sorted" : "{\"text\":{\"_0\":\"👍🏽\"}}",
+      "type" : "InputEvent"
+    },
+    {
+      "json" : "{\"scrollGesture\":{\"x\":0.5,\"y\":0.75,\"_0\":\"began\"}}",
+      "name" : "scrollGesture began",
+      "sorted" : "{\"scrollGesture\":{\"_0\":\"began\",\"x\":0.5,\"y\":0.75}}",
+      "type" : "InputEvent"
+    },
+    {
+      "json" : "{\"scrollGesture\":{\"x\":0.5,\"y\":0.75,\"_0\":\"ended\"}}",
+      "name" : "scrollGesture ended",
+      "sorted" : "{\"scrollGesture\":{\"_0\":\"ended\",\"x\":0.5,\"y\":0.75}}",
+      "type" : "InputEvent"
+    },
+    {
+      "json" : "{\"scrollGesture\":{\"x\":0.5,\"y\":0.75,\"_0\":\"momentumBegan\"}}",
+      "name" : "scrollGesture momentumBegan",
+      "sorted" : "{\"scrollGesture\":{\"_0\":\"momentumBegan\",\"x\":0.5,\"y\":0.75}}",
+      "type" : "InputEvent"
+    },
+    {
+      "json" : "{\"scrollGesture\":{\"x\":0.5,\"y\":0.75,\"_0\":\"momentumEnded\"}}",
+      "name" : "scrollGesture momentumEnded",
+      "sorted" : "{\"scrollGesture\":{\"_0\":\"momentumEnded\",\"x\":0.5,\"y\":0.75}}",
+      "type" : "InputEvent"
+    },
+    {
+      "json" : "{\"key\":{\"modifiers\":1048576,\"hidUsage\":4,\"down\":true}}",
+      "name" : "key",
+      "sorted" : "{\"key\":{\"down\":true,\"hidUsage\":4,\"modifiers\":1048576}}",
+      "type" : "InputEvent"
+    },
+    {
+      "json" : "{\"key\":{\"modifiers\":2031616,\"hidUsage\":231,\"down\":false}}",
+      "name" : "key up, all modifiers",
+      "sorted" : "{\"key\":{\"down\":false,\"hidUsage\":231,\"modifiers\":2031616}}",
+      "type" : "InputEvent"
+    },
+    {
+      "json" : "{\"key\":{\"modifiers\":18446744073709551615,\"hidUsage\":65535,\"down\":false}}",
+      "name" : "key max",
+      "sorted" : "{\"key\":{\"down\":false,\"hidUsage\":65535,\"modifiers\":18446744073709551615}}",
+      "type" : "InputEvent"
+    },
+    {
+      "json" : "{\"height\":844,\"width\":390}",
+      "name" : "panel only",
+      "sorted" : "{\"height\":844,\"width\":390}",
+      "type" : "Viewport"
+    },
+    {
+      "json" : "{\"height\":1024,\"fps\":120,\"scale\":1.25,\"width\":1366.5,\"localCursor\":true}",
+      "name" : "all fields",
+      "sorted" : "{\"fps\":120,\"height\":1024,\"localCursor\":true,\"scale\":1.25,\"width\":1366.5}",
+      "type" : "Viewport"
+    },
+    {
+      "json" : "{\"fps\":60,\"device\":\"iPad (iPad14,1)\",\"rttMs\":4,\"frameAgeMs\":18}",
+      "name" : "first four",
+      "sorted" : "{\"device\":\"iPad (iPad14,1)\",\"fps\":60,\"frameAgeMs\":18,\"rttMs\":4}",
+      "type" : "ClientStats"
+    },
+    {
+      "json" : "{\"audioBehindMs\":30,\"rttMaxMs\":9,\"fps\":120,\"frameAgeMs\":-1,\"frameAgeMaxMs\":40,\"rttMs\":-1,\"device\":\"iPhone\",\"audioLate\":2}",
+      "name" : "all",
+      "sorted" : "{\"audioBehindMs\":30,\"audioLate\":2,\"device\":\"iPhone\",\"fps\":120,\"frameAgeMaxMs\":40,\"frameAgeMs\":-1,\"rttMaxMs\":9,\"rttMs\":-1}",
+      "type" : "ClientStats"
+    },
+    {
+      "json" : "{}",
+      "name" : "empty",
+      "sorted" : "{}",
+      "type" : "Hello"
+    },
+    {
+      "json" : "{\"device\":\"iPad (iPad14,1)\",\"protocol\":1,\"audio\":[\"aac-eld\"],\"appVersion\":\"1.0\",\"build\":\"42\",\"offConsoleView\":1}",
+      "name" : "full",
+      "sorted" : "{\"appVersion\":\"1.0\",\"audio\":[\"aac-eld\"],\"build\":\"42\",\"device\":\"iPad (iPad14,1)\",\"offConsoleView\":1,\"protocol\":1}",
+      "type" : "Hello"
+    },
+    {
+      "json" : "{\"appName\":\"Notes\",\"title\":\"Notes — “Plan”\",\"bundleID\":\"com.apple.Notes\",\"width\":800,\"height\":600,\"id\":77}",
+      "name" : "window",
+      "sorted" : "{\"appName\":\"Notes\",\"bundleID\":\"com.apple.Notes\",\"height\":600,\"id\":77,\"title\":\"Notes — “Plan”\",\"width\":800}",
+      "type" : "WindowInfo"
+    },
+    {
+      "json" : "{\"bundleID\":\"com.apple.Safari\",\"name\":\"Safari\"}",
+      "name" : "app",
+      "sorted" : "{\"bundleID\":\"com.apple.Safari\",\"name\":\"Safari\"}",
+      "type" : "AppInfo"
+    },
+    {
+      "json" : "{\"active\":{\"none\":{}},\"windows\":[],\"macName\":\"PC\"}",
+      "name" : "minimal",
+      "sorted" : "{\"active\":{\"none\":{}},\"macName\":\"PC\",\"windows\":[]}",
+      "type" : "WindowList"
+    },
+    {
+      "json" : "{\"hostVersion\":\"0.1.0\",\"active\":{\"window\":{\"_0\":77}},\"locked\":true,\"launchID\":\"7F3A\",\"offConsoleView\":true,\"clipboard\":1,\"protocol\":1,\"gestures\":1,\"desktopDisplayNames\":[\"DELL U2723QE\",\"\"],\"macName\":\"Kamal's PC\",\"desktopDisplay\":1,\"keyRepeat\":1,\"windows\":[{\"appName\":\"Notes\",\"title\":\"Notes — “Plan”\",\"bundleID\":\"com.apple.Notes\",\"width\":800,\"height\":600,\"id\":77}],\"desktopDisplays\":2,\"offConsole\":true}",
+      "name" : "every optional",
+      "sorted" : "{\"active\":{\"window\":{\"_0\":77}},\"clipboard\":1,\"desktopDisplay\":1,\"desktopDisplayNames\":[\"DELL U2723QE\",\"\"],\"desktopDisplays\":2,\"gestures\":1,\"hostVersion\":\"0.1.0\",\"keyRepeat\":1,\"launchID\":\"7F3A\",\"locked\":true,\"macName\":\"Kamal's PC\",\"offConsole\":true,\"offConsoleView\":true,\"protocol\":1,\"windows\":[{\"appName\":\"Notes\",\"bundleID\":\"com.apple.Notes\",\"height\":600,\"id\":77,\"title\":\"Notes — “Plan”\",\"width\":800}]}",
+      "type" : "WindowList"
+    },
+    {
+      "json" : "{\"windows\":[],\"protocol\":1,\"macName\":\"PC\",\"active\":{\"desktop\":{}}}",
+      "name" : "desktop, protocol only",
+      "sorted" : "{\"active\":{\"desktop\":{}},\"macName\":\"PC\",\"protocol\":1,\"windows\":[]}",
+      "type" : "WindowList"
+    },
+    {
+      "json" : "{\"bundleID\":\"com.apple.Safari\"}",
+      "name" : "launch",
+      "sorted" : "{\"bundleID\":\"com.apple.Safari\"}",
+      "type" : "LaunchApp"
+    },
+    {
+      "json" : "{\"action\":\"close\",\"id\":77}",
+      "name" : "close",
+      "sorted" : "{\"action\":\"close\",\"id\":77}",
+      "type" : "WindowCommand"
+    },
+    {
+      "json" : "{\"action\":\"fullScreen\",\"id\":1}",
+      "name" : "fullScreen",
+      "sorted" : "{\"action\":\"fullScreen\",\"id\":1}",
+      "type" : "WindowCommand"
+    },
+    {
+      "json" : "{\"action\":\"minimize\",\"id\":2}",
+      "name" : "minimize",
+      "sorted" : "{\"action\":\"minimize\",\"id\":2}",
+      "type" : "WindowCommand"
+    },
+    {
+      "json" : "{\"virtualDisplay\":false,\"captureScale\":1,\"maxFPS\":60,\"prioritizeSpeed\":true,\"bitrate\":15000000}",
+      "name" : "required only",
+      "sorted" : "{\"bitrate\":15000000,\"captureScale\":1,\"maxFPS\":60,\"prioritizeSpeed\":true,\"virtualDisplay\":false}",
+      "type" : "StreamSettings"
+    },
+    {
+      "json" : "{\"persistent\":false,\"softwareEncoder\":false,\"settings\":{\"virtualDisplay\":false,\"captureScale\":1,\"maxFPS\":60,\"prioritizeSpeed\":true,\"bitrate\":15000000},\"virtualDisplayAvailable\":false}",
+      "name" : "the Windows MVP's",
+      "sorted" : "{\"persistent\":false,\"settings\":{\"bitrate\":15000000,\"captureScale\":1,\"maxFPS\":60,\"prioritizeSpeed\":true,\"virtualDisplay\":false},\"softwareEncoder\":false,\"virtualDisplayAvailable\":false}",
+      "type" : "HostSettingsState"
+    },
+    {
+      "json" : "{\"stream\":{\"fps\":120,\"height\":2048,\"onVirtualDisplay\":true,\"width\":2732,\"mbps\":80},\"sessionPaired\":true,\"settings\":{\"sendAudio\":false,\"captureScale\":2,\"bitrate\":40000000,\"directWireless\":true,\"virtualDisplay\":true,\"maxFPS\":120,\"prioritizeSpeed\":false},\"virtualDisplayNote\":\"note\",\"softwareEncoder\":true,\"virtualDisplayAvailable\":true,\"answering\":7,\"link\":{\"withheldPerSecond\":12,\"suggestedBitrate\":8000000,\"suggestedCaptureScale\":1,\"bitrate\":15000000,\"carriedKbps\":9000,\"state\":\"behind\"},\"audioNote\":\"a\",\"persistent\":true,\"away\":{\"awayRunning\":false,\"awayBitrate\":4000000,\"homeCaptureScale\":2,\"thisConnectionAway\":false,\"homeBitrate\":15000000,\"awayCaptureScale\":1}}",
+      "name" : "with stream and answer",
+      "sorted" : "{\"answering\":7,\"audioNote\":\"a\",\"away\":{\"awayBitrate\":4000000,\"awayCaptureScale\":1,\"awayRunning\":false,\"homeBitrate\":15000000,\"homeCaptureScale\":2,\"thisConnectionAway\":false},\"link\":{\"bitrate\":15000000,\"carriedKbps\":9000,\"state\":\"behind\",\"suggestedBitrate\":8000000,\"suggestedCaptureScale\":1,\"withheldPerSecond\":12},\"persistent\":true,\"sessionPaired\":true,\"settings\":{\"bitrate\":40000000,\"captureScale\":2,\"directWireless\":true,\"maxFPS\":120,\"prioritizeSpeed\":false,\"sendAudio\":false,\"virtualDisplay\":true},\"softwareEncoder\":true,\"stream\":{\"fps\":120,\"height\":2048,\"mbps\":80,\"onVirtualDisplay\":true,\"width\":2732},\"virtualDisplayAvailable\":true,\"virtualDisplayNote\":\"note\"}",
+      "type" : "HostSettingsState"
+    },
+    {
+      "json" : "{}",
+      "name" : "empty",
+      "sorted" : "{}",
+      "type" : "HostSettingsChange"
+    },
+    {
+      "json" : "{\"sendAudio\":true,\"captureScale\":2,\"bitrate\":8000000,\"directWireless\":false,\"virtualDisplay\":true,\"maxFPS\":60,\"prioritizeSpeed\":false,\"token\":3}",
+      "name" : "every field",
+      "sorted" : "{\"bitrate\":8000000,\"captureScale\":2,\"directWireless\":false,\"maxFPS\":60,\"prioritizeSpeed\":false,\"sendAudio\":true,\"token\":3,\"virtualDisplay\":true}",
+      "type" : "HostSettingsChange"
+    },
+    {
+      "json" : "{\"reason\":\"quit\"}",
+      "name" : "quit",
+      "sorted" : "{\"reason\":\"quit\"}",
+      "type" : "Goodbye"
+    },
+    {
+      "json" : "{\"minimumVersion\":\"1.2\",\"reason\":\"update\",\"reconnect\":false,\"message\":\"Update Sill on your iPad to keep using PC. It needs version 1.2 or later.\"}",
+      "name" : "update",
+      "sorted" : "{\"message\":\"Update Sill on your iPad to keep using PC. It needs version 1.2 or later.\",\"minimumVersion\":\"1.2\",\"reason\":\"update\",\"reconnect\":false}",
+      "type" : "Goodbye"
+    },
+    {
+      "json" : "{\"reason\":\"restarting\",\"message\":\"Restarting\",\"reconnect\":true}",
+      "name" : "restarting",
+      "sorted" : "{\"message\":\"Restarting\",\"reason\":\"restarting\",\"reconnect\":true}",
+      "type" : "Goodbye"
+    },
+    {
+      "json" : "{\"name\":\"iPad\",\"model\":\"iPad14,1\",\"proof\":\"XAX-uZPsq_Ax8fvI_sV7Ex0a-ROi19rI-FW-ykPh9TE\",\"method\":\"code\",\"v\":1}",
+      "name" : "code",
+      "sorted" : "{\"method\":\"code\",\"model\":\"iPad14,1\",\"name\":\"iPad\",\"proof\":\"XAX-uZPsq_Ax8fvI_sV7Ex0a-ROi19rI-FW-ykPh9TE\",\"v\":1}",
+      "type" : "PairRequest"
+    },
+    {
+      "json" : "{\"name\":\"iPhone\",\"cable\":true,\"proof\":\"\",\"method\":\"ask\",\"v\":1}",
+      "name" : "ask on the cable",
+      "sorted" : "{\"cable\":true,\"method\":\"ask\",\"name\":\"iPhone\",\"proof\":\"\",\"v\":1}",
+      "type" : "PairRequest"
+    },
+    {
+      "json" : "{\"name\":\"PC\",\"recognitionKey\":\"ERERERERERERERERERERERERERERERERERERERERERE\",\"proof\":\"6BmGWC9XT8J8OY8phhq9bASgoSnoWpRxBeqZtvRrWmk\",\"macID\":\"A1B2C3D4E5F6G7H8\",\"ok\":true}",
+      "name" : "ok",
+      "sorted" : "{\"macID\":\"A1B2C3D4E5F6G7H8\",\"name\":\"PC\",\"ok\":true,\"proof\":\"6BmGWC9XT8J8OY8phhq9bASgoSnoWpRxBeqZtvRrWmk\",\"recognitionKey\":\"ERERERERERERERERERERERERERERERERERERERERERE\"}",
+      "type" : "PairResult"
+    },
+    {
+      "json" : "{\"ok\":false,\"reason\":\"code\",\"triesLeft\":4}",
+      "name" : "wrong code",
+      "sorted" : "{\"ok\":false,\"reason\":\"code\",\"triesLeft\":4}",
+      "type" : "PairResult"
+    },
+    {
+      "json" : "{\"ok\":false,\"reason\":\"busy\",\"retryAfter\":1.5}",
+      "name" : "busy",
+      "sorted" : "{\"ok\":false,\"reason\":\"busy\",\"retryAfter\":1.5}",
+      "type" : "PairResult"
+    },
+    {
+      "json" : "{\"ok\":false,\"reason\":\"busy\",\"retryAfter\":5}",
+      "name" : "busy whole seconds",
+      "sorted" : "{\"ok\":false,\"reason\":\"busy\",\"retryAfter\":5}",
+      "type" : "PairResult"
+    },
+    {
+      "json" : "{\"name\":\"PC\",\"recognitionKey\":\"x\",\"method\":\"cable\",\"macID\":\"A1B2C3D4E5F6G7H8\",\"ok\":true}",
+      "name" : "cable",
+      "sorted" : "{\"macID\":\"A1B2C3D4E5F6G7H8\",\"method\":\"cable\",\"name\":\"PC\",\"ok\":true,\"recognitionKey\":\"x\"}",
+      "type" : "PairResult"
+    },
+    {
+      "json" : "{\"ok\":false,\"reason\":\"later\",\"message\":\"Words\"}",
+      "name" : "unknown reason with message",
+      "sorted" : "{\"message\":\"Words\",\"ok\":false,\"reason\":\"later\"}",
+      "type" : "PairResult"
+    },
+    {
+      "json" : "{\"remotePort\":7455,\"issuedAt\":1764230400.5,\"name\":\"PC\",\"v\":1,\"addresses\":[{\"kind\":\"vpn\",\"host\":\"100.101.102.103\",\"via\":\"Tailscale\"},{\"kind\":\"internet\",\"via\":\"Address name\",\"host\":\"home.example.net\",\"port\":17455}],\"macID\":\"ET05MRX6K061G1TM\",\"internet\":false,\"remoteAccess\":true}",
+      "name" : "info",
+      "sorted" : "{\"addresses\":[{\"host\":\"100.101.102.103\",\"kind\":\"vpn\",\"via\":\"Tailscale\"},{\"host\":\"home.example.net\",\"kind\":\"internet\",\"port\":17455,\"via\":\"Address name\"}],\"internet\":false,\"issuedAt\":1764230400.5,\"macID\":\"ET05MRX6K061G1TM\",\"name\":\"PC\",\"remoteAccess\":true,\"remotePort\":7455,\"v\":1}",
+      "type" : "MacInfo"
+    },
+    {
+      "json" : "{\"kind\":\"vpn\",\"via\":\"Tailscale\",\"host\":\"fd7a:115c:a1e0::1234\",\"port\":7456}",
+      "name" : "with port",
+      "sorted" : "{\"host\":\"fd7a:115c:a1e0::1234\",\"kind\":\"vpn\",\"port\":7456,\"via\":\"Tailscale\"}",
+      "type" : "MacAddress"
+    },
+    {
+      "json" : "{\"info\":\"eyJhZGRyZXNzZXMiOlt7Imhvc3QiOiIxMDAuMTAxLjEwMi4xMDMiLCJraW5kIjoidnBuIiwidmlhIjoiVGFpbHNjYWxlIn1dLCJpbnRlcm5ldCI6ZmFsc2UsImlzc3VlZEF0IjoxNzY0MjMwNDAwLjUsIm1hY0lEIjoiRVQwNU1SWDZLMDYxRzFUTSIsIm5hbWUiOiJQQyIsInJlbW90ZUFjY2VzcyI6dHJ1ZSwicmVtb3RlUG9ydCI6NzQ1NSwidiI6MX0=\",\"sig\":\"MEQCIGjhTJbTmVGgQKdXzMrsxDPVpMm\\/G5pwCg0Mpkw61iaEAiAWZE8Hub62fS2YxMeHdt2SUi9t+5qUTsGm5WQaeyIAJA==\",\"key\":\"BAIX5hfwtkQ5KCePlpmeaaI6TywVK99tbN9m5bgCgtTtGUp968uXcS0t2jyoWqh2Wlb0X8dYWZZS8ol8ZTBuV5Q=\"}",
+      "name" : "signed",
+      "sorted" : "{\"info\":\"eyJhZGRyZXNzZXMiOlt7Imhvc3QiOiIxMDAuMTAxLjEwMi4xMDMiLCJraW5kIjoidnBuIiwidmlhIjoiVGFpbHNjYWxlIn1dLCJpbnRlcm5ldCI6ZmFsc2UsImlzc3VlZEF0IjoxNzY0MjMwNDAwLjUsIm1hY0lEIjoiRVQwNU1SWDZLMDYxRzFUTSIsIm5hbWUiOiJQQyIsInJlbW90ZUFjY2VzcyI6dHJ1ZSwicmVtb3RlUG9ydCI6NzQ1NSwidiI6MX0=\",\"key\":\"BAIX5hfwtkQ5KCePlpmeaaI6TywVK99tbN9m5bgCgtTtGUp968uXcS0t2jyoWqh2Wlb0X8dYWZZS8ol8ZTBuV5Q=\",\"sig\":\"MEQCIGjhTJbTmVGgQKdXzMrsxDPVpMm\\/G5pwCg0Mpkw61iaEAiAWZE8Hub62fS2YxMeHdt2SUi9t+5qUTsGm5WQaeyIAJA==\"}",
+      "type" : "SignedMacInfo"
+    },
+    {
+      "json" : "{\"fingers\":3,\"gesture\":\"swipeUp\"}",
+      "name" : "swipe up, three fingers",
+      "sorted" : "{\"fingers\":3,\"gesture\":\"swipeUp\"}",
+      "type" : "TrackpadGesture"
+    },
+    {
+      "json" : "{\"gesture\":\"pinch\"}",
+      "name" : "pinch",
+      "sorted" : "{\"gesture\":\"pinch\"}",
+      "type" : "TrackpadGesture"
+    },
+    {
+      "json" : "{}",
+      "name" : "empty (subscribe)",
+      "sorted" : "{}",
+      "type" : "Clipboard"
+    },
+    {
+      "json" : "{\"text\":\"copied 📋\"}",
+      "name" : "text",
+      "sorted" : "{\"text\":\"copied 📋\"}",
+      "type" : "Clipboard"
+    },
+    {
+      "json" : "{\"image\":\"iVBORw0KGgo=\"}",
+      "name" : "image",
+      "sorted" : "{\"image\":\"iVBORw0KGgo=\"}",
+      "type" : "Clipboard"
+    },
+    {
+      "json" : "{\"stop\":true}",
+      "name" : "stop",
+      "sorted" : "{\"stop\":true}",
+      "type" : "Clipboard"
+    },
+    {
+      "json" : "{}",
+      "name" : "empty",
+      "sorted" : "{}",
+      "type" : "MacPointer"
+    },
+    {
+      "json" : "{\"x\":0.5,\"seen\":3,\"inside\":true,\"y\":0.25}",
+      "name" : "inside",
+      "sorted" : "{\"inside\":true,\"seen\":3,\"x\":0.5,\"y\":0.25}",
+      "type" : "MacPointer"
+    },
+    {
+      "json" : "{\"inside\":false,\"seen\":4}",
+      "name" : "outside",
+      "sorted" : "{\"inside\":false,\"seen\":4}",
+      "type" : "MacPointer"
+    }
+  ],
+  "signedMacInfo" : {
+    "infoBytes" : "7b22616464726573736573223a5b7b22686f7374223a223130302e3130312e3130322e313033222c226b696e64223a2276706e222c22766961223a225461696c7363616c65227d5d2c22696e7465726e6574223a66616c73652c226973737565644174223a313736343233303430302e352c226d61634944223a22455430354d5258364b3036314731544d222c226e616d65223a225043222c2272656d6f7465416363657373223a747275652c2272656d6f7465506f7274223a373435352c2276223a317d",
+    "privateKey" : "1111111111111111111111111111111111111111111111111111111111111111",
+    "publicKey" : "040217e617f0b6443928278f96999e69a23a4f2c152bdf6d6cdf66e5b80282d4ed194a7debcb97712d2dda3ca85aa8765a56f45fc758599652f2897c65306e5794",
+    "tampered" : {
+      "info" : "eyJhZGRyZXNzZXMiOlt7Imhvc3QiOiIxMDAuMTAxLjEwMi4xMDMiLCJraW5kIjoidnBuIiwidmlhIjoiVGFpbHNjYWxlIn1dLCJpbnRlcm5ldCI6ZmFsc2UsImlzc3VlZEF0IjoxNzY0MjMwNDAwLjYsIm1hY0lEIjoiRVQwNk1SWDZLMDYxRzFUTSIsIm5hbWUiOiJQQyIsInJlbW90ZUFjY2VzcyI6dHJ1ZSwicmVtb3RlUG9ydCI6NzQ2NiwidiI6MX0=",
+      "key" : "BAIX5hfwtkQ5KCePlpmeaaI6TywVK99tbN9m5bgCgtTtGUp968uXcS0t2jyoWqh2Wlb0X8dYWZZS8ol8ZTBuV5Q=",
+      "sig" : "MEQCIGjhTJbTmVGgQKdXzMrsxDPVpMm/G5pwCg0Mpkw61iaEAiAWZE8Hub62fS2YxMeHdt2SUi9t+5qUTsGm5WQaeyIAJA==",
+      "verifies" : false
+    },
+    "valid" : {
+      "fingerprint" : "76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+      "info" : "eyJhZGRyZXNzZXMiOlt7Imhvc3QiOiIxMDAuMTAxLjEwMi4xMDMiLCJraW5kIjoidnBuIiwidmlhIjoiVGFpbHNjYWxlIn1dLCJpbnRlcm5ldCI6ZmFsc2UsImlzc3VlZEF0IjoxNzY0MjMwNDAwLjUsIm1hY0lEIjoiRVQwNU1SWDZLMDYxRzFUTSIsIm5hbWUiOiJQQyIsInJlbW90ZUFjY2VzcyI6dHJ1ZSwicmVtb3RlUG9ydCI6NzQ1NSwidiI6MX0=",
+      "key" : "BAIX5hfwtkQ5KCePlpmeaaI6TywVK99tbN9m5bgCgtTtGUp968uXcS0t2jyoWqh2Wlb0X8dYWZZS8ol8ZTBuV5Q=",
+      "sig" : "MEQCIGjhTJbTmVGgQKdXzMrsxDPVpMm/G5pwCg0Mpkw61iaEAiAWZE8Hub62fS2YxMeHdt2SUi9t+5qUTsGm5WQaeyIAJA==",
+      "verifies" : true
+    },
+    "wrongKey" : {
+      "info" : "eyJhZGRyZXNzZXMiOlt7Imhvc3QiOiIxMDAuMTAxLjEwMi4xMDMiLCJraW5kIjoidnBuIiwidmlhIjoiVGFpbHNjYWxlIn1dLCJpbnRlcm5ldCI6ZmFsc2UsImlzc3VlZEF0IjoxNzY0MjMwNDAwLjUsIm1hY0lEIjoiRVQwNU1SWDZLMDYxRzFUTSIsIm5hbWUiOiJQQyIsInJlbW90ZUFjY2VzcyI6dHJ1ZSwicmVtb3RlUG9ydCI6NzQ1NSwidiI6MX0=",
+      "key" : "BNZak5d8qj0bCBhS/1ennkZfFmBXcwS66tUF3TpIWJzzUBheiVNy32Ih6joTdVfkc/3bZ1XwW9UHw8Uz/OnJEoU=",
+      "sig" : "MEQCIGjhTJbTmVGgQKdXzMrsxDPVpMm/G5pwCg0Mpkw61iaEAiAWZE8Hub62fS2YxMeHdt2SUi9t+5qUTsGm5WQaeyIAJA==",
+      "verifies" : false
+    }
+  }
+}
