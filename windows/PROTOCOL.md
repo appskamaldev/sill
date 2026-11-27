@@ -244,3 +244,30 @@ framesPerPacket,primingFrames,bitrate,epoch,cookie(base64 ASC),source,app}`. Typ
 `2, epoch u16, seq u32, flags u8 (bit0 segment start), count u8, {len u16, bytes}×count`. Header
 timestamp = wall clock of first sample. Caps: format ≤4 KB, packets ≤16 KB. Codec must be one the
 hello lists; today the client lists only `"aac-eld"` (48 kHz stereo, 480/512 frames, 128 kbps).
+
+## 12. Where the Windows host (Phase 1) differs from upstream, and why
+
+- **Refusal alert:** an untrusted key gets `bad_certificate` (42) from rustls' verifier, the alert
+  Apple's stack reports as -9825. Proved on loopback by a rustls client (`AlertReceived(BadCertificate)`)
+  and Python `ssl` (`TLS_ALERT_BAD_CERTIFICATE`), both seeing the handshake complete first. The
+  device's reaction ("Not paired", no redial) is untested until Checkpoint 1.
+- **`ask` at the home door:** no window is ever opened by an ask (this host has no window to show
+  a code in, and a console the device's user cannot see is not one). A window already open
+  (`--pair`) → `shown`; none → `openOnMac` (upstream's answer when it will not open one, e.g. an ask
+  "quiet" or "often"). At the remote door → `closed`, as upstream.
+- **`cancel`:** always `closed` (upstream's answer); there is never a device-opened window to withdraw.
+- **Pairing window:** only `--pair` opens one, for both doors (as the Mac user's own window); it is
+  used once. No `locked` answer (no lock detection until Phase 2).
+- **Admission:** handshake deadline 4 s (10 s for an address that proved a paired key in the last
+  24 h), kind 19 within 4 s of ready and 10 s of accept. Upstream's per-source places, back-off and
+  failure counting (`DoorPolicy` places/backoff) are not ported yet.
+- **Device gate:** floor "0": admitted at once, nothing read ahead (as upstream); the hello is logged
+  when it comes. The catalog (kinds 2, 16) goes at once; no kind 18 yet (Phase 2).
+- **Sessions:** at most 8 at the remote door (9th: `busy`); the home door has no cap (as upstream).
+  A remote client silent 8 s is dropped; upstream's "not draining for 4 s / 15 s" and the 15 s TCP
+  unacknowledged-data limit are not ported. Ticks run while the picture streams (not for input).
+- **Video:** at most 2 frames in flight per client (the home rule, for both doors), else drop
+  deltas and wait for a keyframe; a drop, a join or a kind 44 (≤ 1/s per session) restarts the clip
+  at its IDR for every viewer. Upstream's remote backlog budgets are not ported.
+- **Unpair while connected:** the running host rereads the paired list when its file changes
+  (`--unpair` from another process) and sends goodbye `removed` to that key's sessions.

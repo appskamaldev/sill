@@ -5,7 +5,10 @@ hardware), `tested` (passed on real hardware, with the evidence in TESTING.md). 
 `planned`: a feature's row moves only when the feature works end to end. Phase 1 task A
 (2026-11-27) added the portable logic several rows need (wire format, pairing crypto and window,
 device gate, door trust), tested against Swift-generated vectors on macOS and Windows CI; no row
-changes for that, and none of it is hardware-tested.
+changes for that, and none of it is hardware-tested. Phase 1 task B (2026-11-27) moved the rows
+it builds end to end to `implemented`: they pass loopback tests on macOS (a rustls client and
+upstream `Scripts/sillclient.py`) and compile on Windows CI, but nothing has met a device yet, so
+nothing is `tested`.
 
 ## 1. Can the unmodified iOS client use a Windows host?
 
@@ -40,15 +43,18 @@ with the original Mac host (verified by connecting to Sill.app on the Mac).
 
 | Feature | Mac host (upstream) | Windows approach | Phase | Windows status |
 |---|---|---|---|---|
-| TLS 1.3 home door + Bonjour `_sill._tcp` (`p`, `r`) | ✅ | rustls + `DnsServiceRegister` | 1 | planned |
-| Remote door :7455 (Tailscale, LAN, VPN) | ✅ | rustls, bind-address config | 1 | planned |
-| Pairing: typed code | ✅ | port of `Pairing.swift` | 1 | planned |
-| Pairing: QR / `sill://pair` link | ✅ | QR in settings window | 2 | planned |
+| TLS 1.3 home door + Bonjour `_sill._tcp` (`p`, `r`) | ✅ | rustls + `DnsServiceRegister` | 1 | implemented (Bonjour: Windows only, never run yet) |
+| Remote door :7455 (Tailscale, LAN, VPN) | ✅ | rustls, bind-address config | 1 | implemented |
+| Pairing: typed code | ✅ | port of `Pairing.swift` | 1 | implemented |
+| Pairing: QR / `sill://pair` link | ✅ | QR in settings window | 2 | implemented (link printed by `--pair`; no QR image yet) |
 | Pairing: ask from device / "Pair This iPad…" (kind 21) | ✅ | toast + window | 2 | planned |
 | Pairing: USB cable auto-pair | ✅ (IOKit cable check) | not planned (no Apple cable link to a PC) | — | n/a |
-| Require pairing on/off | ✅ | same | 2 | planned |
-| Device gate / goodbye / update refusal | ✅ | port `DeviceGate`, `Goodbye` | 1 | planned |
+| Require pairing on/off | ✅ | same | 2 | implemented (`--require-pairing`) |
+| Device gate / goodbye / update refusal | ✅ | port `DeviceGate`, `Goodbye` | 1 | implemented |
 | Signed host info (kind 18) | ✅ | ECDSA P-256 over info bytes | 2 | planned |
+| Unpaired key refused with TLS alert → device shows "Not paired" (R1) | ✅ | rustls verifier → `bad_certificate` (42) | 1 | implemented (alert proved by tests; device reaction untested) |
+| Session basics: window list, host settings, ping/pong, tick, stats log, keyframe request, goodbye quit/removed/busy, 8 remote sessions, 8 s silence | ✅ | tokio session task | 1 | implemented |
+| Synthetic test picture (pre-encoded HEVC clip, 30 fps) | ✅ (`--synthetic`) | `testdata/clip.bin` from `tools/testclip` | 1 | implemented |
 | Full desktop streaming | ✅ | WGC monitor capture | 2 | planned |
 | Multiple displays (kind 47 cycle) | ✅ | monitor order main → right | 4 | planned |
 | Individual window streaming | ✅ (primary feature) | WGC window capture | 3 | planned |

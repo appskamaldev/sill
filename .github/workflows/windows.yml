@@ -28,10 +28,22 @@ jobs:
       - run: cargo test --workspace --locked
       - run: cargo clippy --workspace --all-targets --locked -- -D warnings
       - run: cargo fmt --check
+      # The Windows-only code (DPAPI, DnsServiceRegister) compiles here, under cfg(windows); this
+      # names it so a failure is plain.
+      - name: Windows-only code (sill-platform, sill-store)
+        run: cargo clippy -p sill-platform -p sill-store --all-targets --locked -- -D warnings
+      - run: cargo build -p sill-host --release --locked
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sill-host-windows-x64
+          path: windows/target/release/sill-host.exe
+          retention-days: 14
 
   macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
-      - run: rustup toolchain install stable --profile minimal && rustup default stable
+      - run: rustup toolchain install stable --profile minimal --component clippy && rustup default stable && rustup target add x86_64-pc-windows-msvc
       - run: cargo test --workspace --locked
+      # Cross-check of the Windows-only code from macOS (pure Rust crates: no MSVC needed).
+      - run: cargo clippy -p sill-platform -p sill-store --all-targets --locked --target x86_64-pc-windows-msvc -- -D warnings

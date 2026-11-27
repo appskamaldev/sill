@@ -43,7 +43,8 @@ crates/sill-capture   ← WGC (window, monitor), DDA fallback, D3D11 NV12       
 crates/sill-encode    ← MF HEVC hardware MFT, AU repack, keyframe control, probe [Windows]
 crates/sill-input     ← SendInput, HID→scan code, modifier policy               [Windows]
 crates/sill-catalog   ← EnumWindows, thumbnails, icons, apps, window commands    [Windows]
-crates/sill-store     ← DPAPI identity, paired devices, settings                 [Windows]
+crates/sill-store     ← identity, paired devices, settings (DPAPI on Windows)    [portable + Windows bits]
+crates/sill-platform  ← DPAPI, DnsServiceRegister (cfg(windows); stand-ins elsewhere) [Windows]
 host/                 ← coordinator, tray, settings window, CLI flags            [Windows]
 ```
 
@@ -102,6 +103,26 @@ Apache-2.0, except one transitive crate: `subtle` (BSD-3-Clause, permissive), wh
 MAC and curve crate uses for constant-time comparison; it cannot be dropped without dropping `hmac`. Accepted by Kamal on 2026-11-27.
 `unicode-ident` (MIT/Apache-2.0 plus Unicode-3.0 data licence) is a build-time dependency of serde's
 derive only.
+
+Added in Phase 1 task B (`sill-platform`, `sill-store`, `sill-net`, `host/`):
+
+| Crate | Licence | Why |
+|---|---|---|
+| `tokio` (+ `mio`, `bytes`, `socket2`…) | MIT | Listeners, TLS sessions with deadlines, timers; network threads only. |
+| `rustls` (ring provider, TLS 1.3 only) | Apache-2.0 OR ISC OR MIT | The `Acceptor`/`LazyConfigAcceptor` API reads the ClientHello's ALPN before choosing the client-cert policy; a custom `ClientCertVerifier` does pin-only trust and sends `bad_certificate`. |
+| `tokio-rustls` | MIT/Apache-2.0 | rustls on tokio streams; `into_fallible` hands the socket back after a refusal so it closes without a reset. |
+| `rcgen` | MIT/Apache-2.0 | Builds the self-signed P-256 certificate at every launch from the stored key. |
+| `socket2` | MIT/Apache-2.0 | TCP keepalive 5 s / 2 s / 3 probes (time, interval and count on Windows and macOS), IPV6_V6ONLY. |
+| `if-addrs` | MIT/Apache-2.0 | Lists this machine's addresses for the default bind (loopback, LAN, Tailscale; never public). |
+| `getrandom` | MIT/Apache-2.0 | The OS CSPRNG (BCryptGenRandom / getentropy) for keys, codes, secrets, tags. Already in the tree via `rand_core`. |
+| `windows` (0.62, Windows only) | MIT/Apache-2.0 | DPAPI (`CryptProtectData`) and Bonjour (`DnsServiceRegister`). |
+| `tracing`, `tracing-subscriber` | MIT | Console and `logs\host.log` lines, level by `--log-level`. |
+
+Licences outside MIT/Apache/BSD, all from the ring provider the task named, **pending Kamal's OK**:
+`ring` (Apache-2.0 AND ISC), `rustls-webpki` (ISC) and `untrusted` (ISC). ISC is a permissive
+licence equivalent to MIT (keep the notice). The alternative provider, `aws-lc-rs`, is also
+Apache-2.0 AND ISC (and needs CMake/NASM on Windows); a pure-RustCrypto provider is not mature.
+`webpki` is used only for the TLS 1.3 signature check over a raw SPKI; no chain is ever evaluated.
 
 ## 4. Architecture decisions (ADR log)
 

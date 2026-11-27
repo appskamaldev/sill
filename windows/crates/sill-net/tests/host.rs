@@ -207,8 +207,17 @@ async fn pairing_by_code_end_to_end() {
     let d = device();
     let offer = host.open_pairing().unwrap();
     let key = proof::code_key(&offer.code, &host.fingerprint).unwrap();
-    // The host derives its own K off the network threads: until then it answers busy.
+    // Until the host has its own K (derived off the network threads) a proof is answered busy,
+    // with nothing counted.
     let mut result = pair_once(r.remote_port, &d, PairRequest::CODE, &[0u8; 32]).await;
+    for _ in 0..50 {
+        if result.reason.as_deref() != Some(PairResult::BUSY) {
+            break;
+        }
+        assert_eq!(result.retry_after, Some(1.0));
+        tokio::time::sleep(Duration::from_millis(100)).await;
+        result = pair_once(r.remote_port, &d, PairRequest::CODE, &[0u8; 32]).await;
+    }
     assert_eq!(result.reason.as_deref(), Some(PairResult::CODE), "a wrong proof: {result:?}");
     assert_eq!(result.tries_left, Some(4));
     for _ in 0..40 {
