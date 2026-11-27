@@ -99,7 +99,7 @@ devices: fingerprint, name, model, pairedAt, method), `recognition.bin` (DPAPI),
 In use since Phase 1 task A (portable crates): `serde`, `serde_json`, `base64`, `sha2`, `hmac`,
 `pbkdf2`, `p256` (with `ecdsa`), `unicode-segmentation`, `unicode-general-category`. All MIT and/or
 Apache-2.0, except one transitive crate: `subtle` (BSD-3-Clause, permissive), which every RustCrypto
-MAC and curve crate uses for constant-time comparison; it cannot be dropped without dropping `hmac`.
+MAC and curve crate uses for constant-time comparison; it cannot be dropped without dropping `hmac`. Accepted by Kamal on 2026-11-27.
 `unicode-ident` (MIT/Apache-2.0 plus Unicode-3.0 data licence) is a build-time dependency of serde's
 derive only.
 
