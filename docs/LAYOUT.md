@@ -873,7 +873,9 @@ Below, "this file" means CLAUDE.md, and "Build and run below" means docs/BUILD-A
   0.3 s), its finish or spring back, `EdgeReveal` (min(a third of the width, 80 pt), a 300 pt/s flick
   after 12, back at 200), the preview's cut, `RevealCut` (each layout's picture's place, from its own
   geometry with DuoPosture's split and PhonePortraitLayout), the pointer's dwell at the edge, when it is
-  offered, when the controls come back by themselves, the shake (`Sill.shakeToShowControls`), the Settings
+  offered, when the controls come back by themselves, the shake (`Sill.shakeToShowControls`), Trackpad in
+  Full Screen (`Sill.trackpadInFullScreen`, off by default: while hidden, `TrackpadView` with `overPicture`
+  over the picture's input view, in StreamScreen's and PortraitStreamScreen's picture panes), the Settings
   rows' place, the hint, the room, the words; pure, `Tests/checks/full-screen`; pbxproj A279/F279),
   `RevealEdgePan` (the swipe in's recognizer, a UIPanGestureRecognizer of Sill's on its window, only while
   hidden, which other recognizers wait for it, `EdgeRecognizers.waits` (never one that only watches,

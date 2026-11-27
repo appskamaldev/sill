@@ -33,3 +33,23 @@ Mac. Client only, no wire change: the pad sends the same kind 8 pointer events i
 - **Verified.** `Tests/checks/run-all.sh trackpad-taps tour gestures pointer-presence touch-hold repo-rules`: all
   passed (trackpad-taps 57 checks, 18 of 18 mutants caught). The iOS app builds for the simulator (Debug). Not run:
   the touch rig, harness photos, a real device.
+
+**Trackpad in Full Screen (2026-11-27, branch `task/duo-trackpad-fullscreen`, on top of the above).**
+Kamal: in full screen, an option where the whole picture is the relative trackpad, off by default.
+
+- **What it does.** Settings › This iPhone (This iPad) › Trackpad in Full Screen (`Sill.trackpadInFullScreen`, off
+  unless turned on, never sent), the first of the rows about touch. While the controls are hidden and it is on
+  (`FullScreenPolicy.pictureIsTrackpad`), StreamScreen's and PortraitStreamScreen's picture panes lay the portrait
+  pad's own `TrackpadView` over the input view (`overPicture`): the same surface, clicks, drag, scroll, gestures,
+  latch and haptics; the pointer moves from where it is. This device's pointer shows meanwhile
+  (`showsOwnPointer`), and the zoom goes back to the whole picture as the pad comes (the pad takes the pinch).
+  Shown, the picture is direct touch as always; the laptop pose's lower pad is unchanged.
+- **Taken from upstream's `ready-222` (draft PR #398, Touch Mode), written the same way so the two merge:**
+  `FingerCounter` only watches (`WatchesTouchesOnly`), so the pad never waits for the swipe in and stops
+  answering; the tracker counts a held stroke's travel from its landing (`EdgeRecognizers.heldLanding`); the events
+  with no touch (hover, scroll, transform) fall through to the picture. Not taken: #222's Pencil and pointer-click
+  hand-off (`TouchMode.taker`, `takePointerTouch`): over the picture with the switch on, an iPad's Pencil is a
+  finger on the pad. #222's Touch Mode is the general form (every layout, a segmented control); when it lands this
+  switch either goes or becomes "Trackpad mode only in full screen", Noah's call.
+- **Verified.** full-screen check (its new lines and four mutants), the iOS build for the simulator. In the agents'
+  Duo simulator: see the report of 2026-11-27.

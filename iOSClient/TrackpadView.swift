@@ -85,9 +85,12 @@ struct TrackpadView: UIViewRepresentable {
     let onModifiersConsumed: () -> Void
     var verticalSpan: CGFloat? = nil
     var sendGesture: (TrackpadGestures.Gesture, Int) -> Bool = { _, _ in false }
+    /// Trackpad in Full Screen (FullScreenPolicy.pictureIsTrackpad): this pad lies over the hidden picture,
+    /// whose input view is under it. Read once, as the surface is made (`TrackpadSurface.overPicture`).
+    var overPicture = false
 
     func makeUIView(context: Context) -> TrackpadSurface {
-        let view = TrackpadSurface(frame: .zero)
+        let view = TrackpadSurface(frame: .zero, overPicture: overPicture)
         // The pointer closures go in before the first update as well: the surface reads the feed as
         // it joins the window, and that need not wait for `updateUIView`.
         view.setPointer = setPointer
@@ -137,6 +140,11 @@ final class TrackpadSurface: UIView, UIGestureRecognizerDelegate {
     /// which checks this device's switch and the Mac's `gestures`, and shows the Desktop first while
     /// a window streams). True when it went, which the light tick follows.
     var sendGesture: (TrackpadGestures.Gesture, Int) -> Bool = { _, _ in false }
+    /// Trackpad in Full Screen: this pad lies over the hidden picture, as the whole picture's trackpad, instead
+    /// of below it. Its fingers are the pad's; the events that carry no touch (iPadOS's pointer and the Pencil
+    /// hovering, a trackpad's or a wheel's scroll, a trackpad's pinch) fall through to the picture's input view
+    /// (`point(inside:with:)`). The on-screen trackpad takes everything, as before.
+    private(set) var overPicture = false
     /// Every direct touch, for three-finger strokes: from the moment three fingers are down, nothing
     /// of the stroke reaches the Mac but its gesture (`strokes.silent`, each finger handler's first
     /// line).
@@ -207,8 +215,14 @@ final class TrackpadSurface: UIView, UIGestureRecognizerDelegate {
     /// which is UIKit's doing, so there is deliberately no device check here.
     private let clickHaptic = UIImpactFeedbackGenerator(style: .rigid)
 
-    override init(frame: CGRect) {
+    override convenience init(frame: CGRect) {
+        self.init(frame: frame, overPicture: false)
+    }
+
+    /// `overPicture`: Trackpad in Full Screen's pad over the picture (fixed for the surface's life).
+    init(frame: CGRect, overPicture: Bool) {
         super.init(frame: frame)
+        self.overPicture = overPicture
         backgroundColor = .clear
         isOpaque = false
         isMultipleTouchEnabled = true
@@ -305,6 +319,12 @@ final class TrackpadSurface: UIView, UIGestureRecognizerDelegate {
             trackSuspended = false
             trackLive = false
             trackLast = tracker.location(in: self)
+            // Over the hidden picture: the swipe in held this stroke while it judged it
+            // (EdgeRecognizers.heldLanding), so the tracker begins only as it lets the stroke go, up to
+            // 8 pt on. The pointer carries the travel from where the finger landed, as an unheld stroke's does.
+            if overPicture, let window, let held = EdgeRecognizers.heldLanding(in: window) {
+                trackLast = convert(held, from: window)
+            }
         case .changed:
             guard trackerDriving else { return }
             let location = tracker.location(in: self)
@@ -436,6 +456,14 @@ final class TrackpadSurface: UIView, UIGestureRecognizerDelegate {
             onEnd: { send(.scrollGesture(.momentumEnded, x: at.x, y: at.y)) })
     }
 
+    /// Over the hidden picture, the events that carry no touch (the pointer or the Pencil hovering, a
+    /// trackpad's or a wheel's scroll, a trackpad's pinch or rotation) fall through to the picture's input
+    /// view, whose recognizers take them as in Direct Touch. Touches are the pad's.
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        if overPicture, let type = event?.type, type == .hover || type == .scroll || type == .transform { return false }
+        return super.point(inside: point, with: event)
+    }
+
     /// Two fingers resting on the pad stop a coasting scroll, as on a Mac trackpad, before the pan
     /// has even recognized. One finger does not: that is the pointer, and it may move freely
     /// while the content coasts.
@@ -466,8 +494,10 @@ final class TrackpadSurface: UIView, UIGestureRecognizerDelegate {
         } else {
             adoptAnchor()
             #if DEBUG
-            InputScript.pad = self
-            runInputTest()
+            // `-SillInputScript`'s pad steps and `-SillInputTest`'s trackpad run go to the on-screen trackpad;
+            // the pad over the hidden picture is the script's only while no on-screen pad is.
+            if !overPicture || InputScript.pad == nil { InputScript.pad = self }
+            if !overPicture { runInputTest() }
             #endif
         }
     }
@@ -642,7 +672,11 @@ final class TrackpadSurface: UIView, UIGestureRecognizerDelegate {
 /// never hears a finger lift. This recognizer sees every touch and never recognizes (it stays
 /// possible, so UIKit ends it with the last finger), takes none from the view (`cancelsTouchesInView`
 /// off) and delays none (`delaysTouchesEnded` off); the pad's delegate lets it run beside the rest.
-private final class FingerCounter: UIGestureRecognizer {
+/// It only watches (`WatchesTouchesOnly`), so it never waits for full screen's swipe in: the pad over the
+/// hidden picture is in the window while the swipe in listens, and a watcher made to wait was never reset
+/// after the first stroke the swipe in held, nor the pad with it (docs/full-screen-plan.md, the touch rig's
+/// finding of 2026-11-12, on the stroke observer).
+private final class FingerCounter: UIGestureRecognizer, WatchesTouchesOnly {
     var onCount: ((Int) -> Void)?
     private var down = Set<UITouch>()
 

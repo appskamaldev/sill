@@ -476,6 +476,18 @@ check(FullScreenPolicy.Copy.footnote == "Hides Sill’s controls, so only the pi
       "Full Screen's words")
 check(FullScreenPolicy.Copy.shakeTitle == "Shake to Show Controls", "the switch's title")
 check(FullScreenPolicy.Copy.shakeFootnote(device: "iPad") == "Shaking your iPad brings the controls back too.", "the switch's words name the device")
+// Trackpad in Full Screen (Kamal, 2026-11-27): off unless turned on; the picture is the trackpad only while hidden.
+check(FullScreenPolicy.trackpadKey == "Sill.trackpadInFullScreen" && FullScreenPolicy.trackpadDefault == false,
+      "Trackpad in Full Screen: its key, off unless turned on")
+check(FullScreenPolicy.pictureIsTrackpad(hidden: true, switchOn: true), "hidden, the switch on: the picture is the trackpad")
+check(!FullScreenPolicy.pictureIsTrackpad(hidden: true, switchOn: false), "the switch off: the picture is direct touch in full screen")
+check(!FullScreenPolicy.pictureIsTrackpad(hidden: false, switchOn: true), "shown: the picture is direct touch, the switch on or not")
+check(FullScreenPolicy.showsOwnPointer(portrait: true, hidden: false, switchOn: false), "upright, shown: the pad below's pointer")
+check(!FullScreenPolicy.showsOwnPointer(portrait: true, hidden: true, switchOn: false), "upright, hidden, the switch off: no own pointer")
+check(FullScreenPolicy.showsOwnPointer(portrait: true, hidden: true, switchOn: true)
+      && FullScreenPolicy.showsOwnPointer(portrait: false, hidden: true, switchOn: true), "hidden, the switch on: the own pointer, upright or sideways")
+check(!FullScreenPolicy.showsOwnPointer(portrait: false, hidden: false, switchOn: true), "sideways, shown: the Mac's arrow alone")
+check(FullScreenPolicy.Copy.trackpadTitle == "Trackpad in Full Screen", "the trackpad switch's title")
 check(FullScreenPolicy.Copy.notOffered == "Full Screen works while Sill fills the screen.", "while Sill does not fill the screen")
 check(FullScreenPolicy.Copy.pictureLabel(mac: "Mac mini") == "Mac mini’s picture. Sill’s controls are hidden.", "the picture's label")
 check(FullScreenPolicy.Copy.inputLabels.first == FullScreenPolicy.Copy.action, "Voice Control's first name is the action's")

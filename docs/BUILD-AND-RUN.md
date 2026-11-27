@@ -380,7 +380,7 @@ Sill away, the console's `pip:` lines say what happened), `-Sill.holdThenDrag 0`
 run, PR #292, in the normal app too: the hold on the picture right-clicks at once, as before, and the tour's
 picture card says only that; on, the default since Noah's 2026-11-20, a finger held on the picture and then
 moved drags with the left button, one lifted where it was pressed right-clicks at the lift, and the card says
-so; `-Sill.holdThenDrag 1` on for one run; `-SillSettingsScroll holddrag` the panel at its switch), `-SillVoiceOver 1` (that group as with VoiceOver on:
+so; `-Sill.holdThenDrag 1` on for one run; `-SillSettingsScroll holddrag` the panel at its switch; `-Sill.trackpadInFullScreen 1`, Trackpad in Full Screen on for one run, `-SillSettingsScroll fullpad` the panel at its switch), `-SillVoiceOver 1` (that group as with VoiceOver on:
 its footnote says the rows do the gestures), `-SillScanOverlay 1` (Pair This
 iPad…'s overlay; `-SillOverlayLine asking|shown|openonmac|locked|noanswer` the
 line its ask's answer sets; under `-SillLive 1` it opens over the live session

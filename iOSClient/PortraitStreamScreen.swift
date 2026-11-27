@@ -177,6 +177,8 @@ struct PortraitStreamScreen: View {
     /// switch on: `PhonePortraitLayout.largerPicture(switchOn:streaming:)`); nil for the phone's usual
     /// arrangement (the switch off, the Desktop or nothing streaming), and in the halves.
     var largerKeyboard: CGFloat? = nil
+    /// This device's Trackpad in Full Screen (FullScreenPolicy.trackpadKey): off unless turned on.
+    @AppStorage(FullScreenPolicy.trackpadKey) private var trackpadInFullScreen = FullScreenPolicy.trackpadDefault
     /// The picture's pinch zoom (StreamScreen's; StreamZoom): not watched here, only by the picture's
     /// own view, so a pinch redraws nothing else.
     let zoom: StreamZoomModel
@@ -659,6 +661,18 @@ struct PortraitStreamScreen: View {
                          macRepeatsKeys: { KeyTyping.macRepeats(keyRepeat: client.hostKeyRepeat) },
                          readZoom: { [zoom] in zoom.zoom },
                          writeZoom: { [zoom] in zoom.set($0) })
+            // Trackpad in Full Screen (FullScreenPolicy.pictureIsTrackpad): while hidden, the whole picture is
+            // the Mac's trackpad, the pad below's own surface over the input view.
+            if FullScreenPolicy.pictureIsTrackpad(hidden: hidden, switchOn: trackpadInFullScreen) {
+                TrackpadView(send: { client.sendInput($0) },
+                         setPointer: { client.setOwnPointer($0, from: .trackpad) },
+                         feed: { let f = client.pointerFeedState; return (f.anchor, f.reseeds) },
+                         onFingers: { client.trackpadFingers($0) },
+                         latched: latched,
+                         onModifiersConsumed: { latched = [] },
+                         sendGesture: { client.sendGesture($0, fingers: $1) },
+                         overPicture: true)
+            }
         }
         // Full screen's letterbox is black, as a film's; the panel's own grey otherwise.
         .background(hidden ? Color.black : Palette.panel)

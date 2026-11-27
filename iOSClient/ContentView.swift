@@ -275,6 +275,9 @@ struct ContentView: View {
 ///   left button, one lifted where it was pressed right-clicks at the lift, and the tour's picture card
 ///   says so; `-Sill.holdThenDrag 1` turns it on for one run where it was turned off.
 ///   `-SillSettingsScroll holddrag` starts the panel at its switch and footnote.
+/// * `-Sill.trackpadInFullScreen 1` — not a harness argument either: this device's Trackpad in Full Screen
+///   (FullScreenPolicy.trackpadKey) on for one run: while hidden, the whole picture is the Mac's trackpad.
+///   `-SillSettingsScroll fullpad` starts the panel at its switch and footnote.
 /// * `-Sill.shareClipboard 0` — not a harness argument either: this device's Share Clipboard (the
 ///   Settings panel's This iPad group) off for one run, in the normal app too. The mock Mac shares its
 ///   clipboard (`WindowList.clipboard` 1) in every settings case but `legacy`, whose group then has no
