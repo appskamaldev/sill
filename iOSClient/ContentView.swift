@@ -1093,10 +1093,34 @@ enum InputScript {
     /// if `refusal` lets it.
     static func sessionListed(_ client: StreamClient) {
         let defaults = UserDefaults.standard
-        guard !started, defaults.bool(forKey: "SillLive"), let text = defaults.string(forKey: "SillInputScript") else { return }
+        guard !started, let text = defaults.string(forKey: "SillInputScript") else { return }
+        // The Windows rig's sequence (WindowsRig) sends through the client, so it needs no `-SillLive`
+        // frame: the normal app runs it.
+        let windows = text == "windows"
+        guard windows || defaults.bool(forKey: "SillLive") else { return }
         started = true
-        if let why = refusal(endpoint: client.connection?.endpoint, hostVersion: client.hostVersion) {
+        let remotePC = WindowsRig.remoteInputAllowed(hostPlatform: client.hostPlatform == .windows ? "windows" : nil,
+                                                     flag: defaults.bool(forKey: "SillAllowRemoteInputTest"))
+        if !remotePC, let why = refusal(endpoint: client.connection?.endpoint, hostVersion: client.hostVersion) {
             print("input script: refused: \(why)")
+            if windows { WindowsRig.log("input: REFUSED: \(why) (a Windows host also needs -SillAllowRemoteInputTest 1)") }
+            return
+        }
+        if windows {
+            let steps = WindowsRig.windowsSequence()
+            WindowsRig.log("input: \(steps.count) steps to \(client.hostPlatform == .windows ? "a Windows host" : "a loopback test host")")
+            for step in steps {
+                DispatchQueue.main.asyncAfter(deadline: .now() + step.at) { [weak client] in
+                    guard let client else { return }
+                    for event in step.events {
+                        client.sendInput(event)     // exactly these events, on the wire as every input goes
+                        WindowsRig.log(String(format: "input: t=%.2f %@: ", step.at, step.name) + WindowsRig.describe(event))
+                    }
+                }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + (steps.last?.at ?? 0) + 1) {
+                WindowsRig.log("input: DONE")
+            }
             return
         }
         guard let steps = parse(text) else {
