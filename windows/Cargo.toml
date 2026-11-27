@@ -7,6 +7,8 @@ members = [
     "crates/sill-platform",
     "crates/sill-store",
     "crates/sill-net",
+    "crates/sill-capture",
+    "crates/sill-encode",
     "host",
 ]
 

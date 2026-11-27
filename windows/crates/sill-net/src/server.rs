@@ -229,7 +229,7 @@ async fn chores(host: Arc<Host>) {
         let (home, remote) = host.sessions();
         if home + remote > 0 {
             info!(
-                "stats: sessions {} (home {home}, remote {remote}) | frames sent {} dropped {} waitKey {} keyframes {} | {} kbit/s | pongs {} ticks {} refused {}",
+                "stats: sessions {} (home {home}, remote {remote}) | frames sent {} dropped {} waitKey {} keyframes {} | {} kbit/s | pongs {} ticks {} refused {}{}",
                 home + remote,
                 s.sent,
                 s.dropped,
@@ -238,7 +238,8 @@ async fn chores(host: Arc<Host>) {
                 s.bytes * 8 / 1000,
                 s.pongs,
                 s.ticks,
-                s.refused
+                s.refused,
+                s.media_words()
             );
         }
     }

@@ -15,7 +15,7 @@ pub mod video;
 
 pub use host::{Config, Host, PairingOffer};
 pub use server::{start, Running};
-pub use video::{Clip, ClientVideo, Encoded, Hub};
+pub use video::{ClientVideo, Clip, Encoded, Hub};
 
 /// Seconds since 1970: the timestamp in every header the host writes.
 pub fn wall_clock() -> f64 {

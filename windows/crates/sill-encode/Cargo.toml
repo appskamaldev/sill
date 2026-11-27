@@ -1,0 +1,23 @@
+[package]
+name = "sill-encode"
+version = "0.1.0"
+description = "HEVC for the Windows host: Media Foundation's hardware encoder on the capture's D3D11 device, and Annex-B to Sill's kind 0 and length-prefixed access units."
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+sill-wire = { path = "../sill-wire" }
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.62", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Direct3D11",
+    "Win32_Graphics_Dxgi_Common",
+    "Win32_Media_MediaFoundation",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Ole",
+    "Win32_System_Variant",
+] }

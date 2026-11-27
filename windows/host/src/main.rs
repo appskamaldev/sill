@@ -1,5 +1,9 @@
-//! `sill-host`: the Windows host, Phase 1 (pairing, sessions, a synthetic test picture). Runs on
-//! macOS too for development (plain files, no Bonjour). See windows/BUILD.md.
+//! `sill-host`: the Windows host: pairing, sessions, and the desktop as hardware HEVC (Phase 2), or
+//! the synthetic test picture with `--test-clip`. Runs on macOS too for development (plain files,
+//! no Bonjour, test picture only). See windows/BUILD.md.
+
+#[cfg(windows)]
+mod desktop;
 
 use sill_net::{Clip, Config, Host};
 use sill_store::Store;
@@ -25,6 +29,10 @@ const USAGE: &str = "usage: sill-host [options]
   --allow-internet         also listen on public addresses
   --no-bonjour             do not advertise the home door
   --log-level LEVEL        error, warn, info (default) or debug
+  --test-clip              stream the bundled test picture instead of the desktop
+  --capture-scale X        stream the desktop at X (0.1-1) of the monitor's size (default 1)
+  --bitrate MBPS           megabits per second at 60 fps (default 15; scaled to the stream's fps)
+  --probe-encoder          list the hardware HEVC encoders and exit
   --help";
 
 struct Args {
@@ -40,6 +48,10 @@ struct Args {
     allow_internet: bool,
     bonjour: bool,
     log_level: String,
+    test_clip: bool,
+    capture_scale: f64,
+    bitrate_mbps: f64,
+    probe_encoder: bool,
 }
 
 fn parse(mut it: impl Iterator<Item = String>) -> Result<Args, String> {
@@ -56,6 +68,10 @@ fn parse(mut it: impl Iterator<Item = String>) -> Result<Args, String> {
         allow_internet: false,
         bonjour: true,
         log_level: "info".into(),
+        test_clip: !cfg!(windows),
+        capture_scale: 1.0,
+        bitrate_mbps: 15.0,
+        probe_encoder: false,
     };
     while let Some(flag) = it.next() {
         let mut value = |f: &str| it.next().ok_or_else(|| format!("{f} needs a value"));
@@ -80,6 +96,22 @@ fn parse(mut it: impl Iterator<Item = String>) -> Result<Args, String> {
             "--allow-internet" => a.allow_internet = true,
             "--no-bonjour" => a.bonjour = false,
             "--log-level" => a.log_level = value("--log-level")?,
+            "--test-clip" => a.test_clip = true,
+            "--probe-encoder" => a.probe_encoder = true,
+            "--capture-scale" => {
+                a.capture_scale = value("--capture-scale")?
+                    .parse()
+                    .ok()
+                    .filter(|x: &f64| (0.1..=1.0).contains(x))
+                    .ok_or("--capture-scale: a number from 0.1 to 1")?
+            }
+            "--bitrate" => {
+                a.bitrate_mbps = value("--bitrate")?
+                    .parse()
+                    .ok()
+                    .filter(|x: &f64| (0.5..=200.0).contains(x))
+                    .ok_or("--bitrate: megabits per second, 0.5 to 200")?
+            }
             "--help" | "-h" => return Err(String::new()),
             f => return Err(format!("unknown option {f}")),
         }
@@ -133,6 +165,14 @@ fn main() {
             std::process::exit(if e.is_empty() { 0 } else { 2 });
         }
     };
+    #[cfg(windows)]
+    {
+        sill_capture::set_dpi_awareness();
+        sill_capture::fine_timer();
+    }
+    if args.probe_encoder {
+        std::process::exit(probe_encoder());
+    }
     let Some(dir) = args.data_dir.clone().or_else(Store::default_dir) else {
         eprintln!("sill-host: --data-dir DIR is required on this platform (DEV ONLY: files are not encrypted here).");
         std::process::exit(2);
@@ -344,7 +384,8 @@ async fn run(store: Store, args: Args) -> i32 {
     if !sill_platform_protected() {
         warn!("DEV ONLY: {} holds the private key and paired devices UNENCRYPTED.", store.dir().display());
     }
-    let host = match Host::new(config, store, Clip::bundled()) {
+    let clip = if args.test_clip { Some(Clip::bundled()) } else { None };
+    let host = match Host::new(config, store, clip) {
         Ok(h) => h,
         Err(e) => {
             error!("Could not load the identity: {e}");
@@ -382,7 +423,20 @@ async fn run(store: Store, args: Args) -> i32 {
             Err(e) => error!("Could not open a pairing window: {e}"),
         }
     }
+    let stop_desktop = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    #[cfg(windows)]
+    if !args.test_clip {
+        let h = host.clone();
+        desktop::spawn(
+            host.hub.clone(),
+            host.stats.clone(),
+            stop_desktop.clone(),
+            move || h.now_us(),
+            desktop::Options { bitrate: (args.bitrate_mbps * 1e6) as u32, capture_scale: args.capture_scale },
+        );
+    }
     let _ = tokio::signal::ctrl_c().await;
+    stop_desktop.store(true, std::sync::atomic::Ordering::Relaxed);
     info!("Quitting: goodbye to every device.");
     running.quit().await;
     0
@@ -406,6 +460,36 @@ fn utc(secs: f64) -> String {
     let month = if mp < 10 { mp + 3 } else { mp - 9 };
     let year = yoe + era * 400 + i64::from(month <= 2);
     format!("{year:04}-{month:02}-{day:02} {:02}:{:02} UTC", rest / 3600, rest % 3600 / 60)
+}
+
+/// `--probe-encoder`: the hardware HEVC encoders Media Foundation lists, or why there are none.
+fn probe_encoder() -> i32 {
+    #[cfg(windows)]
+    {
+        match sill_encode::mf::probe() {
+            Ok(names) if names.is_empty() => {
+                println!(
+                    "No hardware HEVC encoder: this PC cannot stream its desktop (sill-host --test-clip still works)."
+                );
+                1
+            }
+            Ok(names) => {
+                for n in names {
+                    println!("Hardware HEVC encoder: {n}");
+                }
+                0
+            }
+            Err(e) => {
+                println!("Media Foundation failed: {e}");
+                1
+            }
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        println!("Hardware HEVC encoding is Windows only here.");
+        1
+    }
 }
 
 fn sill_platform_protected() -> bool {
