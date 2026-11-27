@@ -1,0 +1,26 @@
+[workspace]
+resolver = "2"
+members = ["crates/sill-wire", "crates/sill-pairing", "crates/sill-policy"]
+
+[workspace.package]
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+rust-version = "1.75"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+base64 = "0.22"
+sha2 = "0.10"
+hmac = "0.12"
+pbkdf2 = { version = "0.12", default-features = false, features = ["hmac"] }
+p256 = { version = "0.13", default-features = false, features = ["ecdsa", "std"] }
+unicode-segmentation = "1"
+unicode-general-category = "1"
+
+# PBKDF2's 600,000 rounds take seconds unoptimised; tests run them, so dependencies build optimised.
+[profile.dev.package."*"]
+opt-level = 3
+[profile.dev.package.sill-pairing]
+opt-level = 3

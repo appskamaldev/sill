@@ -376,6 +376,16 @@
       "type" : "WindowList"
     },
     {
+      "input" : "{\"macName\":\"PC\",\"windows\":[[1,\"t\",\"a\",\"b\",1,2]],\"active\":{\"desktop\":{}}}",
+      "ok" : false,
+      "type" : "WindowList"
+    },
+    {
+      "input" : "[\"PC\",[],{\"none\":{}}]",
+      "ok" : false,
+      "type" : "WindowList"
+    },
+    {
       "input" : "{\"id\":1,\"action\":\"close\"}",
       "ok" : true,
       "sorted" : "{\"action\":\"close\",\"id\":1}",
@@ -415,6 +425,16 @@
     },
     {
       "input" : "{\"settings\":{\"maxFPS\":60,\"bitrate\":15000000,\"captureScale\":1,\"prioritizeSpeed\":true},\"persistent\":false,\"virtualDisplayAvailable\":false,\"softwareEncoder\":false}",
+      "ok" : false,
+      "type" : "HostSettingsState"
+    },
+    {
+      "input" : "{\"settings\":[60,15000000,1,true,false],\"persistent\":false,\"virtualDisplayAvailable\":false,\"softwareEncoder\":false}",
+      "ok" : false,
+      "type" : "HostSettingsState"
+    },
+    {
+      "input" : "{\"settings\":{\"maxFPS\":60,\"bitrate\":15000000,\"captureScale\":1,\"prioritizeSpeed\":true,\"virtualDisplay\":false},\"persistent\":false,\"virtualDisplayAvailable\":false,\"softwareEncoder\":false,\"stream\":[1,2,3,4,true]}",
       "ok" : false,
       "type" : "HostSettingsState"
     },
@@ -592,6 +612,44 @@
       "input" : "{\"image\":\"iVBO\\/w==\"}",
       "ok" : true,
       "sorted" : "{\"image\":\"iVBO\\/w==\"}",
+      "type" : "Clipboard"
+    },
+    {
+      "input" : "{\"image\":\"Zh==\"}",
+      "ok" : true,
+      "sorted" : "{\"image\":\"Zg==\"}",
+      "type" : "Clipboard"
+    },
+    {
+      "input" : "{\"image\":\"Zg\"}",
+      "ok" : false,
+      "type" : "Clipboard"
+    },
+    {
+      "input" : "{\"image\":\" Zg==\"}",
+      "ok" : false,
+      "type" : "Clipboard"
+    },
+    {
+      "input" : "{\"image\":\"Zg==\\n\"}",
+      "ok" : false,
+      "type" : "Clipboard"
+    },
+    {
+      "input" : "{\"image\":\"Zm8=\"}",
+      "ok" : true,
+      "sorted" : "{\"image\":\"Zm8=\"}",
+      "type" : "Clipboard"
+    },
+    {
+      "input" : "{\"image\":\"Zm9v====\"}",
+      "ok" : true,
+      "sorted" : "{\"image\":\"Zm9v\"}",
+      "type" : "Clipboard"
+    },
+    {
+      "input" : "{\"image\":\"Z-8=\"}",
+      "ok" : false,
       "type" : "Clipboard"
     },
     {

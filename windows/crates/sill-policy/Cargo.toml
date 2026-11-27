@@ -1,0 +1,12 @@
+[package]
+name = "sill-policy"
+version = "0.1.0"
+description = "Sill host policies as pure functions and state machines: door trust, pairing window, device gate, viewport bounds."
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+sill-wire = { path = "../sill-wire" }
+sill-pairing = { path = "../sill-pairing" }

@@ -268,6 +268,7 @@ dec(WindowList.self, "WindowList", [
     #"{"macName":"PC","windows":[{"id":1,"title":"t","appName":"a","bundleID":"b","width":1,"height":2}],"active":{"window":{"_0":1}},"protocol":1,"later":true}"#,
     #"{"macName":"PC","windows":[{"id":1,"title":"t","appName":"a","bundleID":"b","width":1}],"active":{"desktop":{}}}"#,
     #"{"macName":"PC","windows":[],"active":{"desktop":{}},"clipboard":true}"#,
+    #"{"macName":"PC","windows":[[1,"t","a","b",1,2]],"active":{"desktop":{}}}"#, #"["PC",[],{"none":{}}]"#,
 ])
 enc("LaunchApp", "launch", LaunchApp(bundleID: "com.apple.Safari"))
 enc("WindowCommand", "close", WindowCommand(id: 77, action: .close))
@@ -292,6 +293,8 @@ dec(HostSettingsState.self, "HostSettingsState", [
     #"{"settings":{"maxFPS":60,"bitrate":15000000,"captureScale":1,"prioritizeSpeed":true,"virtualDisplay":false},"persistent":false,"virtualDisplayAvailable":false,"softwareEncoder":false}"#,
     #"{"settings":{"maxFPS":60,"bitrate":15000000,"captureScale":1,"prioritizeSpeed":true,"virtualDisplay":false},"persistent":false,"virtualDisplayAvailable":false}"#,
     #"{"settings":{"maxFPS":60,"bitrate":15000000,"captureScale":1,"prioritizeSpeed":true},"persistent":false,"virtualDisplayAvailable":false,"softwareEncoder":false}"#,
+    #"{"settings":[60,15000000,1,true,false],"persistent":false,"virtualDisplayAvailable":false,"softwareEncoder":false}"#,
+    #"{"settings":{"maxFPS":60,"bitrate":15000000,"captureScale":1,"prioritizeSpeed":true,"virtualDisplay":false},"persistent":false,"virtualDisplayAvailable":false,"softwareEncoder":false,"stream":[1,2,3,4,true]}"#,
     #"{"settings":{"maxFPS":60,"bitrate":15000000,"captureScale":1,"prioritizeSpeed":true,"virtualDisplay":false,"directWireless":null},"persistent":false,"virtualDisplayAvailable":false,"softwareEncoder":false,"link":{"state":"weird","withheldPerSecond":0,"bitrate":1}}"#,
 ])
 enc("HostSettingsChange", "empty", HostSettingsChange())
@@ -364,7 +367,8 @@ enc("Clipboard", "text", Clipboard(text: "copied \u{1F4CB}"))
 enc("Clipboard", "image", Clipboard(image: unhex("89504e470d0a1a0a")))
 enc("Clipboard", "stop", Clipboard(stop: true))
 dec(Clipboard.self, "Clipboard", [#"{}"#, #"{"text":"hi"}"#, #"{"image":"iVBORw0KGgo="}"#, #"{"image":"iVBORw0KGgo"}"#,
-                                   #"{"image":"not base64!"}"#, #"{"image":""}"#, #"{"stop":true,"text":null}"#, #"{"image":"iVBO\/w=="}"#])
+                                   #"{"image":"not base64!"}"#, #"{"image":""}"#, #"{"stop":true,"text":null}"#, #"{"image":"iVBO\/w=="}"#,
+                                   #"{"image":"Zh=="}"#, #"{"image":"Zg"}"#, #"{"image":" Zg=="}"#, #"{"image":"Zg==\n"}"#, #"{"image":"Zm8="}"#, #"{"image":"Zm9v===="}"#, #"{"image":"Z-8="}"#])
 enc("MacPointer", "empty", MacPointer())
 enc("MacPointer", "inside", MacPointer(x: 0.5, y: 0.25, inside: true, seen: 3))
 enc("MacPointer", "outside", MacPointer(inside: false, seen: 4))
