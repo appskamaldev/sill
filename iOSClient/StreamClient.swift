@@ -65,9 +65,10 @@ struct FoundMac: Identifiable, Hashable {
     /// A network "Mac mini" and a Remote "Mac mini" are two rows. Names are unique per route
     /// (DiscoveryPolicy.rows lists a name once), Mac IDs among Remote rows.
     var id: String { route == .remote ? "remote:\(macID ?? name)" : "\(route.rawValue):\(name)" }
-    /// The word at the end of its row: "Remote" for a saved Mac dialed away from home, else its home
-    /// word (`homeWord`): how its Mac is reachable (`method`), "Not paired" or "Update Sill", or nil.
-    var word: String? { route == .remote ? "Remote" : homeWord.word }
+    /// The word at the end of its row: "Away" for a saved Mac dialed away from home (it said "Remote"
+    /// before the gallery, 2026-11-27), else its home word (`homeWord`): how its Mac is reachable
+    /// (`method`), "Not paired" or "Update Sill", or nil.
+    var word: String? { route == .remote ? "Away" : homeWord.word }
 }
 
 /// How the current connection runs (`Session.route`): set when it starts, again at `.ready` and by
@@ -136,6 +137,7 @@ final class StreamClient: ObservableObject {
     @Published var connected = false {
         didSet {
             guard connected != oldValue else { return }
+            if connected { banner = nil }             // a session came: what the banner said is past
             DeviceIdleTimer.shared.update()          // auto-lock (PR #230)
             PictureInPictureHub.shared.update()      // Picture in Picture's offer (#291)
         }
@@ -228,9 +230,9 @@ final class StreamClient: ObservableObject {
 
     /// The connect screen's idle status lines: only these follow the nearby search and Local Network
     /// access (updateDiscovery); any other status (a disconnect, a failure) stays as it was set.
-    static let lookingOnNetwork = "Looking for Macs on this network"
-    static let lookingNearby = "Looking for Macs on this network and nearby"
-    static let allowLocalNetwork = "To find your Mac, allow Local Network for Sill in Settings."
+    static let lookingOnNetwork = "Looking for computers on this network"
+    static let lookingNearby = "Looking for computers on this network and nearby"
+    static let allowLocalNetwork = "To find your computer, allow Local Network for Sill in Settings."
 
     // Switcher catalog, as the host sends it. Published on main.
     @Published var macName = ""
@@ -932,6 +934,10 @@ final class StreamClient: ObservableObject {
         var storeLink = false
     }
     @Published var notice: Notice?
+    /// What the connect screen keeps at the top of its list until it is dismissed or a session comes
+    /// (HomeGallery.Banner): who removed this device, an update needed, a revoked or replaced key, the
+    /// wrong computer, Remote Access off. Raised beside the status line it stands for.
+    @Published var banner: HomeGallery.Banner?
     /// The Mac's version and protocol from this session's window lists (`WindowList.hostVersion`,
     /// `protocol`): nil from SillHost and from Macs before 2026-09-25. Shown nowhere yet; kept so a
     /// later device can tell a Mac from the first public build from what it needs (§14). Cleared
@@ -3553,6 +3559,23 @@ final class StreamClient: ObservableObject {
         case .awaitAsked:
             waitForFreshKeyframe(asked: false)
         }
+    }
+
+    /// Cancel on a card that is connecting (the gallery): the tap's dial, remote or at home, and the
+    /// ask stop before any session, and nothing reconnects. A session already up is Disconnect's.
+    func cancelConnecting() {
+        guard !connected else { return }
+        #if DEBUG
+        if mockDiscovery { status = Self.lookingOnNetwork; return }
+        #endif
+        reconnect = nil
+        cancelRemoteDial()
+        cancelHomeAsk()
+        let c = connection
+        connection = nil
+        c?.cancel()
+        tearDown(status: Self.lookingOnNetwork)
+        updateDiscovery()
     }
 
     private func finishDisconnect() {

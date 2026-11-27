@@ -406,7 +406,9 @@ extension StreamClient {
                 savedMacs = next
                 persistSavedMacs()
             }
-            endAtHome(DiscoveryPolicy.HomeCopy.removed(mac: name, device: Self.deviceWord))
+            let words = DiscoveryPolicy.HomeCopy.removed(mac: name, device: Self.deviceWord)
+            endAtHome(words)
+            banner = HomeGallery.banner(.removed, mac: name, device: Self.deviceWord, source: words)
         case .pairingRequired:
             endAtHome(DiscoveryPolicy.HomeCopy.pairingRequired(mac: name, device: Self.deviceWord))
         case .otherKey:
@@ -418,7 +420,9 @@ extension StreamClient {
         case .wrongKey:
             let tried = s.row.map { $0.tried + [$0.id] } ?? []
             guard let mac = saved, let pin = mac.fingerprintData else {
-                endAtHome(RemoteCopy.dialFailure(.wrongMac, mac: name, candidate: nil, vpnName: nil, device: Self.deviceWord))
+                let words = RemoteCopy.dialFailure(.wrongMac, mac: name, candidate: nil, vpnName: nil, device: Self.deviceWord)
+                endAtHome(words)
+                banner = HomeGallery.banner(.wrongMac, mac: name, device: Self.deviceWord, source: words)
                 return true
             }
             switch DiscoveryPolicy.afterPinRefused(macID: mac.macID, tried: tried, rows: homeRows(), tagNamed: s.row?.tagNamed ?? true,
@@ -436,7 +440,9 @@ extension StreamClient {
                 // code the Mac shows proves it; nothing reconnects meanwhile.
                 pinRefusedRows.formUnion(tried.filter { id in macs.first { $0.id == id }.map { $0.macID == nil } ?? false })
                 markNewKey(mac.macID)
-                endAtHome(DiscoveryPolicy.HomeCopy.newKey(mac: name, device: Self.deviceWord))
+                let words = DiscoveryPolicy.HomeCopy.newKey(mac: name, device: Self.deviceWord)
+                endAtHome(words)
+                banner = HomeGallery.banner(.newKey, mac: name, device: Self.deviceWord, source: words)
             case .skipRow:
                 // The reconnect's row taken by its Bonjour name alone is not that Mac: skipped from
                 // now on, and the reconnect goes on without it.
