@@ -30,6 +30,9 @@ import Foundation
 ///       own trackpad or mouse
 ///     this device, the Pencil                any         hidden (Q2)
 ///
+/// While the picture is the trackpad (Trackpad in Full Screen, `padOverPicture`) the sprite always shows: the
+/// Mac's pointer while the Mac has it over the stream, else where the pad last put it.
+///
 /// Nothing shows while nothing streams. The shape is kind 14's in every row. A value; main thread.
 struct PointerPresence: Equatable {
     /// Who moved the pointer last: this device, or the Mac or another device.
@@ -48,6 +51,14 @@ struct PointerPresence: Equatable {
     var origin: Origin = .none
     /// The laptop layout: inner or outer portrait.
     var portrait = false
+    /// Trackpad in Full Screen (FullScreenPolicy.pictureIsTrackpad): the whole picture is the trackpad, so a
+    /// pointer always shows (Kamal, 2026-11-27): the Mac's while it has the pointer over the stream, else where
+    /// the pad last put this device's (`padLast`), whatever input came since; none yet, the Mac's last or the
+    /// middle, where the pad's cursor starts.
+    var padOverPicture = false
+    /// Where a trackpad of this device last put the pointer (`setOwn` from `.trackpad`); kept when a key,
+    /// typing or a hover clears `own`, so the pad over the picture still draws it. Nil for a new session.
+    private(set) var padLast: CGPoint?
     /// Something streams (`client.active != .none`).
     var streaming = false
     /// Q2: the Pencil draws no pointer, hovering or touching (the request, by its letter). True draws
@@ -67,6 +78,10 @@ struct PointerPresence: Equatable {
     /// Where the sprite's tip goes, a fraction of the frame, or nil to hide it.
     func sprite(now: Double) -> CGPoint? {
         guard streaming else { return nil }
+        if padOverPicture {
+            if control == .elsewhere, macInside, let mac { return mac }
+            return padLast ?? mac ?? CGPoint(x: 0.5, y: 0.5)
+        }
         switch control {
         case .elsewhere:
             return macInside ? mac : nil
@@ -97,7 +112,11 @@ struct PointerPresence: Equatable {
     mutating func setOwn(_ p: CGPoint?, from origin: Origin) {
         own = p
         self.origin = origin
+        if origin == .trackpad, let p { padLast = p }
     }
+
+    /// The session is over: no pad has put the pointer anywhere in the next one yet.
+    mutating func forgetPad() { padLast = nil }
 
     /// How many fingers are on the portrait pad: the last one lifting starts the linger.
     mutating func fingers(_ n: Int, now: Double) {

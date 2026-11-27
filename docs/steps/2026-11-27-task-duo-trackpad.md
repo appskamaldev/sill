@@ -53,3 +53,21 @@ Kamal: in full screen, an option where the whole picture is the relative trackpa
   switch either goes or becomes "Trackpad mode only in full screen", Noah's call.
 - **Verified.** full-screen check (its new lines and four mutants), the iOS build for the simulator. In the agents'
   Duo simulator: see the report of 2026-11-27.
+
+**Trackpad in Full Screen: a pointer always shows (2026-11-27, same branch).** Kamal, on the Duo (build 5): with
+the switch on, no pointer in full screen; the laptop pose's pad shows one.
+
+- **Why, from the code.** The sprite (PointerPresence.sprite) drew the pad's pointer only while this device had
+  the pointer and the pad was the last thing to set it (`origin == .trackpad`). Otherwise it drew the Mac's, and
+  only while the Mac's was over the stream. Entering full screen with the Mac's pointer outside the streamed
+  picture (where it usually is after the Mac's own mouse, or a window stream), or after a key, typing or a hover
+  cleared this device's own pointer, nothing showed until the pad moved it. Shown in the agents' simulator
+  (live, a synthetic host): hidden at runtime with no input since, no sprite; with a pad move, one. On the Duo
+  itself the cause is not confirmed: see the report of 2026-11-27.
+- **What it does now.** While the picture is the trackpad (`FullScreenPolicy.pictureIsTrackpad`, told to the
+  client by StreamScreen's `setPictureIsTrackpad`), `PointerPresence.padOverPicture` keeps a pointer drawn: the
+  Mac's while the Mac has it over the stream, else where the pad last put it (`padLast`, kept when a key or typing
+  clears `own`, forgotten with the session), else the Mac's last place, else the middle (where the pad's cursor
+  starts). The shape is the Mac's (kind 14), as always. Off the picture, nothing changes.
+- **Verified.** `Tests/checks/pointer-presence/run.sh` (178 checks) and `--mutants` (49 of 49, six new); the
+  simulator: hidden with no input, the arrow in the middle of the picture. Not run: the Duo's own glass.

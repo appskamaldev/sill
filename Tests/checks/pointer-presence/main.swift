@@ -503,5 +503,37 @@ do {
     check(pad3.cursor == pt(0.50, 0.40), "rest: another device driving on, the finger's move goes on from its latest position")
 }
 
+// MARK: Trackpad in Full Screen: the picture is the trackpad, so a pointer always shows (Kamal, 2026-11-27)
+
+do {
+    // The pad put it here, upright or sideways; a key, typing or a hover since clears `own`, not the pointer.
+    for (portrait, layout) in layouts {
+        var p = presence(.here, own: ownAt, origin: .trackpad, portrait: portrait)
+        p.padOverPicture = true
+        check(p.sprite(now: 0) == ownAt, "full-screen pad, \(layout): the pad's pointer")
+        p.setOwn(nil, from: .none)
+        check(p.sprite(now: 0) == ownAt, "full-screen pad, \(layout): a key or typing leaves the pad's pointer drawn")
+        p.padOverPicture = false
+        check(p.sprite(now: 0) == nil, "the pad off the picture: as before, nothing after a key")
+    }
+    // The Mac has it: its pointer over the stream; off it, the pad's last, else the Mac's last, else the middle.
+    var m = presence(.elsewhere, mac: macAt, inside: true, portrait: false)
+    m.padOverPicture = true
+    check(m.sprite(now: 0) == macAt, "full-screen pad: the Mac's pointer over the stream")
+    m.macInside = false
+    check(m.sprite(now: 0) == macAt, "full-screen pad: the Mac's off the stream, no pad yet: its last place")
+    m.setOwn(ownAt, from: .trackpad)
+    check(m.sprite(now: 0) == ownAt, "full-screen pad: the Mac's off the stream: where the pad left it")
+    m.forgetPad(); m.setOwn(nil, from: .none); m.mac = nil
+    check(m.sprite(now: 0) == pt(0.5, 0.5), "full-screen pad: nothing known: the middle, where the pad's cursor starts")
+    check(PadCursor().cursor == pt(0.5, 0.5), "the pad's cursor starts in the middle")
+    m.streaming = false
+    check(m.sprite(now: 0) == nil, "full-screen pad: nothing streams, nothing shows")
+    // The Pencil's position is not the pad's.
+    var q = presence(.here, own: ownAt, origin: .pencil, portrait: true)
+    q.padOverPicture = true
+    check(q.sprite(now: 0) == pt(0.5, 0.5), "full-screen pad: the Pencil's position is not where the pad left it")
+}
+
 print("\(checks) checks, \(failures) failed")
 exit(failures == 0 ? 0 : 1)

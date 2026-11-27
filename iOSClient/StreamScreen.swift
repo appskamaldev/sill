@@ -408,9 +408,12 @@ struct StreamScreen: View {
                                                                switchOn: trackpadInFullScreen), initial: true) { _, show in
                     client.setPointerLayout(portrait: show)
                 }
-                // The pad over the picture takes the pinch, so no pinch could undo a zoom made before it.
-                .onChange(of: FullScreenPolicy.pictureIsTrackpad(hidden: hidden, switchOn: trackpadInFullScreen)) { _, pad in
+                // The pad over the picture takes the pinch, so no pinch could undo a zoom made before it; and a
+                // pointer always shows on it, the Mac's or the pad's (PointerPresence.padOverPicture).
+                .onChange(of: FullScreenPolicy.pictureIsTrackpad(hidden: hidden, switchOn: trackpadInFullScreen),
+                          initial: true) { _, pad in
                     if pad { zoom.reset() }
+                    client.setPictureIsTrackpad(pad)
                 }
                 // The clipboard's chip on screen or not: its 20 s run only while it is, and VoiceOver
                 // is told when it first shows (ClipboardPolicy.chipCounts).
