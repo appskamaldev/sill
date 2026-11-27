@@ -216,7 +216,7 @@ struct HostSettingsPanel: View {
             arranged(layout)
                 #if DEBUG
                 // The console's line for the photo gates: how the pane sits on this screen, at each change.
-                .onChange(of: layout.description, initial: true) { _, line in print("settings: " + line) }
+                .onChangeCompat(of: layout.description, initial: true) { _, line in print("settings: " + line) }
                 #endif
         }
         // The bars' colour over the whole screen: under the status bar and into the side insets too, as the
@@ -235,12 +235,12 @@ struct HostSettingsPanel: View {
         .onAppear { headerFocused = true }
         // A refused change: the control has already gone back to the Mac's value, and the reason
         // is in the footer or the note. The haptic is a no-op on an iPad.
-        .sensoryFeedback(.warning, trigger: client.settingsRefusals)
-        .onChange(of: client.settingsRefusals) { _, _ in
-            AccessibilityNotification.Announcement("\(mac) kept its setting").post()
+        .warningFeedback(trigger: client.settingsRefusals)
+        .onChangeCompat(of: client.settingsRefusals) { _, _ in
+            UIAccessibility.post(notification: .announcement, argument: "\(mac) kept its setting")
         }
-        .onChange(of: client.settingsProblem) { _, problem in
-            if let problem { AccessibilityNotification.Announcement(problem).post() }
+        .onChangeCompat(of: client.settingsProblem) { _, problem in
+            if let problem { UIAccessibility.post(notification: .announcement, argument: problem) }
         }
         .task(id: client.connectedAt) {
             olderMac = false
@@ -369,11 +369,12 @@ struct HostSettingsPanel: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) { rows }
                     .padding(.top, ScrollEdgeFade.height)
+                    .paddingBefore17(margins)
             }
-            .scrollIndicatorsFlash(onAppear: true)
+            .flashesScrollIndicatorsOnAppear()
             .scrollBounceBehavior(.basedOnSize)
             .modifier(StartAnchor(atEnd: Self.startsAtEnd))
-            .contentMargins([.leading, .bottom, .trailing], margins, for: .scrollContent)
+            .scrollContentMargins([.leading, .bottom, .trailing], margins)
             .modifier(SystemEdgeEffect(hidden: systemEdges))
             .modifier(ScrollEdgeFade())
             .modifier(ScrollAreaOutline())
@@ -722,7 +723,7 @@ struct HostSettingsPanel: View {
                     Text(FullScreenPolicy.Copy.shakeTitle).foregroundStyle(Palette.text)
                 }
                 .rowFrame()
-                .onChange(of: shakeShowsControls) { _, on in
+                .onChangeCompat(of: shakeShowsControls) { _, on in
                     client.noteAction()
                     #if DEBUG
                     print("full screen: Shake to Show Controls \(on ? "on" : "off")")
@@ -899,7 +900,7 @@ struct HostSettingsPanel: View {
                     Text(PictureInPicturePolicy.Copy.title).foregroundStyle(Palette.text)
                 }
                 .rowFrame()
-                .onChange(of: pictureInPicture) { _, on in
+                .onChangeCompat(of: pictureInPicture) { _, on in
                     client.noteAction()
                     PictureInPictureHub.shared.update()
                     #if DEBUG
@@ -941,7 +942,7 @@ struct HostSettingsPanel: View {
                     Text(ClipboardPolicy.Copy.switchTitle).foregroundStyle(Palette.text)
                 }
                 .rowFrame()
-                .onChange(of: clipboardOn) { _, _ in client.clipboardSwitchChanged() }
+                .onChangeCompat(of: clipboardOn) { _, _ in client.clipboardSwitchChanged() }
                 if clipboardOn {
                     RowDivider()
                     // Paste right away (2026-10-29): with it on, a Paste's receipt presses ⌘V on the Mac.
@@ -1658,8 +1659,10 @@ private struct StartAnchor: ViewModifier {
             content
                 .defaultScrollAnchor(.bottom, for: .initialOffset)
                 .defaultScrollAnchor(.bottom, for: .sizeChanges)
-        } else {
+        } else if #available(iOS 17.0, *) {
             content.defaultScrollAnchor(.bottom)
+        } else {
+            content   // iOS 16: the panel starts at its top
         }
     }
 }

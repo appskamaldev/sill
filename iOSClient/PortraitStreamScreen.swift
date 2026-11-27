@@ -292,13 +292,13 @@ struct PortraitStreamScreen: View {
         }
         // The laptop pose with the person's keyboard up: KeyboardFrameMonitor reads where its glass is after
         // each change (a fold among them); nowhere else does it reload anything.
-        .onChange(of: KeyboardReadings(wanted: !preview && wantsKeyboardReadings(size), controlsTop: origin.y + split.controls), initial: true) { _, now in
+        .onChangeCompat(of: KeyboardReadings(wanted: !preview && wantsKeyboardReadings(size), controlsTop: origin.y + split.controls), initial: true) { _, now in
             if !preview { KeyboardFrameMonitor.shared.setWantsReadings(now.wanted, controlsTop: now.controlsTop) }
         }
-        .onChange(of: duoFold) { _, _ in if !preview { KeyboardFrameMonitor.shared.poseChanged() } }
+        .onChangeCompat(of: duoFold) { _, _ in if !preview { KeyboardFrameMonitor.shared.poseChanged() } }
         .onDisappear { if !preview { KeyboardFrameMonitor.shared.setWantsReadings(false, controlsTop: 0) } }
         #if DEBUG
-        .onChange(of: standIn, initial: true) { old, now in
+        .onChangeCompat(of: standIn, initial: true) { old, now in
             if now != nil || old != nil { print(keyboardStandInLine(now, size: size, origin: origin, split: split)) }
         }
         #endif
@@ -483,9 +483,9 @@ struct PortraitStreamScreen: View {
             // The viewport: the picture's pane, or with Larger Picture its whole room (never the pane
             // at the picture's shape, which would hold a window at the shape it has); full screen, the room.
             // Never the lifted room: the Mac resizes nothing for a keyboard.
-            .onChange(of: hidden ? room.size : layout.picture.size, initial: true) { _, size in onPanelSize(size) }
+            .onChangeCompat(of: hidden ? room.size : layout.picture.size, initial: true) { _, size in onPanelSize(size) }
             // A thumbnail's lights hang from the strip: as it tucks away they close, rather than wait unseen.
-            .onChange(of: lift.tucked) { _, tucked in if tucked, windowMenu != nil { windowMenu = nil } }
+            .onChangeCompat(of: lift.tucked) { _, tucked in if tucked, windowMenu != nil { windowMenu = nil } }
             #if DEBUG
             .modifier(PhoneConsole(layout: layout, lift: lift, span: span, video: client.videoSize, origin: origin, quiet: preview || hidden))
             #endif
@@ -875,14 +875,14 @@ private struct PhoneConsole: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: [layout.trackpad.width, layout.trackpad.height, span], initial: true) { _, _ in
+            .onChangeCompat(of: [layout.trackpad.width, layout.trackpad.height, span], initial: true) { _, _ in
                 if !quiet { print(trackpadLine) }
             }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidChangeFrameNotification)) { note in
                 guard !quiet, let end = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
                 print(keyboardLine(end))
             }
-            .onChange(of: lift.line(video: video)) { _, line in
+            .onChangeCompat(of: lift.line(video: video)) { _, line in
                 if !quiet { print(line) }
             }
     }
@@ -960,7 +960,7 @@ private struct HeldCapStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .opacity(configuration.isPressed ? 0.5 : 1)
-            .onChange(of: configuration.isPressed) { _, isPressed in pressed(isPressed) }
+            .onChangeCompat(of: configuration.isPressed) { _, isPressed in pressed(isPressed) }
     }
 }
 
@@ -1081,12 +1081,12 @@ private struct KeyRow: View {
         }
         // Arrow Keys turned on or off with a cap held (another finger in Settings): the row it was in has
         // gone, and no release comes from it, so it comes up here.
-        .onChange(of: arrowKeys) { _, _ in heldCap.releaseAll().forEach(send) }
+        .onChangeCompat(of: arrowKeys) { _, _ in heldCap.releaseAll().forEach(send) }
         .frame(height: metrics.keyBlockHeight)
         // Gone from the screen (a turn, the stream's end) with a cap held: no release comes, so it
         // comes up here; and hidden under the key row alone, whose caps are now the ones to touch.
         .onDisappear { heldCap.releaseAll().forEach(send) }
-        .onChange(of: hidden) { _, now in if now { heldCap.releaseAll().forEach(send) } }
+        .onChangeCompat(of: hidden) { _, now in if now { heldCap.releaseAll().forEach(send) } }
         #if DEBUG
         .onAppear(perform: runInputTest)
         #endif
@@ -1292,12 +1292,12 @@ private struct PhoneKeyStrip<Cap: View>: View {
                                 .id(index)
                         }
                     }
-                    .scrollTargetLayout()
+                    .scrollTargetLayoutIf17()
                     .onGeometryChange(for: CGFloat.self, of: { -$0.frame(in: .named(Self.space)).minX },
                                       action: { scrolled = $0 })
                 }
                 .coordinateSpace(name: Self.space)
-                .scrollTargetBehavior(.viewAligned)
+                .viewAlignedScrollIf17()
                 .mask(fade(strip))
                 #if DEBUG
                 .onAppear {

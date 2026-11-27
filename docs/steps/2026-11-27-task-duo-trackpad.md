@@ -71,3 +71,21 @@ the switch on, no pointer in full screen; the laptop pose's pad shows one.
   starts). The shape is the Mac's (kind 14), as always. Off the picture, nothing changes.
 - **Verified.** `Tests/checks/pointer-presence/run.sh` (178 checks) and `--mutants` (49 of 49, six new); the
   simulator: hidden with no input, the arrow in the middle of the picture. Not run: the Duo's own glass.
+
+**iOS 16.4 (2026-11-27, branch `task/ios16` from `task/duo-trackpad-fullscreen`).** Kamal: his own build on an
+iPad Pro M1 on iPadOS 16.6. IPHONEOS_DEPLOYMENT_TARGET 16.4 (Package.swift `.iOS(.v16)`, macOS still 14).
+Every iOS 17 call is guarded or has its iOS 16 form; on iOS 17 and later each runs as before.
+
+- `onChange(of:)` (63): `onChangeCompat` (IOS16Compat.swift), iOS 17's own where it runs; on 16, `onChange(of:perform:)`
+  with the old value kept, the newest closure called (16's runs the one from an update earlier) and `initial` at
+  `onAppear`. `.spring(duration:bounce:)` (10): `springCompat`, on 16 `spring(response:dampingFraction: 1 − bounce)`.
+  AccessibilityNotification (14): `UIAccessibility.post`. `sensoryFeedback`: on 16 UIKit's feedback generators.
+  `inlinePredictionType`: computed, iOS 17 only. `coordinateSpace(.named:)`: `coordinateSpace(name:)`.
+  `withAnimation … completion:` (closing Settings): on 16, the completion after the close's duration.
+  The harness's `safeAreaPadding`: plain padding on 16. Settings' `contentMargins`: padding on 16.
+- **Missing on iOS 16:** the scroll indicators' flash; the Tour's ring pulse, Next's nudge and its symbol's
+  bounce and replace; the key row's view-aligned scrolling; Settings starting at its end (`-SillSettingsScroll`
+  ends, `defaultScrollAnchor`) starts at its top.
+- **Verified.** Builds at 16.4: Debug and Release for a generic iOS device, Debug for the simulator. Pure checks:
+  device-idle, hardware-keyboard, key-strokes, text-composition, thumbnail-hold, tour, full-screen,
+  pointer-presence, repo-rules. **Nothing has run on iOS 16**: no iOS 16 runtime on this Mac, no device yet.

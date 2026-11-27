@@ -13,7 +13,7 @@ struct ContentView: View {
         root.onAppear { statsReporter.attach(to: client) }
             // This window's sound: a scene in the background is not heard, though another keeps the app
             // active (inactive is still on screen: Control Center over it, a headless simulator).
-            .onChange(of: scenePhase, initial: true) { _, phase in client.sound.setSceneForeground(phase != .background) }
+            .onChangeCompat(of: scenePhase, initial: true) { _, phase in client.sound.setSceneForeground(phase != .background) }
     }
 
     @ViewBuilder private var root: some View {
@@ -801,7 +801,7 @@ struct LayoutHarness: View {
                     // The fake screen's safe area, which full screen measures its room by (a device: the window's).
                     .environment(\.harnessSafeArea, spec.insets ?? EdgeInsets())
                     .frame(width: spec.size.width, height: spec.size.height)
-                    .coordinateSpace(.named(DuoPosture.displaySpace))
+                    .coordinateSpace(name: DuoPosture.displaySpace)
                     // `-SillMockHardware 1`: an iPhone's Dynamic Island, rounded corners and home indicator drawn
                     // over the fake screen, for full screen's photos of where the hidden picture goes.
                     .overlay { if MockHardware.wanted { MockHardware(size: spec.size, insets: spec.insets) } }
@@ -862,7 +862,7 @@ struct LayoutHarness: View {
         if let want = spec.insets {
             GeometryReader { g in
                 let have = g.safeAreaInsets
-                screen.safeAreaPadding(EdgeInsets(top: max(0, want.top - have.top), leading: max(0, want.leading - have.leading),
+                screen.safeAreaPaddingCompat(EdgeInsets(top: max(0, want.top - have.top), leading: max(0, want.leading - have.leading),
                                                   bottom: max(0, want.bottom - have.bottom),
                                                   trailing: max(0, want.trailing - have.trailing)))
                     // Black under the insets too, as the app's own root is (ContentView's `app`).
@@ -1347,7 +1347,7 @@ struct ConnectScreen: View {
                     }
                 }
                 .scrollBounceBehavior(.basedOnSize)
-                .scrollIndicatorsFlash(onAppear: true)
+                .flashesScrollIndicatorsOnAppear()
                 // A column that scrolls fades out above the footer instead of being cut off at it, and
                 // keeps a little room before it. Both are in the gap, which a column that fits keeps
                 // clear, so neither ever reaches one.
@@ -1378,14 +1378,14 @@ struct ConnectScreen: View {
         // The switch beside the title or a saved Mac's menu: the list hides the pictures and keeps their
         // files, and tiles show them again at once (ConnectionList.previewPlan); none is taken while the
         // list shows (ConnectionList.takesPreview).
-        .onChange(of: styleRaw) { _, raw in
+        .onChangeCompat(of: styleRaw) { _, raw in
             client.syncPreviews(to: ConnectionList.storedStyle(raw))
         }
-        .onChange(of: client.pairing) { old, new in
+        .onChangeCompat(of: client.pairing) { old, new in
             // Paired but no session came (10 s): the card closes, and the Mac is a saved row.
             if case .paired = old, new == .idle, !client.connected { fold() }
         }
-        .onChange(of: client.homeAsk) { _, ask in
+        .onChangeCompat(of: client.homeAsk) { _, ask in
             if let ask, ask.phase == .shown {
                 // The Mac shows its code: the home card for that row.
                 if homeCard != ask.name { unfoldHome(ask.name) }
@@ -1425,13 +1425,13 @@ struct ConnectScreen: View {
             }
             #endif
         }
-        .onChange(of: client.status) { _, line in announce(line) }
+        .onChangeCompat(of: client.status) { _, line in announce(line) }
     }
 
     /// Not the idle "Looking for Macs…" lines, which change as the search does.
     private func announce(_ line: String) {
         guard !line.isEmpty, line != StreamClient.lookingOnNetwork, line != StreamClient.lookingNearby else { return }
-        AccessibilityNotification.Announcement(line).post()
+        UIAccessibility.post(notification: .announcement, argument: line)
     }
 
     /// The switch beside the title, and Show as List/Tiles in a saved Mac's menu: stores the other style,
@@ -1601,7 +1601,7 @@ struct ConnectScreen: View {
                 Button(action: {
                     client.searchNearby()
                     // The button leaves from under VoiceOver's cursor: say what it started.
-                    AccessibilityNotification.Announcement("Also looking nearby").post()
+                    UIAccessibility.post(notification: .announcement, argument: "Also looking nearby")
                 }) {
                     Text("Search Nearby")
                         .font(.system(size: 15, weight: .semibold))
@@ -1768,7 +1768,7 @@ struct ConnectScreen: View {
         client.cancelHomeAsk()      // a tap's ask still waiting for its answer: Add a Mac is another way
         client.pairing = .idle
         typed = !scannerUsable
-        withAnimation(reduceMotion ? .easeOut(duration: 0.18) : .spring(duration: 0.3, bounce: 0.1)) { adding = true }
+        withAnimation(reduceMotion ? .easeOut(duration: 0.18) : .springCompat(duration: 0.3, bounce: 0.1)) { adding = true }
         titleFocused = true
     }
 
@@ -1777,7 +1777,7 @@ struct ConnectScreen: View {
     private func unfoldHome(_ mac: String) {
         typed = !scannerUsable
         editing = false
-        withAnimation(reduceMotion ? .easeOut(duration: 0.18) : .spring(duration: 0.3, bounce: 0.1)) {
+        withAnimation(reduceMotion ? .easeOut(duration: 0.18) : .springCompat(duration: 0.3, bounce: 0.1)) {
             adding = false
             homeCard = mac
         }

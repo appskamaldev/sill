@@ -1018,6 +1018,9 @@ Below, "this file" means CLAUDE.md, and "Build and run below" means docs/BUILD-A
   and `MacMenuButton` (the bars' Menus button: the bar's look, and
   `MacMenuTrigger`'s clear UIButton with the pull-down over it; `fits`, where
   a bar holds it and still a whole thumbnail).
+  `IOS16Compat` (iOS 16.4 support for Kamal's own build: `onChangeCompat`, iOS 17's
+  `onChange(of:initial:)` with the old value on iOS 16 too, and the iOS 17 modifiers that do nothing or
+  their iOS 16 equivalent before it; pbxproj A430/F430).
   `PointerPresence` (the rules of the one pointer sprite: the Mac's
   arrow while the Mac or another device moved it last, this device's own only
   for the portrait trackpad; a kind 26's freshness; the network queue's feed
