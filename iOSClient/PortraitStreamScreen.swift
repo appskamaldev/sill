@@ -179,6 +179,8 @@ struct PortraitStreamScreen: View {
     var largerKeyboard: CGFloat? = nil
     /// This device's Use Picture as Trackpad (FullScreenPolicy.trackpadKey): off unless turned on.
     @AppStorage(FullScreenPolicy.trackpadKey) private var trackpadInFullScreen = FullScreenPolicy.trackpadDefault
+    /// A mouse or trackpad connected pauses it (PointerDeviceMonitor; FullScreenPolicy.pictureIsTrackpad).
+    @ObservedObject private var pointerDevice = PointerDeviceMonitor.shared
     /// The picture's pinch zoom (StreamScreen's; StreamZoom): not watched here, only by the picture's
     /// own view, so a pinch redraws nothing else.
     let zoom: StreamZoomModel
@@ -661,10 +663,12 @@ struct PortraitStreamScreen: View {
                          macRepeatsKeys: { KeyTyping.macRepeats(keyRepeat: client.hostKeyRepeat) },
                          readZoom: { [zoom] in zoom.zoom },
                          writeZoom: { [zoom] in zoom.set($0) },
-                         padOverPicture: FullScreenPolicy.pictureIsTrackpad(switchOn: trackpadInFullScreen))
+                         padOverPicture: FullScreenPolicy.pictureIsTrackpad(switchOn: trackpadInFullScreen,
+                                                pointerDeviceConnected: pointerDevice.connected))
             // Use Picture as Trackpad (FullScreenPolicy.pictureIsTrackpad): shown or hidden, the whole picture is
             // the Mac's trackpad, the pad below's own surface over the input view.
-            if FullScreenPolicy.pictureIsTrackpad(switchOn: trackpadInFullScreen) {
+            if FullScreenPolicy.pictureIsTrackpad(switchOn: trackpadInFullScreen,
+                                                pointerDeviceConnected: pointerDevice.connected) {
                 TrackpadView(send: { client.sendInput($0) },
                          setPointer: { client.setOwnPointer($0, from: .trackpad) },
                          feed: { let f = client.pointerFeedState; return (f.anchor, f.reseeds) },
