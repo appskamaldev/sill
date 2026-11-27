@@ -15,7 +15,6 @@ path = "src/main.rs"
 sill-net = { path = "../crates/sill-net" }
 sill-store = { path = "../crates/sill-store" }
 sill-pairing = { path = "../crates/sill-pairing" }
-sill-wire = { path = "../crates/sill-wire" }
 tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true

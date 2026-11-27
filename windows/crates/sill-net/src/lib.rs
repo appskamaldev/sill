@@ -1,1 +1,23 @@
+//! The Windows host's network side (Phase 1): TLS 1.3 doors with pin-only trust, pairing on
+//! `sill-pair/1`, sessions on `sill/1` and a synthetic test picture. Portable (tokio + rustls);
+//! the Windows-only pieces (Bonjour, DPAPI) live in `sill-platform`.
 
+pub mod bind;
+pub mod cert;
+pub mod conn;
+pub mod host;
+pub mod pairing;
+pub mod server;
+pub mod session;
+pub mod stats;
+pub mod tls;
+pub mod video;
+
+pub use host::{Config, Host, PairingOffer};
+pub use server::{start, Running};
+pub use video::Clip;
+
+/// Seconds since 1970: the timestamp in every header the host writes.
+pub fn wall_clock() -> f64 {
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs_f64()).unwrap_or(0.0)
+}

@@ -184,6 +184,11 @@ impl Store {
         }
     }
 
+    /// When the paired devices were last written (by this process or another `sill-host`).
+    pub fn paired_modified(&self) -> Option<std::time::SystemTime> {
+        fs::metadata(self.dir.join(DEVICES)).and_then(|m| m.modified()).ok()
+    }
+
     pub fn save_paired(&self, devices: &[PairedDevice]) -> io::Result<()> {
         let d = serde_json::to_vec_pretty(devices).map_err(io::Error::other)?;
         self.write_sealed(DEVICES, &d)
