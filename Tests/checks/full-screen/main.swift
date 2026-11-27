@@ -487,6 +487,33 @@ check(!FullScreenPolicy.showsOwnPointer(portrait: true, hidden: true, switchOn: 
 check(FullScreenPolicy.showsOwnPointer(portrait: true, hidden: true, switchOn: true)
       && FullScreenPolicy.showsOwnPointer(portrait: false, hidden: true, switchOn: true), "hidden, the switch on: the own pointer, upright or sideways")
 check(!FullScreenPolicy.showsOwnPointer(portrait: false, hidden: false, switchOn: true), "sideways, shown: the Mac's arrow alone")
+// Who takes what on the picture (Kamal's Duo, builds 6 and 7: direct touch with the switch on, open flat and closed).
+// Every layout lays its picture through one of two panes, StreamScreen's content area (sideways: an iPhone or the
+// Duo's cover on its side, the Duo open flat, an iPad) and PortraitStreamScreen's (upright, the laptop pose, the
+// cover upright, an iPad upright); each pane's input view and pad ask the same two rules, for every layout alike.
+let layouts = ["iPhone upright", "iPhone sideways", "Duo cover upright", "Duo cover sideways", "Duo laptop pose",
+               "Duo open flat upright", "Duo open flat sideways", "iPad upright", "iPad sideways"]
+for layout in layouts {
+    for hidden in [false, true] {
+        for on in [false, true] {
+            let pad = FullScreenPolicy.pictureIsTrackpad(hidden: hidden, switchOn: on)
+            let fingers = FullScreenPolicy.surface(for: .touch, padOverPicture: pad)
+            let hover = FullScreenPolicy.surface(for: .hover, padOverPicture: pad)
+            let state = "\(layout), " + (hidden ? "full screen" : "shown") + ", the switch " + (on ? "on" : "off")
+            if hidden && on {
+                check(fingers == .pad && hover == .pad, "\(state): fingers and hovering are the trackpad's, never direct touch")
+            } else {
+                check(fingers == .inputView && hover == .inputView, "\(state): direct touch, as always")
+            }
+        }
+    }
+}
+for event in FullScreenPolicy.PictureEvent.allCases {
+    check(FullScreenPolicy.surface(for: event, padOverPicture: false) == .inputView, "no pad: the input view takes \(event)")
+}
+check(FullScreenPolicy.surface(for: .scroll, padOverPicture: true) == .inputView
+      && FullScreenPolicy.surface(for: .transform, padOverPicture: true) == .inputView,
+      "the pad over the picture: an iPad's trackpad scroll and pinch stay the input view's")
 check(FullScreenPolicy.Copy.trackpadTitle == "Trackpad in Full Screen", "the trackpad switch's title")
 check(FullScreenPolicy.Copy.notOffered == "Full Screen works while Sill fills the screen.", "while Sill does not fill the screen")
 check(FullScreenPolicy.Copy.pictureLabel(mac: "Mac mini") == "Mac mini’s picture. Sill’s controls are hidden.", "the picture's label")

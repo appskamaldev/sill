@@ -660,7 +660,8 @@ struct PortraitStreamScreen: View {
                          sendGesture: { client.sendGesture($0, fingers: $1) },
                          macRepeatsKeys: { KeyTyping.macRepeats(keyRepeat: client.hostKeyRepeat) },
                          readZoom: { [zoom] in zoom.zoom },
-                         writeZoom: { [zoom] in zoom.set($0) })
+                         writeZoom: { [zoom] in zoom.set($0) },
+                         padOverPicture: FullScreenPolicy.pictureIsTrackpad(hidden: hidden, switchOn: trackpadInFullScreen))
             // Trackpad in Full Screen (FullScreenPolicy.pictureIsTrackpad): while hidden, the whole picture is
             // the Mac's trackpad, the pad below's own surface over the input view.
             if FullScreenPolicy.pictureIsTrackpad(hidden: hidden, switchOn: trackpadInFullScreen) {
