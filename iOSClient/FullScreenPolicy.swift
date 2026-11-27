@@ -400,13 +400,18 @@ enum FullScreenPolicy {
     static let trackpadDefault = false
 
     /// Whether the picture is the Mac's trackpad: whenever the switch is on, in every layout, the interface
-    /// shown or hidden. Off, the picture is direct touch, as always.
-    static func pictureIsTrackpad(switchOn: Bool) -> Bool { switchOn }
+    /// shown or hidden, unless a mouse or trackpad is connected (`pointerDeviceConnected`, PointerDeviceMonitor;
+    /// Kamal, 2026-11-27): then it pauses, and the picture is as with the switch off, the iPad pointer pointing
+    /// directly, until the last one goes. A live override: the stored switch never changes, and a keyboard alone
+    /// does not count. Off, the picture is direct touch, as always. The laptop pose's pad below is not the picture's.
+    static func pictureIsTrackpad(switchOn: Bool, pointerDeviceConnected: Bool) -> Bool {
+        switchOn && !pointerDeviceConnected
+    }
 
     /// Whether this device's own pointer shows (`StreamClient.setPointerLayout`): wherever a trackpad of this
     /// device moves it, the one below the picture upright (`portrait`, never while hidden) or the picture.
-    static func showsOwnPointer(portrait: Bool, hidden: Bool, switchOn: Bool) -> Bool {
-        (portrait && !hidden) || pictureIsTrackpad(switchOn: switchOn)
+    static func showsOwnPointer(portrait: Bool, hidden: Bool, switchOn: Bool, pointerDeviceConnected: Bool) -> Bool {
+        (portrait && !hidden) || pictureIsTrackpad(switchOn: switchOn, pointerDeviceConnected: pointerDeviceConnected)
     }
 
     /// What reaches the picture: a touch (a finger, the Pencil, the iPad pointer's click; UIKit's own hit test
@@ -520,7 +525,10 @@ enum FullScreenPolicy {
         static func shakeFootnote(device: String) -> String { "Shaking your \(device) brings the controls back too." }
         /// Settings › This iPad › Use Picture as Trackpad, and the line under it.
         static let trackpadTitle = "Use Picture as Trackpad"
-        static let trackpadFootnote = "The whole picture works as a trackpad, with the controls shown or in full screen: drag to move the pointer, tap to click, tap with two fingers to right-click, tap, then drag to drag, and drag two fingers to scroll."
+        static let trackpadFootnote = "The whole picture works as a trackpad, with the controls shown or in full screen: drag to move the pointer, tap to click, tap with two fingers to right-click, tap, then drag to drag, and drag two fingers to scroll. Pauses while a mouse or trackpad is connected."
+        /// VoiceOver, while the switch is on, when a mouse or trackpad connects and when the last one goes.
+        static let trackpadPaused = "Picture as Trackpad paused while a mouse or trackpad is connected."
+        static let trackpadResumed = "Picture as Trackpad is back."
         /// Under the row while Sill's window does not fill the screen.
         static let notOffered = "Full Screen works while Sill fills the screen."
     }

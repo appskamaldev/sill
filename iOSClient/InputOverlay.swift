@@ -1657,6 +1657,50 @@ final class HardwareKeyboardMonitor: ObservableObject {
     #endif
 }
 
+/// Whether a mouse or trackpad is connected (a Bluetooth or USB mouse, a Magic Trackpad, the Magic Keyboard's
+/// trackpad): GameController's GCMouse, which iPadOS reports for each of them (iOS 14+), and its connect and
+/// disconnect notifications, counted by device, so it says gone only when the last one goes. A keyboard alone
+/// is GCKeyboard's, never this. While one is, Use Picture as Trackpad pauses
+/// (FullScreenPolicy.pictureIsTrackpad). DEBUG `-SillPointerDevice 1|0` says so instead for a run. Main thread.
+final class PointerDeviceMonitor: ObservableObject {
+    static let shared = PointerDeviceMonitor()
+    @Published private(set) var connected: Bool
+    private var mice: Set<ObjectIdentifier>
+
+    private init() {
+        mice = Set(GCMouse.mice().map(ObjectIdentifier.init))
+        connected = Self.override ?? !mice.isEmpty
+        let center = NotificationCenter.default
+        center.addObserver(forName: .GCMouseDidConnect, object: nil, queue: .main) { [weak self] note in
+            self?.changed(note.object as? GCMouse, connected: true)
+        }
+        center.addObserver(forName: .GCMouseDidDisconnect, object: nil, queue: .main) { [weak self] note in
+            self?.changed(note.object as? GCMouse, connected: false)
+        }
+    }
+
+    private func changed(_ mouse: GCMouse?, connected now: Bool) {
+        if let mouse {
+            if now { mice.insert(ObjectIdentifier(mouse)) } else { mice.remove(ObjectIdentifier(mouse)) }
+        } else {
+            mice = Set(GCMouse.mice().map(ObjectIdentifier.init))
+        }
+        #if DEBUG
+        print("pointer: GameController says a mouse or trackpad \(now ? "connected" : "went"), \(mice.count) now")
+        #endif
+        let any = Self.override ?? !mice.isEmpty
+        guard any != connected else { return }
+        connected = any
+    }
+
+    private static var override: Bool? {
+        #if DEBUG
+        if let raw = UserDefaults.standard.string(forKey: "SillPointerDevice") { return raw == "1" }
+        #endif
+        return nil
+    }
+}
+
 /// Where the software keyboard is: as UIKit reports it (`frame`, the end frame of its notifications, in
 /// the screen's coordinates, the stream screen's window filling its screen; nil while none is up), and as
 /// Sill read it (`read`). The inner display's stand-in for the rows follows the glass (#215,

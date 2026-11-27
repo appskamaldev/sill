@@ -481,15 +481,21 @@ check(FullScreenPolicy.Copy.shakeFootnote(device: "iPad") == "Shaking your iPad 
 // carries over.
 check(FullScreenPolicy.trackpadKey == "Sill.trackpadInFullScreen" && FullScreenPolicy.trackpadDefault == false,
       "Use Picture as Trackpad: the old key kept, off unless turned on")
-check(FullScreenPolicy.pictureIsTrackpad(switchOn: true), "the switch on: the picture is the trackpad")
-check(!FullScreenPolicy.pictureIsTrackpad(switchOn: false), "the switch off: the picture is direct touch")
-check(FullScreenPolicy.showsOwnPointer(portrait: true, hidden: false, switchOn: false), "upright, shown: the pad below's pointer")
-check(!FullScreenPolicy.showsOwnPointer(portrait: true, hidden: true, switchOn: false), "upright, hidden, the switch off: no own pointer")
-check(!FullScreenPolicy.showsOwnPointer(portrait: false, hidden: false, switchOn: false), "sideways, shown, the switch off: the Mac's arrow alone")
+check(FullScreenPolicy.pictureIsTrackpad(switchOn: true, pointerDeviceConnected: false), "the switch on: the picture is the trackpad")
+check(!FullScreenPolicy.pictureIsTrackpad(switchOn: false, pointerDeviceConnected: false), "the switch off: the picture is direct touch")
+check(FullScreenPolicy.showsOwnPointer(portrait: true, hidden: false, switchOn: false, pointerDeviceConnected: false), "upright, shown: the pad below's pointer")
+check(!FullScreenPolicy.showsOwnPointer(portrait: true, hidden: true, switchOn: false, pointerDeviceConnected: false), "upright, hidden, the switch off: no own pointer")
+check(!FullScreenPolicy.showsOwnPointer(portrait: false, hidden: false, switchOn: false, pointerDeviceConnected: false), "sideways, shown, the switch off: the Mac's arrow alone")
 for portrait in [false, true] {
     for hidden in [false, true] {
-        check(FullScreenPolicy.showsOwnPointer(portrait: portrait, hidden: hidden, switchOn: true),
+        check(FullScreenPolicy.showsOwnPointer(portrait: portrait, hidden: hidden, switchOn: true, pointerDeviceConnected: false),
               "the switch on, \(portrait ? "upright" : "sideways"), \(hidden ? "hidden" : "shown"): the own pointer always shows")
+        // A mouse or trackpad connected: as with the switch off, whatever the switch; the pad below upright stays.
+        for on in [false, true] {
+            check(FullScreenPolicy.showsOwnPointer(portrait: portrait, hidden: hidden, switchOn: on, pointerDeviceConnected: true)
+                  == (portrait && !hidden),
+                  "a mouse connected, the switch \(on ? "on" : "off"), \(portrait ? "upright" : "sideways"), \(hidden ? "hidden" : "shown"): the own pointer as with the switch off")
+        }
     }
 }
 // Who takes what on the picture (Kamal's Duo, builds 6 and 7: direct touch with the switch on, open flat and closed).
@@ -500,17 +506,18 @@ let layouts = ["iPhone upright", "iPhone sideways", "Duo cover upright", "Duo co
                "Duo open flat upright", "Duo open flat sideways", "iPad upright", "iPad sideways"]
 for layout in layouts {
     for hidden in [false, true] {
-        for on in [false, true] {
-            let pad = FullScreenPolicy.pictureIsTrackpad(switchOn: on)
+        for on in [false, true] { for mouse in [false, true] {
+            let pad = FullScreenPolicy.pictureIsTrackpad(switchOn: on, pointerDeviceConnected: mouse)
             let fingers = FullScreenPolicy.surface(for: .touch, padOverPicture: pad)
             let hover = FullScreenPolicy.surface(for: .hover, padOverPicture: pad)
             let state = "\(layout), " + (hidden ? "full screen" : "shown") + ", the switch " + (on ? "on" : "off")
-            if on {
+                + (mouse ? ", a mouse or trackpad connected" : "")
+            if on && !mouse {
                 check(fingers == .pad && hover == .pad, "\(state): fingers and hovering are the trackpad's, never direct touch")
             } else {
-                check(fingers == .inputView && hover == .inputView, "\(state): direct touch, as always")
+                check(fingers == .inputView && hover == .inputView, "\(state): direct touch and the pointer's hover, as with the switch off")
             }
-        }
+        } }
     }
 }
 for event in FullScreenPolicy.PictureEvent.allCases {
@@ -521,6 +528,15 @@ check(FullScreenPolicy.surface(for: .scroll, padOverPicture: true) == .inputView
       "the pad over the picture: an iPad's trackpad scroll and pinch stay the input view's")
 check(FullScreenPolicy.Copy.trackpadTitle == "Use Picture as Trackpad", "the trackpad switch's title")
 check(!FullScreenPolicy.Copy.trackpadFootnote.hasPrefix("In full screen"), "the switch's words do not say full screen alone")
+check(FullScreenPolicy.Copy.trackpadFootnote.hasSuffix(" Pauses while a mouse or trackpad is connected."),
+      "the switch's words say a mouse or trackpad pauses it")
+// The pause is live, never stored: connect, then disconnect, and the switch's own value is back.
+for on in [false, true] {
+    let before = FullScreenPolicy.pictureIsTrackpad(switchOn: on, pointerDeviceConnected: false)
+    let during = FullScreenPolicy.pictureIsTrackpad(switchOn: on, pointerDeviceConnected: true)
+    let after = FullScreenPolicy.pictureIsTrackpad(switchOn: on, pointerDeviceConnected: false)
+    check(!during && before == on && after == on, "the switch \(on ? "on" : "off"): paused while connected, its own value after")
+}
 check(FullScreenPolicy.Copy.notOffered == "Full Screen works while Sill fills the screen.", "while Sill does not fill the screen")
 check(FullScreenPolicy.Copy.pictureLabel(mac: "Mac mini") == "Mac mini’s picture. Sill’s controls are hidden.", "the picture's label")
 check(FullScreenPolicy.Copy.inputLabels.first == FullScreenPolicy.Copy.action, "Voice Control's first name is the action's")

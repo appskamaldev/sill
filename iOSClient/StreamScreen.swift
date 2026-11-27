@@ -280,6 +280,8 @@ struct StreamScreen: View {
     @AppStorage(StreamClient.largerPictureKey) private var largerPicture = false
     /// This device's Use Picture as Trackpad (FullScreenPolicy.trackpadKey): off unless turned on.
     @AppStorage(FullScreenPolicy.trackpadKey) private var trackpadInFullScreen = FullScreenPolicy.trackpadDefault
+    /// A mouse or trackpad connected pauses it (PointerDeviceMonitor; FullScreenPolicy.pictureIsTrackpad).
+    @ObservedObject private var pointerDevice = PointerDeviceMonitor.shared
     /// Larger Picture as it was in effect when the Settings panel opened (`largerPictureNow`), which
     /// the arrangement keeps until the panel closes; nil while it is closed. The panel hangs under row
     /// 1, which the arrangement moves by the picture's growth (157 pt on an 18 Pro Max), so a change
@@ -405,12 +407,21 @@ struct StreamScreen: View {
                 // trackpad, so none of its arrow either, unless the picture is the trackpad (Trackpad in
                 // Full Screen).
                 .onChange(of: FullScreenPolicy.showsOwnPointer(portrait: DuoLayout.of(geo.size).isPortrait, hidden: hidden,
-                                                               switchOn: trackpadInFullScreen), initial: true) { _, show in
+                                                               switchOn: trackpadInFullScreen,
+                                                               pointerDeviceConnected: pointerDevice.connected),
+                          initial: true) { _, show in
                     client.setPointerLayout(portrait: show)
+                }
+                // Use Picture as Trackpad pausing for a mouse or trackpad, or coming back: VoiceOver is told.
+                .onChange(of: pointerDevice.connected) { _, connected in
+                    guard trackpadInFullScreen, UIAccessibility.isVoiceOverRunning else { return }
+                    UIAccessibility.post(notification: .announcement,
+                                         argument: connected ? FullScreenPolicy.Copy.trackpadPaused : FullScreenPolicy.Copy.trackpadResumed)
                 }
                 // The pad over the picture takes the pinch, so no pinch could undo a zoom made before it; and a
                 // pointer always shows on it, the Mac's or the pad's (PointerPresence.padOverPicture).
-                .onChange(of: FullScreenPolicy.pictureIsTrackpad(switchOn: trackpadInFullScreen),
+                .onChange(of: FullScreenPolicy.pictureIsTrackpad(switchOn: trackpadInFullScreen,
+                                                pointerDeviceConnected: pointerDevice.connected),
                           initial: true) { _, pad in
                     if pad { zoom.reset() }
                     client.setPictureIsTrackpad(pad)
@@ -1855,10 +1866,12 @@ struct StreamScreen: View {
                              macRepeatsKeys: { KeyTyping.macRepeats(keyRepeat: client.hostKeyRepeat) },
                              readZoom: { [zoom] in zoom.zoom },
                              writeZoom: { [zoom] in zoom.set($0) },
-                             padOverPicture: FullScreenPolicy.pictureIsTrackpad(switchOn: trackpadInFullScreen))
+                             padOverPicture: FullScreenPolicy.pictureIsTrackpad(switchOn: trackpadInFullScreen,
+                                                pointerDeviceConnected: pointerDevice.connected))
                 // Use Picture as Trackpad (FullScreenPolicy.pictureIsTrackpad): shown or hidden, the whole picture
                 // is the Mac's trackpad, the portrait pad's own surface over the input view.
-                if FullScreenPolicy.pictureIsTrackpad(switchOn: trackpadInFullScreen) {
+                if FullScreenPolicy.pictureIsTrackpad(switchOn: trackpadInFullScreen,
+                                                pointerDeviceConnected: pointerDevice.connected) {
                     TrackpadView(send: { client.sendInput($0) },
                              setPointer: { client.setOwnPointer($0, from: .trackpad) },
                              feed: { let f = client.pointerFeedState; return (f.anchor, f.reseeds) },

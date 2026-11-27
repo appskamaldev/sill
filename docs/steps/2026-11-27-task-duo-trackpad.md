@@ -111,3 +111,21 @@ flat with the bar shown, and wants the switch to hold everywhere.
   the switch comes on), now with the bar shown too; an iPad's pointer or Pencil hovering over the picture moves
   nothing.
 - **Verified.** `Tests/checks/run-all.sh full-screen pointer-presence`; full-screen's mutants. Not run: the glass.
+
+**Use Picture as Trackpad pauses while a mouse or trackpad is connected (2026-11-27, same branch, for build 10).**
+Kamal: with a pointing device the iPad's own pointer should point directly, as with the switch off.
+
+- **What it does.** `FullScreenPolicy.pictureIsTrackpad(switchOn:pointerDeviceConnected:)` is `switchOn &&
+  !pointerDeviceConnected`, and `showsOwnPointer` takes the same, so while one is connected both picture panes
+  are as with the switch off: direct pointing, the pointer's hover moving the Mac's pointer. A live override: the
+  stored `Sill.trackpadInFullScreen` never changes; on the last disconnect the switch's own value is back at once.
+  The laptop pose's pad below the fold is untouched (its `portrait && !hidden` term). A keyboard alone does not count.
+  The footnote ends "Pauses while a mouse or trackpad is connected."; VoiceOver hears "Picture as Trackpad paused
+  while a mouse or trackpad is connected." / "Picture as Trackpad is back." while the switch is on.
+- **The signal.** `PointerDeviceMonitor` (InputOverlay.swift, beside HardwareKeyboardMonitor): `GCMouse.mice()` at
+  start and `.GCMouseDidConnect` / `.GCMouseDidDisconnect`, counted per device. iPadOS reports a USB or Bluetooth
+  mouse, a Magic Trackpad and the Magic Keyboard's trackpad as a GCMouse. Not seen on the glass yet: whether the
+  Magic Keyboard's trackpad (Smart Connector) connects as one, and whether an iPhone (the Duo) reports a mouse at
+  all (on iPhone a mouse is AssistiveTouch's). A hover recognizer was not used: it sees a pointer only while it
+  moves over the view and has no disconnect. DEBUG `-SillPointerDevice 1|0` stands in for a run.
+- **Verified.** full-screen check and mutants, repo-rules. Not run: the glass with a mouse or the Magic Keyboard.
