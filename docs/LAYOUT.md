@@ -1003,7 +1003,10 @@ Below, "this file" means CLAUDE.md, and "Build and run below" means docs/BUILD-A
   home card for a row), `CodeScanner` (VisionKit),
   `PairingOverlay` (Pair This iPad…), `GoodbyePolicy` (the words and the
   reconnect after a session ends, a Mac's notice included; pure, checked with
-  swiftc). The Mac's menus (docs/menu-bar-plan.md §7): `MacMenuState` (one
+  swiftc), `HomeGallery` (the connect screen's gallery, 2026-11-27: each
+  card's state, icon, colour and word, VoiceOver's label and hint, the hero, the card a
+  dial line names, and which outcomes are a banner; pure, `Tests/checks/home-gallery`;
+  pbxproj A431/F431). The Mac's menus (docs/menu-bar-plan.md §7): `MacMenuState` (one
   connection's view: the top level, the menus asked for and the choices sent,
   each opened menu's completion settled exactly once, the rows and sections;
   pure, `Tests/checks/menu-state`), `MacMenuElements` (the one builder of

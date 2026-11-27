@@ -32,14 +32,16 @@ struct ContentView: View {
 
     private var app: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            (client.connected ? Color.black : Color(.systemBackground)).ignoresSafeArea()
             if client.connected {
                 StreamScreen(client: client)
             } else {
                 ConnectScreen(client: client)
             }
         }
-        .preferredColorScheme(.dark)
+        // The stream screen is dark, as it always was; the connect screen follows the system (the gallery,
+        // 2026-11-27).
+        .preferredColorScheme(client.connected ? .dark : nil)
         // Tells MacMenuHub which window shows this session: the iPad's menu bar shows its menus while
         // it is the app's one window.
         .background(WindowSessionObserver(client: client))
@@ -766,6 +768,15 @@ struct LayoutHarness: View {
     @ObservedObject var live: StreamClient
     @StateObject private var mock: StreamClient
 
+    /// `-SillColorScheme light|dark`: a connect case's appearance; the system's without it.
+    private static var connectScheme: ColorScheme? {
+        switch UserDefaults.standard.string(forKey: "SillColorScheme") {
+        case "light"?: return .light
+        case "dark"?: return .dark
+        default: return nil
+        }
+    }
+
     init(spec: Spec, live: StreamClient) {
         self.spec = spec
         self.live = live
@@ -821,7 +832,8 @@ struct LayoutHarness: View {
             }
         }
         .ignoresSafeArea()
-        .preferredColorScheme(.dark)
+        // A connect case follows the system, or `-SillColorScheme light|dark`; the stream screen is dark.
+        .preferredColorScheme(spec.connectCase == nil ? .dark : Self.connectScheme)
         .statusBar(hidden: true)
         // The iPad's menu bar follows the client this frame shows, as the app's does.
         .background(WindowSessionObserver(client: spec.live ? live : mock))
@@ -891,7 +903,7 @@ struct LayoutHarness: View {
         } else if let c = spec.connectCase {
             let options = MockCatalog.connectScreenOptions(c)
             ZStack {
-                Color.black
+                Color(.systemBackground)
                 ConnectScreen(client: mock, adding: options.adding, typed: options.typed, scannerOverride: options.scanner)
             }
         } else {
@@ -1266,6 +1278,21 @@ struct ConnectScreen: View {
     /// The saved Mac whose New Group… alert is up, and the name typed there.
     @State private var newGroupFor: String?
     @State private var newGroupName = ""
+    /// The card last tapped, Connecting… at once, until its dial's line comes (HomeGallery).
+    @State private var tappedCard: String?
+    /// Cards whose tap's dial of a computer away ended with no session and no banner, and the latest.
+    @State private var unanswered: Set<String> = []
+    @State private var lastUnanswered: String?
+    /// The banner the × put away (a Local Network one is not the client's to clear).
+    @State private var dismissedBanner: HomeGallery.Banner?
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.openURL) private var openURL
+    @ScaledMetric(relativeTo: .body) private var tileThumb: CGFloat = 96
+    @ScaledMetric(relativeTo: .body) private var rowThumb: CGFloat = 44
+    @ScaledMetric(relativeTo: .body) private var heroSymbol: CGFloat = 56
+    @ScaledMetric(relativeTo: .body) private var tileSymbol: CGFloat = 40
+    @ScaledMetric(relativeTo: .body) private var rowSymbol: CGFloat = 22
+    @ScaledMetric(relativeTo: .title2) private var welcomeTile: CGFloat = 80
 
     private var style: ConnectionList.Style {
         #if DEBUG
@@ -1288,9 +1315,9 @@ struct ConnectScreen: View {
     /// "Pair with Mac mini" over the home card; "Add a Mac" over Add a Mac and an outside link's
     /// confirmation.
     private var title: String {
-        if client.pendingLink != nil || adding { return "Add a Mac" }
+        if client.pendingLink != nil || adding { return "Add Computer" }
         if let mac = homeCard { return DiscoveryPolicy.HomeCopy.cardTitle(mac: mac) }
-        return "Connect to a Mac"
+        return "Computers"
     }
 
     private var device: String { StreamClient.deviceWord }
@@ -1331,14 +1358,17 @@ struct ConnectScreen: View {
                         // height, as before.
                         centreHeight: layout.topRoom.map { min($0, 500) } ?? geo.size.height,
                         visibleHeight: geo.size.height, scrollHeight: layout.roomAboveFold,
-                        gap: Self.footerGap, atTop: toTop) {
+                        // The gallery starts at the top under its large title; the first run's welcome and
+                        // the cards are centred as before.
+                        gap: Self.footerGap, atTop: toTop || (galleryShown && !firstRun)) {
                         column(layout)
-                            .frame(width: carded && layout.short && !typed ? layout.sideBySideWidth : layout.columnWidth,
+                            .frame(width: !galleryShown ? (carded && layout.short && !typed ? layout.sideBySideWidth : layout.columnWidth)
+                                                         : galleryWidth(layout),
                                    alignment: .leading)
                             // Placed by its leading edge, not centred: the side-by-side card is wider
                             // than the rows, and centring it moved the title sideways as the card
                             // unfolded.
-                            .padding(.leading, layout.columnX)
+                            .padding(.leading, galleryShown ? galleryX(layout) : layout.columnX)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         // The footer's height, measured here; the one shown is the one below.
                         footer(layout)
@@ -1425,12 +1455,20 @@ struct ConnectScreen: View {
             }
             #endif
         }
-        .onChangeCompat(of: client.status) { _, line in announce(line) }
+        .onChangeCompat(of: client.status) { old, line in
+            noteUnanswered(old: old, new: line)
+            announce(line)
+        }
+        // A banner is spoken as it comes (its status line is not, above).
+        .onChangeCompat(of: client.banner) { _, b in
+            if let b { UIAccessibility.post(notification: .announcement, argument: b.announcement) }
+        }
     }
 
     /// Not the idle "Looking for Macs…" lines, which change as the search does.
     private func announce(_ line: String) {
-        guard !line.isEmpty, line != StreamClient.lookingOnNetwork, line != StreamClient.lookingNearby else { return }
+        guard !line.isEmpty, line != StreamClient.lookingOnNetwork, line != StreamClient.lookingNearby,
+              line != client.banner?.source else { return }
         UIAccessibility.post(notification: .announcement, argument: line)
     }
 
@@ -1460,42 +1498,36 @@ struct ConnectScreen: View {
     }
     #endif
 
+    /// The gallery shows (no card, no link's confirmation): the toolbar and the large title over it.
+    private var galleryShown: Bool { !carded && client.pendingLink == nil }
+
     private func column(_ layout: ConnectLayout) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            // Leading, so the title never jumps sideways when the hint, a row or the card widens the
-            // column. Vertically it is still centred (ColumnOverFooter): what adds height moves it up
-            // by half as much. It wraps, never truncates, under the home card ("Pair with" and a
-            // long Mac name).
-            Text(title)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(Palette.text)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 10)
-                .accessibilityAddTraits(carded ? .isHeader : [])
-                .accessibilityFocused($titleFocused)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                // The switch between rows and tiles: a 44 pt target over the title's line, which it
-                // overhangs above and below (an overlay, so the column is laid out as before it). Always
-                // (Noah, 2026-10-27: "The list/tiles switch should always show"), whichever style is on
-                // and whether or not a Mac is listed; only the card, which takes the title's place, and a
-                // link's confirmation leave it out. #117 showed it for tiles alone while the list was the
-                // default, which with tiles the default left someone with no Mac who chose the list no way
-                // back.
-                .overlay(alignment: .trailing) {
-                    if !carded, client.pendingLink == nil {
-                        Button {
-                            toggleStyle()
-                        } label: {
-                            Image(systemName: style == .tiles ? "list.bullet" : "square.grid.2x2")
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundStyle(Palette.accent)
-                                .frame(width: 44, height: 44)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(style == .tiles ? "Show as list" : "Show as tiles")
-                    }
+        VStack(alignment: .leading, spacing: galleryShown ? 16 : 6) {
+            if galleryShown {
+                // Add Computer and the ⋯ menu (List or Tiles, Search Nearby, Settings): the list/tiles
+                // switch always shows (Noah, 2026-10-27), now in the menu.
+                toolbar
+                if !firstRun {
+                    Text("Computers")
+                        .font(.largeTitle.bold())
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.leading, 4)
+                        .accessibilityAddTraits(.isHeader)
+                        .accessibilityFocused($titleFocused)
                 }
+            } else {
+                // Leading, so the title never jumps sideways when the card widens the column. It wraps,
+                // never truncates, under the home card ("Pair with" and a long name).
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(Palette.text)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 10)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityFocused($titleFocused)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
 
             if let link = client.pendingLink {
                 LinkConfirmation(link: link, pair: {
@@ -1520,112 +1552,587 @@ struct ConnectScreen: View {
                     .padding(.top, 4)
                     .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
             } else {
-                rows(layout)
+                gallery(layout)
             }
         }
     }
 
-    @ViewBuilder private func rows(_ layout: ConnectLayout) -> some View {
-        Text(client.status)
-            .font(.system(size: 13))
-            .foregroundStyle(Palette.muted)
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, 10)
-            .padding(.bottom, 4)
+    // MARK: The gallery (direction A, Kamal, 2026-11-27; HomeGallery)
 
-        // A Mac that no longer serves this version said so (GoodbyePolicy's "update", its words the
-        // status line above): where to get the new one, while the status line still says why. Not
-        // before Sill's App Store address is known (SillLinks): the words say what to do anyway.
-        if let notice = client.notice, notice.storeLink, notice.text == client.status, let url = SillLinks.appStore {
-            Link(destination: url) {
-                Text("Update Sill in the App Store")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Palette.accent)
-                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                    .padding(.horizontal, 10)
+    /// No computer saved yet: the first run's welcome, with the computers nearby under it.
+    private var firstRun: Bool {
+        client.savedMacs.isEmpty && !client.macs.contains { $0.savedID != nil }
+    }
+
+    /// The gallery's width: the screen less 20 pt margins, at most 640 pt (the Duo open flat), and on the
+    /// book pose's leading page where it fits there (the column never crosses the fold).
+    private func galleryWidth(_ layout: ConnectLayout) -> CGFloat {
+        var width = min(layout.size.width - 2 * Self.margin, 640)
+        if let page = layout.leadingPage, page - 2 * Self.margin >= 320 { width = min(width, page - 2 * Self.margin) }
+        return max(200, width)
+    }
+
+    private func galleryX(_ layout: ConnectLayout) -> CGFloat {
+        DuoPosture.columnX(columnWidth: galleryWidth(layout), screenWidth: layout.size.width, fold: layout.fold)
+    }
+
+    private static let margin: CGFloat = 20
+    private static let gutter: CGFloat = 12
+    private static let cardRadius: CGFloat = 22
+    private static let thumbRadius: CGFloat = 14
+
+    /// A row's facts as HomeGallery reads them.
+    private func galleryRow(_ mac: FoundMac) -> HomeGallery.Row {
+        func via(_ m: DiscoveryPolicy.Method?) -> HomeGallery.Via {
+            switch m {
+            case .wired?: return .wired
+            case .wifi?: return .wifi
+            case .direct?: return .direct
+            case nil: return .unknown
+            }
+        }
+        let word: HomeGallery.Row.Word
+        switch mac.homeWord {
+        case .method(let m): word = .method(via(m))
+        case .notPaired: word = .notPaired
+        case .openDoor: word = .openDoor
+        case .pairsOverCable: word = .pairsOverCable
+        case .updateSill: word = .updateSill
+        }
+        return HomeGallery.Row(route: cardRoute(mac), word: word, saved: mac.savedID != nil)
+    }
+
+    private func cardRoute(_ mac: FoundMac) -> HomeGallery.Row.Route {
+        switch mac.route {
+        case .network: return .network
+        case .direct: return .direct
+        case .remote: return .remote
+        }
+    }
+
+    private func state(_ mac: FoundMac) -> HomeGallery.State {
+        HomeGallery.state(galleryRow(mac), unanswered: unanswered.contains(mac.id), justFailed: lastUnanswered == mac.id)
+    }
+
+    /// The card shows Connecting…: its tap's ask waits, the status line dials it, or it was tapped a moment ago.
+    private func connecting(_ mac: FoundMac) -> Bool {
+        asking(mac) || tappedCard == mac.id || HomeGallery.isDialing(client.status, name: mac.name, route: cardRoute(mac))
+    }
+
+    /// The row or tile a tap's ask is waiting on.
+    private func asking(_ mac: FoundMac) -> Bool {
+        client.homeAsk.map { $0.phase == .asking && $0.target.row == mac.id } ?? false
+    }
+
+    private func preview(_ mac: FoundMac) -> UIImage? {
+        ConnectionList.tileMac(macID: mac.macID, savedByName: mac.savedByName).flatMap { client.macPreviews[$0] }
+    }
+
+    private func heroID() -> String? {
+        HomeGallery.hero(client.macs.map { mac in
+            HomeGallery.Candidate(id: mac.id, state: state(mac),
+                                  lastUsed: mac.savedID.flatMap { client.savedMac($0)?.lastConnectedAt?.timeIntervalSince1970 })
+        })
+    }
+
+    private func tint(_ t: HomeGallery.Tint) -> Color {
+        switch t {
+        case .green: return Color(.systemGreen)
+        case .blue: return Color(.systemBlue)
+        case .orange: return Color(.systemOrange)
+        case .red: return Color(.systemRed)
+        case .tertiary: return Color(.tertiaryLabel)
+        case .accent: return Palette.accent
+        }
+    }
+
+    /// A tap: the card answers at once (Connecting… and its ring, before the dial's own line), then dials.
+    private func tap(_ mac: FoundMac) {
+        tappedCard = mac.id
+        if lastUnanswered == mac.id { lastUnanswered = nil }
+        client.connect(to: mac)
+        let id = mac.id
+        // A tap whose dial says nothing (its line unchanged) lets the card go after a moment.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { if tappedCard == id { tappedCard = nil } }
+    }
+
+    private func cancel(_ mac: FoundMac) {
+        tappedCard = nil
+        client.cancelConnecting()
+        UIAccessibility.post(notification: .announcement, argument: "Cancelled")
+    }
+
+    /// A dial of a computer away ended with neither a session nor a banner: its card says it did not answer.
+    private func noteUnanswered(old: String, new: String) {
+        tappedCard = nil
+        guard let d = HomeGallery.dialed(old), d.route == .remote, HomeGallery.dialed(new) == nil, !client.connected,
+              new != StreamClient.lookingOnNetwork, client.banner?.source != new,
+              let mac = client.macs.first(where: { $0.route == .remote && $0.name == d.name }) else { return }
+        unanswered.insert(mac.id)
+        lastUnanswered = mac.id
+    }
+
+    /// The banner shown: the client's, else Local Network refused; none once dismissed.
+    private var shownBanner: HomeGallery.Banner? {
+        if let b = client.banner, b != dismissedBanner { return b }
+        if client.status == StreamClient.allowLocalNetwork {
+            let b = HomeGallery.banner(.localNetwork, mac: "", device: device, source: client.status)
+            return b == dismissedBanner ? nil : b
+        }
+        return nil
+    }
+
+    private func dismiss(_ b: HomeGallery.Banner) {
+        if client.banner == b { client.banner = nil }
+        dismissedBanner = b
+    }
+
+    private func act(_ b: HomeGallery.Banner) {
+        switch b.action {
+        case .pairAgain?:
+            // At home its row asks, and the computer shows a code; away, Add Computer.
+            if let row = client.macs.first(where: { $0.route != .remote && $0.name == b.mac }) {
+                tap(row)
+            } else {
+                unfold()
+            }
+        case .update?:
+            if let url = SillLinks.appStore { openURL(url) }
+        case .openSettings?:
+            if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+        case nil:
+            break
+        }
+    }
+
+    // MARK: The gallery's views
+
+    @ViewBuilder private func gallery(_ layout: ConnectLayout) -> some View {
+        if let b = shownBanner {
+            banner(b)
+        }
+        if !client.status.isEmpty, client.status != shownBanner?.source {
+            Text(client.status)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 4)
+        }
+        if firstRun {
+            welcome(layout)
+        } else {
+            cards(layout)
+        }
+        nearbyHint
+    }
+
+    /// Banners stand for what needs doing before a tap can work: one title, one line, one action, and ×.
+    private func banner(_ b: HomeGallery.Banner) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.title3)
+                .foregroundStyle(Color(.systemOrange))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(b.title)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                        .accessibilityAddTraits(.isHeader)
+                    Text(b.line)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                if let title = b.actionTitle {
+                    Button { act(b) } label: {
+                        Text(title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.black)
+                            .padding(.horizontal, 16)
+                            .frame(minHeight: 34)
+                            .background(Capsule().fill(Color(.systemOrange)))
+                            .frame(minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            Spacer(minLength: 0)
+            Button { dismiss(b) } label: {
+                Image(systemName: "xmark")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityHint("Opens the App Store.")
+            .accessibilityLabel("Dismiss")
+            .padding(.top, -10)
+            .padding(.trailing, -8)
         }
+        .padding(EdgeInsets(top: 14, leading: 14, bottom: 14, trailing: 12))
+        .background(RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .fill(Color(.systemOrange).opacity(colorScheme == .dark ? 0.22 : 0.14)))
+        .accessibilityElement(children: .contain)
+    }
 
-        // Every row of one Mac in its group, a row taken for it by its name too (ConnectionList.tileMac).
-        let sections = ConnectionList.sections(for: client.macs, macID: { ConnectionList.tileMac(macID: $0.macID, savedByName: $0.savedByName) },
+    /// The hero, then the rest in two columns (one at accessibility sizes, as rows), by group; the list
+    /// style is rows throughout.
+    @ViewBuilder private func cards(_ layout: ConnectLayout) -> some View {
+        let rows = style == .list || typeSize.isAccessibilitySize
+        let hero = rows ? nil : heroID()
+        let sections = ConnectionList.sections(for: client.macs.filter { $0.id != hero },
+                                               macID: { ConnectionList.tileMac(macID: $0.macID, savedByName: $0.savedByName) },
                                                groups: client.macGroups)
-        if style == .list, sections.count <= 1, sections.first?.title == nil {
-            ForEach(client.macs) { mac in
-                macRow(mac)
-            }
-        } else {
-            ForEach(Array(sections.enumerated()), id: \.offset) { _, section in
-                if let sectionTitle = section.title {
-                    Text(sectionTitle)
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(Palette.muted)
-                        .padding(.horizontal, 10)
-                        .padding(.top, 4)
-                        .accessibilityAddTraits(.isHeader)
-                }
-                if style == .tiles {
-                    let cols = ConnectionList.columns(forWidth: layout.columnWidth, accessibleText: typeSize.isAccessibilitySize)
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: cols), spacing: 10) {
-                        ForEach(section.items) { mac in
-                            macTile(mac)
-                        }
-                    }
-                    .padding(.horizontal, 10)
-                } else {
-                    ForEach(section.items) { mac in
-                        macRow(mac)
-                    }
-                }
-            }
+        if let hero, let mac = client.macs.first(where: { $0.id == hero }) {
+            heroCard(mac)
         }
-
-        if client.showsNearbyHint {
-            Text("Your Mac has to be on the same Wi\u{2011}Fi network as this \(device), or have Direct Wireless Connection turned on in Sill. Away from home, add it once with a code from your Mac.")
-                .font(.system(size: 13))
-                .foregroundStyle(Palette.muted)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 10)
-            // Once the nearby search runs, a line in the button's place says so, whatever the
-            // status line says (a disconnect's message stays there), at the button's height so
-            // nothing moves.
-            if client.searchingNearby {
-                Text("Also looking nearby")
-                    .font(.system(size: 15))
-                    .foregroundStyle(Palette.muted)
-                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                    .padding(.horizontal, 10)
+        ForEach(Array(sections.enumerated()), id: \.offset) { _, section in
+            if let sectionTitle = section.title {
+                Text(sectionTitle)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 4)
+                    .padding(.top, 8)
+                    .accessibilityAddTraits(.isHeader)
+            }
+            if rows {
+                ForEach(section.items) { mac in listRow(mac) }
             } else {
-                Button(action: {
-                    client.searchNearby()
-                    // The button leaves from under VoiceOver's cursor: say what it started.
-                    UIAccessibility.post(notification: .announcement, argument: "Also looking nearby")
-                }) {
-                    Text("Search Nearby")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Palette.accent)
-                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                        .padding(.horizontal, 10)
-                        .contentShape(Rectangle())
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Self.gutter), count: 2), spacing: Self.gutter) {
+                    ForEach(section.items) { mac in tile(mac) }
                 }
-                .buttonStyle(.plain)
-                .accessibilityHint("Also looks for a Mac with Direct Wireless Connection turned on, without a Wi\u{2011}Fi network.")
             }
         }
+    }
 
-        // Always the last line, from the first frame, so nothing moves when it is needed.
-        Button(action: unfold) {
-            Text("Add a Mac…")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Palette.accent)
-                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                .padding(.horizontal, 10)
+    /// A card's state line: its icon (a ProgressView while connecting) in its colour, and its word.
+    private func stateLine(_ mac: FoundMac, font: Font) -> some View {
+        let look = HomeGallery.look(state(mac), connecting: connecting(mac))
+        return HStack(spacing: 5) {
+            if let symbol = look.symbol {
+                Image(systemName: symbol).foregroundStyle(tint(look.tint))
+            } else {
+                ProgressView().controlSize(.small)
+            }
+            Text(look.word)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .font(font)
+    }
+
+    /// The picture a session's end kept, or the computer's symbol on a soft tint.
+    private func thumbnail(_ mac: FoundMac, height: CGFloat?, radius: CGFloat, symbol: CGFloat) -> some View {
+        let s = state(mac)
+        let look = HomeGallery.look(s)
+        let picture = preview(mac)
+        // The hero 16:10 across the card; a tile or a row at its (scaled) height, as wide as its place.
+        let well = Rectangle().fill(picture == nil ? tint(look.tint).opacity(0.14) : Color(.tertiarySystemFill))
+        return Group {
+            if let height {
+                well.frame(maxWidth: .infinity).frame(height: height)
+            } else {
+                well.aspectRatio(16.0 / 10.0, contentMode: .fit)
+            }
+        }
+            .overlay {
+                if let picture {
+                    Image(uiImage: picture).resizable().scaledToFill()
+                } else {
+                    Image(systemName: "desktopcomputer")
+                        .font(.system(size: symbol, weight: .light))
+                        .foregroundStyle(tint(look.tint))
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .saturation(HomeGallery.desaturated(s) ? 0 : 1)
+            .opacity(HomeGallery.desaturated(s) ? 0.6 : 1)
+            .accessibilityHidden(true)
+    }
+
+    /// The card's frame: the grouped background, the accent ring while connecting.
+    private func cardChrome<V: View>(_ content: V, connecting: Bool, radius: CGFloat, shadow: Bool) -> some View {
+        content
+            .background(RoundedRectangle(cornerRadius: radius, style: .continuous).fill(Color(.secondarySystemBackground)))
+            .overlay {
+                if connecting {
+                    RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(Palette.accent, lineWidth: 2)
+                }
+            }
+            .shadow(color: .black.opacity(shadow && colorScheme == .light ? 0.08 : 0), radius: 8, y: 6)
+            .contentShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+    }
+
+    private func cancelButton(_ mac: FoundMac) -> some View {
+        Button { cancel(mac) } label: {
+            Text("Cancel")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .padding(.horizontal, 16)
+                .frame(minHeight: 34)
+                .background(Capsule().fill(Color(.tertiarySystemFill)))
+                .frame(minHeight: 44)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityHint("Pairs this \(device) with a Mac so you can reach it away from home.")
+        .accessibilityHint("Stops connecting to \(mac.name).")
+    }
+
+    private func heroCard(_ mac: FoundMac) -> some View {
+        let s = state(mac)
+        let dialing = connecting(mac)
+        return Button { tap(mac) } label: {
+            cardChrome(VStack(alignment: .leading, spacing: 12) {
+                thumbnail(mac, height: nil, radius: Self.thumbRadius, symbol: heroSymbol)
+                    .overlay(alignment: .topLeading) {
+                        stateLine(mac, font: .footnote.weight(.semibold))
+                            .padding(.horizontal, 10)
+                            .frame(minHeight: 28)
+                            .background(Capsule().fill(.regularMaterial))
+                            .padding(10)
+                    }
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(mac.name)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                            .lineLimit(2)
+                        Text(dialing ? HomeGallery.connectingWord : HomeGallery.place(s))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
+                    if !dialing, HomeGallery.connects(s) {
+                        Text("Connect")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color(.systemBackground))
+                            .padding(.horizontal, 18)
+                            .frame(minHeight: 34)
+                            .background(Capsule().fill(Palette.accent))
+                    } else if dialing {
+                        // Cancel's place: the real button lies over it (a button in a button never answers).
+                        Color.clear.frame(width: 88, height: 34)
+                    }
+                }
+                .padding(.horizontal, 6)
+            }
+            .padding(EdgeInsets(top: 8, leading: 8, bottom: 14, trailing: 8)),
+            connecting: dialing, radius: Self.cardRadius, shadow: true)
+        }
+        .buttonStyle(CardPress())
+        .overlay(alignment: .bottomTrailing) {
+            if dialing { cancelButton(mac).padding(.trailing, 14).padding(.bottom, 8) }
+        }
+        .modifier(CardAccessibility(label: HomeGallery.label(name: mac.name, state: s, connecting: dialing),
+                                    hint: HomeGallery.hint(state: s, connecting: dialing, device: device),
+                                    cancel: dialing ? { cancel(mac) } : nil))
+        .contextMenu { menu(for: mac) }
+    }
+
+    private func tile(_ mac: FoundMac) -> some View {
+        let s = state(mac)
+        let dialing = connecting(mac)
+        return Button { tap(mac) } label: {
+            cardChrome(VStack(alignment: .leading, spacing: 10) {
+                thumbnail(mac, height: tileThumb, radius: Self.thumbRadius, symbol: tileSymbol)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(mac.name)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+                    stateLine(mac, font: .footnote)
+                }
+                .padding(.horizontal, 4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(EdgeInsets(top: 8, leading: 8, bottom: 12, trailing: 8))
+            .frame(maxHeight: .infinity, alignment: .top),
+            connecting: dialing, radius: Self.cardRadius, shadow: false)
+        }
+        .buttonStyle(CardPress())
+        .modifier(CardAccessibility(label: HomeGallery.label(name: mac.name, state: s, connecting: dialing),
+                                    hint: HomeGallery.hint(state: s, connecting: dialing, device: device),
+                                    cancel: dialing ? { cancel(mac) } : nil))
+        .contextMenu { menu(for: mac) }
+    }
+
+    /// The list style's row, the accessibility sizes' and the first run's Nearby (direction B's row).
+    private func listRow(_ mac: FoundMac) -> some View {
+        let s = state(mac)
+        let dialing = connecting(mac)
+        return Button { tap(mac) } label: {
+            cardChrome(HStack(spacing: 12) {
+                thumbnail(mac, height: rowThumb, radius: 10, symbol: rowSymbol)
+                    .frame(width: rowThumb)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(mac.name)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    stateLine(mac, font: .subheadline)
+                }
+                Spacer(minLength: 0)
+                if dialing {
+                    Color.clear.frame(width: 88, height: 34)
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .frame(minHeight: 68),
+            connecting: dialing, radius: 12, shadow: false)
+        }
+        .buttonStyle(CardPress())
+        .overlay(alignment: .trailing) {
+            if dialing { cancelButton(mac).padding(.trailing, 12) }
+        }
+        .modifier(CardAccessibility(label: HomeGallery.label(name: mac.name, state: s, connecting: dialing),
+                                    hint: HomeGallery.hint(state: s, connecting: dialing, device: device),
+                                    cancel: dialing ? { cancel(mac) } : nil))
+        .contextMenu { menu(for: mac) }
+    }
+
+    /// The first run: what Sill needs, the two ways to pair, and the computers nearby as they appear.
+    private func welcome(_ layout: ConnectLayout) -> some View {
+        VStack(spacing: 0) {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Palette.accent.opacity(0.14))
+                .frame(width: welcomeTile, height: welcomeTile)
+                .overlay {
+                    Image(systemName: "desktopcomputer")
+                        .font(.system(size: welcomeTile / 2, weight: .regular))
+                        .foregroundStyle(Palette.accent)
+                }
+                .accessibilityHidden(true)
+            Text("Connect to your computer")
+                .font(.title2.bold())
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 24)
+                .accessibilityAddTraits(.isHeader)
+            Text("Open Sill on your Mac or PC and show its pairing code.")
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 8)
+            VStack(spacing: 12) {
+                Button { unfold(typed: false) } label: {
+                    Label("Scan Pairing Code", systemImage: "qrcode.viewfinder")
+                        .font(.headline)
+                        .foregroundStyle(Color(.systemBackground))
+                        .frame(maxWidth: .infinity, minHeight: 52)
+                        .background(Capsule().fill(Palette.accent))
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(CardPress())
+                Button { unfold(typed: true) } label: {
+                    Text("Enter Address and Code")
+                        .font(.headline)
+                        .foregroundStyle(Palette.accent)
+                        .frame(maxWidth: .infinity, minHeight: 52)
+                        .background(Capsule().fill(Color(.secondarySystemBackground)))
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(CardPress())
+            }
+            .padding(.top, 32)
+            if !client.macs.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Nearby")
+                        .font(.footnote)
+                        .textCase(.uppercase)
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, 4)
+                        .accessibilityAddTraits(.isHeader)
+                    ForEach(client.macs) { mac in listRow(mac) }
+                }
+                .padding(.top, 32)
+            }
+            Link(destination: SillLinks.download) {
+                Text("Get Sill for Mac or Windows")
+                    .font(.subheadline)
+                    .foregroundStyle(Palette.accent)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .padding(.top, 16)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// Nothing listed after the network's first seconds: why, and Search Nearby (also in the ⋯ menu).
+    @ViewBuilder private var nearbyHint: some View {
+        if client.showsNearbyHint {
+            Text("Your computer has to be on the same Wi\u{2011}Fi network as this \(device), or have Direct Wireless Connection turned on in Sill. Away from home, add it once with a code from your computer.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 4)
+                .padding(.top, 8)
+            if client.searchingNearby {
+                Text("Also looking nearby")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .padding(.horizontal, 4)
+            } else {
+                Button(action: searchNearby) {
+                    Text("Search Nearby")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Palette.accent)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .padding(.horizontal, 4)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Also looks for a computer with Direct Wireless Connection turned on, without a Wi\u{2011}Fi network.")
+            }
+        }
+    }
+
+    private func searchNearby() {
+        client.searchNearby()
+        // The button leaves from under VoiceOver's cursor: say what it started.
+        UIAccessibility.post(notification: .announcement, argument: "Also looking nearby")
+    }
+
+    /// The top line: Add Computer and the ⋯ menu (List or Tiles, Search Nearby, Settings), 44 pt each.
+    private var toolbar: some View {
+        HStack(spacing: 8) {
+            Spacer(minLength: 0)
+            Button { unfold() } label: { toolbarCircle("plus") }
+                .buttonStyle(CardPress())
+                .accessibilityLabel("Add Computer")
+                .accessibilityHint("Pairs this \(device) with a Mac or PC so you can reach it away from home.")
+            Menu {
+                Button { toggleStyle() } label: {
+                    Label(style == .tiles ? "Show as List" : "Show as Tiles",
+                          systemImage: style == .tiles ? "list.bullet" : "square.grid.2x2")
+                }
+                if !client.searchingNearby {
+                    Button(action: searchNearby) { Label("Search Nearby", systemImage: "antenna.radiowaves.left.and.right") }
+                }
+                Button {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                } label: { Label("Settings", systemImage: "gear") }
+            } label: { toolbarCircle("ellipsis") }
+            .accessibilityLabel("More")
+        }
+    }
+
+    private func toolbarCircle(_ symbol: String) -> some View {
+        Image(systemName: symbol)
+            .font(.body.weight(.semibold))
+            .foregroundStyle(Palette.accent)
+            .frame(width: 44, height: 44)
+            .background(Circle().fill(Color(.secondarySystemBackground)))
+            .contentShape(Circle())
     }
 
     /// A saved Mac's row or tile: Connect (a Remote row) or Connect Remotely (its network row, to
@@ -1672,102 +2179,11 @@ struct ConnectScreen: View {
         }
     }
 
-    private func macRow(_ mac: FoundMac) -> some View {
-        // The kind of link, never the Wi-Fi network's name: that needs Location access, which
-        // Sill does not ask for (DiscoveryPolicy.method); "Remote" for a saved Mac dialed away
-        // from home; at home, what a tap does first when it pairs ("Not paired", "Wired" over
-        // the cable) or cannot connect ("Update Sill"), with VoiceOver's label and hint for it
-        // (DiscoveryPolicy.RowWord). The row a tap's ask is waiting on is lit, as the drawer
-        // lights the app on screen, while the status line says "Pairing with…".
-        DrawerRow(height: 50, highlighted: asking(mac),
-                  title: mac.name, trailing: mac.word,
-                  action: { client.connect(to: mac) }) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Palette.iconFallback)
-                Image(systemName: "desktopcomputer")
-                    .font(.system(size: 16))
-                    .foregroundStyle(.white)
-            }
-            .frame(width: 32, height: 32)
-        }
-        .accessibilityLabel(rowLabel(mac))
-        .accessibilityHint(rowHint(mac))
-        .contextMenu { menu(for: mac) }
-    }
 
-    /// The row or tile a tap's ask is waiting on.
-    private func asking(_ mac: FoundMac) -> Bool {
-        client.homeAsk.map { $0.phase == .asking && $0.target.row == mac.id } ?? false
-    }
-
-    private func rowLabel(_ mac: FoundMac) -> String {
-        mac.route == .remote ? "\(mac.name), Remote" : mac.homeWord.label(name: mac.name)
-    }
-
-    private func rowHint(_ mac: FoundMac) -> String {
-        mac.route == .remote ? "Connects through your VPN or the internet."
-            : mac.homeWord.hint(name: mac.name, device: device, direct: mac.direct)
-    }
-
-    private func macTile(_ mac: FoundMac) -> some View {
-        let highlighted = asking(mac)
-        // Every row of one Mac shows its one picture: Wired, Wi-Fi, Direct and Remote (ConnectionList.tileMac).
-        let preview = ConnectionList.tileMac(macID: mac.macID, savedByName: mac.savedByName).flatMap { client.macPreviews[$0] }
-        return Button(action: { client.connect(to: mac) }) {
-            VStack(alignment: .leading, spacing: 0) {
-                // The band sets the size; the picture fills it as an overlay, which never sizes the
-                // tile, and is clipped to it. In the band's place, a picture wider than its cell (a
-                // 16:9 or 2.39:1 screen) made the tile wider than its column.
-                Rectangle()
-                    .fill(Palette.iconFallback.opacity(0.35))
-                    .frame(height: 92)
-                    .overlay {
-                        if let preview {
-                            Image(uiImage: preview)
-                                .resizable()
-                                .scaledToFill()
-                        } else {
-                            Image(systemName: "desktopcomputer")
-                                .font(.system(size: 24))
-                                .foregroundStyle(.white.opacity(0.85))
-                        }
-                    }
-                    .clipped()
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(mac.name)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Palette.text)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                    if let word = mac.word {
-                        Text(word)
-                            .font(.system(size: 12))
-                            .foregroundStyle(Palette.muted)
-                            .lineLimit(1)
-                    }
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
-                .frame(maxWidth: .infinity, minHeight: 46, alignment: .leading)
-            }
-            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(highlighted ? Palette.accent.opacity(0.22) : Palette.control))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(highlighted ? Palette.accent.opacity(0.55) : Color.white.opacity(0.08), lineWidth: 1)
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(rowLabel(mac))
-        .accessibilityHint(rowHint(mac))
-        .contextMenu { menu(for: mac) }
-    }
-
-    private func unfold() {
+    private func unfold(typed startTyped: Bool = false) {
         client.cancelHomeAsk()      // a tap's ask still waiting for its answer: Add a Mac is another way
         client.pairing = .idle
-        typed = !scannerUsable
+        typed = startTyped || !scannerUsable
         withAnimation(reduceMotion ? .easeOut(duration: 0.18) : .springCompat(duration: 0.3, bounce: 0.1)) { adding = true }
         titleFocused = true
     }
@@ -1873,8 +2289,8 @@ struct ConnectScreen: View {
         // Under the column's own edge and as wide as the rows, so the two line up; on a screen
         // narrower than 412 pt (a phone, a window in Slide Over) that is the screen's width less
         // the margins, so the links go to a second line rather than past the edge.
-        .frame(width: layout.columnWidth, alignment: .leading)
-        .padding(.leading, layout.columnX)
+        .frame(width: galleryShown ? galleryWidth(layout) : layout.columnWidth, alignment: .leading)
+        .padding(.leading, galleryShown ? galleryX(layout) : layout.columnX)
         .frame(maxWidth: .infinity, alignment: .leading)
         // Room for the last link's tap area, which then stays on the screen.
         .padding(.bottom, Self.linkReach)
@@ -1905,7 +2321,7 @@ struct ConnectScreen: View {
     }
 
     private var needsMac: some View {
-        Text("Needs the free Sill app on your Mac.")
+        Text("Needs the free Sill app on your Mac or PC.")
             .foregroundStyle(Palette.muted)
             .fixedSize(horizontal: false, vertical: true)
     }
@@ -1966,6 +2382,36 @@ struct ConnectScreen: View {
                 .contentShape(Rectangle())
         }
         .padding(.vertical, -Self.linkReach)
+    }
+}
+
+/// A card's press: it gives at once under the finger (well within 100 ms), and springs back.
+private struct CardPress: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .opacity(configuration.isPressed ? 0.85 : 1)
+            .animation(.easeOut(duration: 0.08), value: configuration.isPressed)
+    }
+}
+
+/// One VoiceOver element per card: its label and hint, and Cancel as an action while it connects.
+private struct CardAccessibility: ViewModifier {
+    let label: String
+    let hint: String
+    let cancel: (() -> Void)?
+
+    func body(content: Content) -> some View {
+        let element = content
+            .accessibilityElement(children: .ignore)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel(label)
+            .accessibilityHint(hint)
+        if let cancel {
+            element.accessibilityAction(named: "Cancel", cancel)
+        } else {
+            element
+        }
     }
 }
 
