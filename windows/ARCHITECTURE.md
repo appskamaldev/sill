@@ -124,6 +124,19 @@ licence equivalent to MIT (keep the notice). The alternative provider, `aws-lc-r
 Apache-2.0 AND ISC (and needs CMake/NASM on Windows); a pure-RustCrypto provider is not mature.
 `webpki` is used only for the TLS 1.3 signature check over a raw SPKI; no chain is ever evaluated.
 
+Added in Phase 2 (tray, control pipe, the Sill app):
+
+| Component | Licence | Why |
+|---|---|---|
+| `qrcode` (0.14, no default features) | MIT/Apache-2.0 | The pairing QR's modules, sent to the app as rows over the control pipe (the app draws them; no image crate). |
+| Windows App SDK 1.6 (WinUI 3) | MIT | The app's window, tray flyout, Mica/acrylic and Fluent controls (ADR-7). Bundled self-contained; nothing to install. |
+| .NET 8 runtime | MIT | The app's runtime, bundled self-contained and trimmed (partial). |
+| Microsoft.Windows.SDK.BuildTools | MIT | Build-time only (WinRT projections). |
+| WebView2 projection | BSD-3-Clause | Pulled in by the Windows App SDK; unused by the app, trimmed where the linker can. |
+
+The app adds no other NuGet package: JSON is System.Text.Json (source-generated), the pipe is
+`System.IO.Pipes`.
+
 ## 4. Architecture decisions (ADR log)
 
 | # | Date | Decision | Status |

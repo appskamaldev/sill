@@ -14,7 +14,8 @@ windows/
 ├── crates/sill-platform  DPAPI and DnsServiceRegister (cfg(windows)); stand-ins elsewhere
 ├── crates/sill-store     identity (P-256 key, recognition key), paired devices, Require pairing
 ├── crates/sill-net       TLS doors, pairing, sessions, synthetic stream (tokio + rustls)
-├── host/                 the sill-host binary (CLI)
+├── host/                 the sill-host binary (tray icon, control pipe; CLI flags for development)
+├── app/Sill/             the Sill app (C#, WinUI 3): main window and tray flyout, talks to the host
 ├── testdata/clip.bin     the synthetic picture: 30 HEVC frames, 1280×800 (format: sill-net/src/video.rs)
 ├── vectors/*.json        golden vectors from upstream Swift (generated, committed)
 └── tools/                make-vectors.sh, the vector generator (tools/vectors), testclip (tools/testclip),
@@ -69,6 +70,23 @@ Flags: `--name`, `--data-dir`, `--pair`, `--list-devices`, `--unpair NAME|FP`, `
 `--no-bonjour`, `--log-level error|warn|info|debug` (input events and skipped kinds are debug).
 `--list-devices` and `--unpair` act on the files and exit; a running host notices within a second
 and sends the unpaired device goodbye `removed`.
+
+## The Sill app (WinUI 3)
+
+Needs the .NET 8 SDK (8.0.4xx); NuGet fetches the Windows App SDK 1.6. No Visual Studio needed.
+```
+cd windows\app\Sill
+dotnet build -c Release                                  # bin\Release\net8.0-windows10.0.22621.0\win-x64\Sill.exe
+dotnet publish -c Release -r win-x64 --self-contained -o <install dir>\app   # trimmed, about 77 MB
+```
+Install layout: `<dir>\sill-host.exe` and `<dir>\app\Sill.exe` (+ its files). The host opens the app
+from the tray (`--flyout`; `--pair` for Pair a device) and lets onto its control pipe
+(`\\.\pipe\sill-host-<user SID>`, this user and SYSTEM only, no remote clients) only processes whose
+exe is inside its own folder; `sill-host.exe --control-any-client` lifts that for development.
+The app starts the host if it is not running, keeps one instance (a second launch is handed to the
+first), and exits when its last window closes; the host and the tray icon stay.
+Development flags: `--page status|pair|devices|streaming|network|logs|about`, `--theme light|dark`,
+`--stay` (the flyout stays open without focus). App errors: `%LOCALAPPDATA%\Sill\logs\app.log`.
 
 ## Synthetic clip (macOS, no Xcode project, no simulator: no xcode-lock)
 

@@ -13,6 +13,7 @@ public sealed class StatusService
 
     DispatcherQueueTimer? timer;
     bool busy;
+    DateTime? startedHostAt;
 
     /// The last status; null when the host is not running.
     public Status? Current { get; private set; }
@@ -38,8 +39,11 @@ public sealed class StatusService
         try
         {
             var s = await HostClient.Shared.StatusAsync();
+            // Not running: start it once, and give it a few seconds before saying so.
+            if (s is null && startedHostAt is null && HostClient.HostInstalled && HostClient.StartHost())
+                startedHostAt = DateTime.UtcNow;
             Current = s;
-            Reached = true;
+            Reached = s is not null || startedHostAt is null || DateTime.UtcNow - startedHostAt > TimeSpan.FromSeconds(8);
             Updated?.Invoke();
         }
         finally { busy = false; }
