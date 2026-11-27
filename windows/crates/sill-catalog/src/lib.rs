@@ -10,7 +10,11 @@
 #[cfg(windows)]
 mod win;
 #[cfg(windows)]
-pub use win::{icon_png, launch, scan};
+pub mod window_ops;
+#[cfg(windows)]
+pub mod windows_list;
+#[cfg(windows)]
+pub use win::{app_path, icon_png, launch, scan};
 
 /// One app of the drawer.
 #[derive(Clone, Debug, PartialEq, Eq)]

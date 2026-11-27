@@ -30,7 +30,8 @@ pub fn host_settings(host: &Host, answering: Option<i64>) -> HostSettingsState {
 }
 
 pub fn window_list(host: &Host) -> WindowList {
-    let mut l = WindowList::new(host.config.name.clone(), Vec::new(), StreamSource::Desktop);
+    let windows = host.windows.get().map(|w| (*w.list()).clone()).unwrap_or_default();
+    let mut l = WindowList::new(host.config.name.clone(), windows, host.hub.source());
     l.launch_id = Some(host.launch_id.clone());
     l.host_version = Some(env!("CARGO_PKG_VERSION").to_string());
     l.protocol = Some(PROTOCOL_CURRENT);
@@ -142,6 +143,12 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
     out.send(message(Kind::HostSettings, encode(&host_settings(&host, None))));
     let video = Arc::new(ClientVideo::new(tx.clone(), in_flight, out.last_sent.clone()));
     // The Apps drawer after the catalog, as upstream's `sendCatalog`: icons, then the list.
+    let mut window_events = host.windows.get().map(|w| {
+        w.resend_thumbnails();
+        w.subscribe()
+    });
+    let mut active_rx = host.hub.active.subscribe();
+    active_rx.borrow_and_update();
     let mut app_events = match host.apps.get() {
         Some(src) => {
             if src.locked() {
@@ -179,7 +186,7 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
         name: &name,
         fps: &mut fps,
         last_keyframe_request: &mut last_keyframe_request,
-        picked_desktop: false,
+        picked: None,
         session_id: video_id,
         literal_keys: false,
         settings_arrivals: Vec::new(),
@@ -243,6 +250,32 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
                     Err(tokio::sync::broadcast::error::RecvError::Closed) => app_events = None,
                 }
             }
+            ev = async {
+                match window_events.as_mut() {
+                    Some(rx) => rx.recv().await,
+                    None => std::future::pending().await,
+                }
+            } => {
+                use crate::windows::WindowEvent;
+                match ev {
+                    Ok(WindowEvent::List(_)) => out.send(message(Kind::WindowList, encode(&window_list(&host)))),
+                    Ok(WindowEvent::Thumbnail(id, jpeg)) => {
+                        out.send(message(Kind::Thumbnail, sill_wire::encode_thumbnail(id, &jpeg)));
+                    }
+                    Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                        out.send(message(Kind::WindowList, encode(&window_list(&host))));
+                    }
+                    Err(tokio::sync::broadcast::error::RecvError::Closed) => window_events = None,
+                }
+            }
+            changed = active_rx.changed() => {
+                // The source changed (this device's pick or another's): the list says it.
+                if changed.is_ok() {
+                    active_rx.borrow_and_update();
+                    video.needs_keyframe.store(true, Ordering::Relaxed);
+                    out.send(message(Kind::WindowList, encode(&window_list(&host))));
+                }
+            }
             changed = s.settings_rx.changed() => {
                 // Another session changed the settings: every device hears the new state.
                 if changed.is_ok() {
@@ -302,9 +335,9 @@ struct SessionState<'a> {
     name: &'a str,
     fps: &'a mut Option<i64>,
     last_keyframe_request: &'a mut Option<Instant>,
-    /// The Desktop was picked and not unpicked since: a device sends its own pick on the first
-    /// window list and its switcher's, often in one read (Checkpoint 1: two lines 6 µs apart).
-    picked_desktop: bool,
+    /// This session's last pick: a device sends its own pick on the first window list and its
+    /// switcher's, often in one read (Checkpoint 1: two lines 6 µs apart); a repeat is not logged.
+    picked: Option<StreamSource>,
     /// The hub's id for this session, also its input state's.
     session_id: u64,
     /// Its hello said `pcKeys` ≥ 1: its keys are literal PC keys (fork extension).
@@ -348,26 +381,38 @@ impl SessionState<'_> {
                 }
             }
             Kind::SelectSource => match decode::<StreamSource>(&m.payload) {
-                Some(StreamSource::Desktop) if self.picked_desktop => {
-                    debug!("{name} at {peer} picked the Desktop again; it streams already.");
+                // One source for every device; the last pick wins (upstream).
+                Some(src) if src == self.host.hub.source() && self.picked == Some(src) => {
+                    debug!("{name} at {peer} picked {src:?} again; it streams already.");
                 }
                 Some(StreamSource::Desktop) => {
                     info!("{name} at {peer} picked the Desktop.");
-                    self.picked_desktop = true;
+                    self.picked = Some(StreamSource::Desktop);
                     self.video.needs_keyframe.store(true, Ordering::Relaxed);
                     self.video.wants.store(true, Ordering::Relaxed);
-                    self.host.hub.request_keyframe();
+                    self.host.hub.select(StreamSource::Desktop);
                 }
                 Some(StreamSource::None) => {
                     info!("{name} at {peer} picked nothing.");
-                    self.picked_desktop = false;
-                    self.video.wants.store(false, Ordering::Relaxed);
+                    self.picked = Some(StreamSource::None);
+                    self.host.hub.select(StreamSource::None);
                     if let Some(sink) = self.host.input.get() {
                         sink.left(self.session_id);
                     }
                 }
                 Some(StreamSource::Window(id)) => {
-                    info!("{name} at {peer} picked window {id}; this host lists none, the Desktop stays.")
+                    let listed = self.host.windows.get().is_some_and(|w| w.list().iter().any(|x| x.id == id));
+                    self.picked = Some(StreamSource::Window(id));
+                    if listed {
+                        info!("{name} at {peer} picked window {id}.");
+                        self.video.needs_keyframe.store(true, Ordering::Relaxed);
+                        self.video.wants.store(true, Ordering::Relaxed);
+                        self.host.hub.select(StreamSource::Window(id));
+                    } else {
+                        // Upstream: a window not on the list streams nothing, and the list says so.
+                        info!("{name} at {peer} picked window {id}, which is not listed: nothing streams.");
+                        self.host.hub.select(StreamSource::None);
+                    }
                 }
                 None => debug!("{name} at {peer}: a selectSource that does not decode."),
             },
@@ -377,6 +422,10 @@ impl SessionState<'_> {
                     None => {
                         *self.fps = v.fps;
                         self.video.fps.store(v.fps.unwrap_or(0).max(0), Ordering::Relaxed);
+                        // With a text scale, a streamed window is fitted to the panel; without one
+                        // (Aa Off), the fit ends. The last device's viewport wins (upstream).
+                        let fit = v.scale.filter(|s| *s > 0.0).map(|s| (v.width, v.height, s));
+                        self.host.hub.viewport.send_replace(fit);
                         info!(
                             "Viewport from {name}: {}×{} points, fps {} ({}).",
                             viewport::whole(v.width),
@@ -423,6 +472,13 @@ impl SessionState<'_> {
                 // Exactly one answer, to this device: the settings as they now stand.
                 self.out.send(message(Kind::HostSettings, encode(&host_settings(self.host, change.token))));
             }
+            Kind::WindowCommand => match (decode::<sill_wire::WindowCommand>(&m.payload), self.host.windows.get()) {
+                (Some(c), Some(w)) => match w.command(&c) {
+                    Ok(()) => info!("{name} at {peer}: window {} {:?}.", c.id, c.action),
+                    Err(e) => info!("{name} at {peer}: window {} {:?} refused: {e}", c.id, c.action),
+                },
+                _ => debug!("{name} at {peer}: a windowCommand this host cannot take."),
+            },
             Kind::LaunchApp => match (decode::<LaunchApp>(&m.payload), self.host.apps.get()) {
                 (Some(l), Some(src)) if !src.locked() => match src.launch(&l.bundle_id) {
                     Ok(()) => info!("{name} at {peer} launched {}.", sill_pairing::safe_text::label64(&l.bundle_id)),

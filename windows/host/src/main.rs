@@ -3,11 +3,12 @@
 //! no Bonjour, test picture only). See windows/BUILD.md.
 
 #[cfg(windows)]
-mod apps;
+mod catalog;
 #[cfg(windows)]
 mod desktop;
 #[cfg(windows)]
 mod input;
+mod thumbs;
 
 use sill_net::{Clip, Config, Host};
 use sill_store::Store;
@@ -446,11 +447,18 @@ async fn run(store: Store, args: Args) -> i32 {
     let stop_desktop = Arc::new(std::sync::atomic::AtomicBool::new(false));
     #[cfg(windows)]
     if !args.test_clip {
-        let _ = host.input.set(Arc::new(input::DesktopInput::default()));
-        let _ = host.apps.set(apps::StartApps::start());
+        let h = host.clone();
+        let catalog = catalog::Catalog::start(host.hub.clone(), move || {
+            let (home, remote) = h.sessions();
+            home + remote
+        });
+        let _ = host.apps.set(catalog.clone());
+        let _ = host.windows.set(catalog.clone());
+        let _ = host.input.set(Arc::new(input::DesktopInput::new(host.hub.clone(), catalog.clone())));
         let h = host.clone();
         desktop::spawn(
             host.hub.clone(),
+            catalog.clone(),
             host.stats.clone(),
             stop_desktop.clone(),
             move || h.now_us(),

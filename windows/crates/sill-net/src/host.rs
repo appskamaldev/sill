@@ -94,6 +94,8 @@ pub struct Host {
     pub input: std::sync::OnceLock<Arc<dyn crate::input::InputSink>>,
     /// The Apps drawer (set once by the host binary); none: no apps are sent.
     pub apps: std::sync::OnceLock<Arc<dyn crate::apps::AppSource>>,
+    /// The window list (set once by the host binary); none: no windows are listed.
+    pub windows: std::sync::OnceLock<Arc<dyn crate::windows::WindowSource>>,
     started: Instant,
     state: Mutex<State>,
     pub shutdown: watch::Sender<bool>,
@@ -147,6 +149,7 @@ impl Host {
             clip,
             input: std::sync::OnceLock::new(),
             apps: std::sync::OnceLock::new(),
+            windows: std::sync::OnceLock::new(),
             stats,
             started: Instant::now(),
             state: Mutex::new(State {

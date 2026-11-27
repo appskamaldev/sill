@@ -205,6 +205,19 @@ impl Capture {
     pub fn start(gpu: &Gpu, monitor: &Monitor, on_frame: impl Fn() + Send + Sync + 'static) -> Result<Capture> {
         let interop = windows::core::factory::<GraphicsCaptureItem, IGraphicsCaptureItemInterop>()?;
         let item: GraphicsCaptureItem = unsafe { interop.CreateForMonitor(monitor.handle)? };
+        Self::with_item(gpu, item, on_frame)
+    }
+
+    /// Captures one window (WGC also captures it while other windows cover it; a minimized window
+    /// sends no frames).
+    pub fn start_window(gpu: &Gpu, hwnd: isize, on_frame: impl Fn() + Send + Sync + 'static) -> Result<Capture> {
+        let interop = windows::core::factory::<GraphicsCaptureItem, IGraphicsCaptureItemInterop>()?;
+        let item: GraphicsCaptureItem =
+            unsafe { interop.CreateForWindow(windows::Win32::Foundation::HWND(hwnd as *mut _))? };
+        Self::with_item(gpu, item, on_frame)
+    }
+
+    fn with_item(gpu: &Gpu, item: GraphicsCaptureItem, on_frame: impl Fn() + Send + Sync + 'static) -> Result<Capture> {
         let dxgi: IDXGIDevice = gpu.device.cast()?;
         let d3d: IDirect3DDevice = unsafe { CreateDirect3D11DeviceFromDXGIDevice(&dxgi)? }.cast()?;
         let size: SizeInt32 = item.Size()?;

@@ -23,3 +23,6 @@ sill-encode = { path = "../crates/sill-encode" }
 sill-input = { path = "../crates/sill-input" }
 sill-wire = { path = "../crates/sill-wire" }
 sill-catalog = { path = "../crates/sill-catalog" }
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.62", features = ["Win32_Foundation"] }

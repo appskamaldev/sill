@@ -15,6 +15,7 @@ pub mod settings;
 pub mod stats;
 pub mod tls;
 pub mod video;
+pub mod windows;
 
 pub use host::{Config, Host, PairingOffer};
 pub use server::{start, Running};

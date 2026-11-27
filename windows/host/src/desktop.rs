@@ -1,16 +1,23 @@
-//! The desktop as the picture (Windows): primary monitor → WGC → NV12 on the GPU → hardware HEVC
-//! → `Hub::deliver`. One thread owns the whole pipeline and builds it when a session starts
-//! viewing, rebuilds it when the monitor's size or the wanted frame rate changes, and tears it
-//! down a few seconds after the last viewer leaves.
+//! The picture (Windows): the primary monitor or one window → WGC → BGRA or NV12 on the GPU →
+//! hardware HEVC → `Hub::deliver`. One thread owns the whole pipeline. It builds the pipeline when a
+//! session starts viewing, and rebuilds it when the source (the hub's `active`), the size, the
+//! wanted frame rate or the bitrate changes. It tears the pipeline down a few seconds after the last
+//! viewer leaves.
+//!
+//! A streamed window is fitted to the device's panel when the device sends a text scale (the
+//! upstream viewport fit, which keeps text 1:1 and crisp). It is put back when it stops being the
+//! source, the fit ends, or the host quits.
 //!
 //! Latency over quality: the capture's newest frame wins (older waiting ones are released
 //! unseen), frames are paced to the stream's fps, and a keyframe wanted on a still screen
-//! re-encodes the last NV12 texture.
+//! re-encodes the last picture.
 
+use crate::catalog::Catalog;
 use sill_capture::{Capture, Converter, Gpu, Monitor};
 use sill_encode::{annexb, mf};
 use sill_net::stats::Stats;
 use sill_net::{Encoded, Hub};
+use sill_wire::StreamSource;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 use std::sync::Arc;
@@ -22,7 +29,7 @@ const IDLE_TEARDOWN: Duration = Duration::from_secs(3);
 
 #[derive(Clone, Copy, Debug)]
 pub struct Options {
-    /// A cap on the share of the monitor's pixels (`--capture-scale`, 1 = none), on top of the
+    /// A cap on the share of the source's pixels (`--capture-scale`, 1 = none), on top of the
     /// devices' Retina or Standard.
     pub capture_scale: f64,
     /// Give the encoder the captured BGRA (it converts on its own engine) instead of converting to
@@ -32,9 +39,111 @@ pub struct Options {
     pub bgra_input: bool,
 }
 
-/// Starts the desktop pipeline's thread; it runs until `stop` is set.
+/// What is captured.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Target {
+    Monitor,
+    Window { id: u32, hwnd: isize },
+}
+
+/// The window fitted to the device's panel, and how to put it back.
+struct Fit {
+    hwnd: isize,
+    original: windows::Win32::Foundation::RECT,
+    /// The visible frame size asked for, in physical pixels.
+    asked: (i32, i32),
+}
+
+#[derive(Default)]
+struct Fitter {
+    fit: Option<Fit>,
+    last_check: Option<Instant>,
+}
+
+impl Fitter {
+    /// Fits the streamed window `hwnd` to `viewport` (points and text scale), or puts a fitted window
+    /// back when it is no longer the source or the fit ended. At most every 250 ms.
+    fn update(&mut self, hwnd: Option<isize>, viewport: Option<(f64, f64, f64)>) {
+        if self.last_check.is_some_and(|t| t.elapsed() < Duration::from_millis(250)) {
+            return;
+        }
+        self.last_check = Some(Instant::now());
+        use sill_catalog::window_ops as ops;
+        if let Some(f) = &self.fit {
+            if hwnd != Some(f.hwnd) || viewport.is_none() {
+                self.restore();
+            }
+        }
+        let (Some(h), Some((vw, vh, scale))) = (hwnd, viewport) else { return };
+        if !ops::is_window(h) || ops::is_maximized(h) {
+            return;
+        }
+        let dpi = sill_catalog::windows_list::dpi_scale_of(windows::Win32::Foundation::HWND(h as *mut _));
+        // Upstream: round(panel / scale) points; here points are DIPs.
+        let want = (((vw / scale).round() * dpi).round() as i32, ((vh / scale).round() * dpi).round() as i32);
+        if want.0 < 100 || want.1 < 100 {
+            return;
+        }
+        let Some(frame) = sill_catalog::windows_list::frame_of(windows::Win32::Foundation::HWND(h as *mut _)) else {
+            return;
+        };
+        let cur = (frame.right - frame.left, frame.bottom - frame.top);
+        let tol = (2.0 * dpi).ceil() as i32;
+        if (cur.0 - want.0).abs() <= tol && (cur.1 - want.1).abs() <= tol {
+            return;
+        }
+        if self.fit.is_none() {
+            let Some(original) = ops::outer_rect(h) else { return };
+            self.fit = Some(Fit { hwnd: h, original, asked: want });
+        }
+        match ops::set_frame_size(h, want.0, want.1) {
+            Ok(()) => {
+                if let Some(f) = &mut self.fit {
+                    f.asked = want;
+                }
+                info!(
+                    "Window fitted to the device: {}×{} DIPs ({}×{} px) for a {:.0}×{:.0} pt panel at scale {scale}.",
+                    (vw / scale).round(),
+                    (vh / scale).round(),
+                    want.0,
+                    want.1,
+                    vw,
+                    vh
+                );
+            }
+            Err(e) => warn!("Window fit refused: {e}"),
+        }
+    }
+
+    /// Puts the fitted window back, unless it is gone or someone resized it since (upstream
+    /// WindowRestore: "resized on the Mac" is left alone).
+    fn restore(&mut self) {
+        use sill_catalog::window_ops as ops;
+        let Some(f) = self.fit.take() else { return };
+        if !ops::is_window(f.hwnd) {
+            return;
+        }
+        let h = windows::Win32::Foundation::HWND(f.hwnd as *mut _);
+        let dpi = sill_catalog::windows_list::dpi_scale_of(h);
+        let tol = (2.0 * dpi).ceil() as i32;
+        let ours = sill_catalog::windows_list::frame_of(h).is_some_and(|r| {
+            ((r.right - r.left) - f.asked.0).abs() <= tol && ((r.bottom - r.top) - f.asked.1).abs() <= tol
+        });
+        if !ours {
+            info!("Window not put back: it was resized on this PC since the fit.");
+            return;
+        }
+        match ops::set_outer_rect(f.hwnd, f.original) {
+            Ok(()) => info!("Window put back to its own size."),
+            Err(e) => warn!("Window could not be put back: {e}"),
+        }
+    }
+}
+
+/// Starts the pipeline's thread; it runs until `stop` is set.
 pub fn spawn(
     hub: Arc<Hub>,
+    catalog: Arc<Catalog>,
     stats: Arc<Stats>,
     stop: Arc<AtomicBool>,
     now_us: impl Fn() -> u64 + Send + 'static,
@@ -42,24 +151,35 @@ pub fn spawn(
 ) {
     let _ = std::thread::Builder::new().name("sill-desktop".into()).spawn(move || {
         if let Err(e) = mf::startup() {
-            warn!("Media Foundation did not start ({e}); no desktop picture.");
+            warn!("Media Foundation did not start ({e}); no picture.");
             return;
         }
         let mut pipeline: Option<Pipeline> = None;
         let mut idle_since: Option<Instant> = None;
         let mut retry_at: Option<Instant> = None;
+        let mut fitter = Fitter::default();
         while !stop.load(Ordering::Relaxed) {
-            if !hub.streaming() {
+            let target = match hub.source() {
+                StreamSource::Desktop => Some(Target::Monitor),
+                StreamSource::Window(id) => catalog.hwnd(id).map(|hwnd| Target::Window { id, hwnd }),
+                StreamSource::None => None,
+            };
+            let window = match target {
+                Some(Target::Window { hwnd, .. }) => Some(hwnd),
+                _ => None,
+            };
+            fitter.update(if hub.streaming() { window } else { None }, *hub.viewport.borrow());
+            let Some(target) = target.filter(|_| hub.streaming()) else {
                 if pipeline.is_some() {
                     let since = *idle_since.get_or_insert_with(Instant::now);
-                    if since.elapsed() >= IDLE_TEARDOWN {
-                        info!("Desktop capture stopped: nobody is viewing.");
+                    if since.elapsed() >= IDLE_TEARDOWN || hub.source() == StreamSource::None {
+                        info!("Capture stopped: nothing to stream.");
                         pipeline = None;
                     }
                 }
                 std::thread::sleep(Duration::from_millis(50));
                 continue;
-            }
+            };
             idle_since = None;
             let monitor = match sill_capture::primary_monitor() {
                 Some(m) => m,
@@ -70,17 +190,32 @@ pub fn spawn(
             };
             let video = hub.video();
             let fps = sill_capture::stream_fps(hub.max_fps(), video.max_fps, monitor.refresh_hz);
-            let fraction = sill_capture::scale_fraction(video.capture_scale, monitor.dpi_scale) * o.capture_scale;
-            let size = sill_capture::stream_size(monitor.width, monitor.height, fraction);
+            let dpi = match target {
+                Target::Monitor => monitor.dpi_scale,
+                Target::Window { hwnd, .. } => {
+                    sill_catalog::windows_list::dpi_scale_of(windows::Win32::Foundation::HWND(hwnd as *mut _))
+                }
+            };
+            let fraction = sill_capture::scale_fraction(video.capture_scale, dpi) * o.capture_scale;
             let bitrate = video.bitrate.clamp(500_000, 200_000_000) as u32;
             let stale = pipeline.as_ref().is_some_and(|p| {
-                p.fps != fps
-                    || (p.monitor.width, p.monitor.height) != (monitor.width, monitor.height)
-                    || p.size != size
+                p.target != target
+                    || p.fps != fps
+                    || p.fraction != fraction
                     || p.bitrate != bitrate
+                    || p.resized
+                    || (target == Target::Monitor
+                        && (p.monitor.width, p.monitor.height) != (monitor.width, monitor.height))
             });
             if stale {
-                info!("Desktop picture changes: rebuilding the pipeline.");
+                let p = pipeline.as_ref().expect("stale implies some");
+                if p.target != target {
+                    info!("The source changes: rebuilding the pipeline.");
+                } else if p.resized {
+                    info!("The source's size changed: rebuilding the pipeline.");
+                } else {
+                    info!("The picture's settings changed: rebuilding the pipeline.");
+                }
                 pipeline = None;
             }
             if pipeline.is_none() {
@@ -88,30 +223,41 @@ pub fn spawn(
                     std::thread::sleep(Duration::from_millis(100));
                     continue;
                 }
-                match Pipeline::new(&monitor, size, fps, bitrate, o.bgra_input) {
+                match Pipeline::new(&monitor, target, fraction, fps, bitrate, o.bgra_input) {
                     Ok(p) => {
+                        let what = match target {
+                            Target::Monitor => format!(
+                                "{} {}×{} at {} Hz (scale {:.2})",
+                                monitor.device, monitor.width, monitor.height, monitor.refresh_hz, monitor.dpi_scale
+                            ),
+                            Target::Window { id, .. } => {
+                                format!("window {id} {}×{} px (scale {:.2})", p.capture.width, p.capture.height, dpi)
+                            }
+                        };
                         info!(
-                            "Desktop capture: {} {}×{} at {} Hz (scale {:.2}) → {}×{} at up to {} fps, {} kbit/s, {} on {}{}.",
-                            monitor.device,
-                            monitor.width,
-                            monitor.height,
-                            monitor.refresh_hz,
-                            monitor.dpi_scale,
-                            size.0,
-                            size.1,
+                            "Capture: {what} → {}×{} at up to {} fps, {} kbit/s, {} on {}{}.",
+                            p.size.0,
+                            p.size.1,
                             fps,
                             p.encoder.settings.bitrate / 1000,
                             p.encoder.name,
                             p.gpu.adapter,
                             if p.bgra { ", BGRA input" } else { "" }
                         );
-                        hub.set_picture(format!("the desktop streams at {}×{} up to {} fps", size.0, size.1, fps));
+                        hub.set_picture(match target {
+                            Target::Monitor => {
+                                format!("the desktop streams at {}×{} up to {} fps", p.size.0, p.size.1, fps)
+                            }
+                            Target::Window { id, .. } => {
+                                format!("window {id} streams at {}×{} up to {} fps", p.size.0, p.size.1, fps)
+                            }
+                        });
                         hub.request_keyframe();
                         retry_at = None;
                         pipeline = Some(p);
                     }
                     Err(e) => {
-                        warn!("Desktop capture could not start: {e}. Retrying in 2 s.");
+                        warn!("Capture could not start: {e}. Retrying in 2 s.");
                         retry_at = Some(Instant::now() + Duration::from_secs(2));
                         continue;
                     }
@@ -119,11 +265,14 @@ pub fn spawn(
             }
             let p = pipeline.as_mut().expect("built above");
             if let Err(e) = p.step(&hub, &stats, &now_us) {
-                warn!("Desktop capture failed: {e}. Rebuilding.");
+                warn!("Capture failed: {e}. Rebuilding.");
                 pipeline = None;
                 retry_at = Some(Instant::now() + Duration::from_secs(1));
             }
         }
+        // Quitting: a fitted window goes back to its own size.
+        fitter.last_check = None;
+        fitter.restore();
     });
 }
 
@@ -132,6 +281,11 @@ struct Pipeline {
     _timer: sill_capture::FineTimer,
     gpu: Gpu,
     monitor: Monitor,
+    target: Target,
+    /// The share of the source's pixels streamed (Retina/Standard and `--capture-scale`).
+    fraction: f64,
+    /// The source's size changed (a window was resized): rebuild.
+    resized: bool,
     capture: Capture,
     wake: mpsc::Receiver<()>,
     converter: Converter,
@@ -157,13 +311,26 @@ struct Pipeline {
 }
 
 impl Pipeline {
-    fn new(monitor: &Monitor, size: (u32, u32), fps: u32, bitrate: u32, bgra: bool) -> Result<Pipeline, String> {
+    fn new(
+        monitor: &Monitor,
+        target: Target,
+        fraction: f64,
+        fps: u32,
+        bitrate: u32,
+        bgra: bool,
+    ) -> Result<Pipeline, String> {
         let gpu = Gpu::new().map_err(|e| format!("no D3D11 hardware device ({e})"))?;
         let (tx, wake) = mpsc::sync_channel::<()>(1);
-        let capture = Capture::start(&gpu, monitor, move || {
+        let on_frame = move || {
             let _ = tx.try_send(());
-        })
-        .map_err(|e| format!("Windows Graphics Capture refused the monitor ({e})"))?;
+        };
+        let capture = match target {
+            Target::Monitor => Capture::start(&gpu, monitor, on_frame)
+                .map_err(|e| format!("Windows Graphics Capture refused the monitor ({e})"))?,
+            Target::Window { id, hwnd } => Capture::start_window(&gpu, hwnd, on_frame)
+                .map_err(|e| format!("Windows Graphics Capture refused window {id} ({e})"))?,
+        };
+        let size = sill_capture::stream_size(capture.width, capture.height, fraction);
         let converter = Converter::new(&gpu, capture.width, capture.height, size.0, size.1)
             .map_err(|e| format!("the GPU video processor refused BGRA to NV12 ({e})"))?;
         let bgra_ok = bgra && size == (capture.width, capture.height);
@@ -177,6 +344,9 @@ impl Pipeline {
             _timer: sill_capture::FineTimer::new(),
             gpu,
             monitor: monitor.clone(),
+            target,
+            fraction,
+            resized: false,
             capture,
             wake,
             converter,
@@ -225,7 +395,9 @@ impl Pipeline {
                 stats.superseded.fetch_add(1, Ordering::Relaxed);
             }
             if (frame.width, frame.height) != (self.capture.width, self.capture.height) {
-                return Err(format!("the monitor is now {}×{}", frame.width, frame.height));
+                // A resized window (or a new monitor mode): rebuilt at once by the loop.
+                self.resized = true;
+                return Ok(());
             }
             let t = Instant::now();
             let nv12 = if self.bgra {

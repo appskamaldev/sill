@@ -189,6 +189,12 @@ pub struct Hub {
     picture: Mutex<String>,
     /// The stream settings devices set (kind 17); sessions and the source watch it.
     pub settings: tokio::sync::watch::Sender<crate::settings::Video>,
+    /// What streams: the Desktop, a window, or nothing. One for every device: the last pick wins
+    /// (upstream). The window list's `active` says it.
+    pub active: tokio::sync::watch::Sender<sill_wire::StreamSource>,
+    /// The last viewport a device sent with a text scale: (width, height, scale) in points; a
+    /// streamed window is fitted to it.
+    pub viewport: tokio::sync::watch::Sender<Option<(f64, f64, f64)>>,
 }
 
 impl Hub {
@@ -200,7 +206,26 @@ impl Hub {
             stats,
             picture: Mutex::new("no picture source runs".into()),
             settings: tokio::sync::watch::channel(crate::settings::Video::default()).0,
+            active: tokio::sync::watch::channel(sill_wire::StreamSource::Desktop).0,
+            viewport: tokio::sync::watch::channel(None).0,
         }
+    }
+
+    pub fn source(&self) -> sill_wire::StreamSource {
+        *self.active.borrow()
+    }
+
+    /// Makes `s` the source for every device (a keyframe follows from the new pipeline).
+    pub fn select(&self, s: sill_wire::StreamSource) {
+        self.active.send_if_modified(|cur| {
+            if *cur == s {
+                false
+            } else {
+                *cur = s;
+                true
+            }
+        });
+        self.request_keyframe();
     }
 
     /// The stream settings as they stand.
@@ -249,9 +274,11 @@ impl Hub {
         self.keyframe_wanted.store(true, Ordering::SeqCst);
     }
 
-    /// Whether any session shows the picture now (ticks run only then).
+    /// Whether any session shows the picture now (ticks run only then): a source is picked and a
+    /// session views it.
     pub fn streaming(&self) -> bool {
-        self.clients.lock().unwrap().values().any(|c| c.wants.load(Ordering::Relaxed))
+        *self.active.borrow() != sill_wire::StreamSource::None
+            && self.clients.lock().unwrap().values().any(|c| c.wants.load(Ordering::Relaxed))
     }
 
     /// Loops `clip` into this hub until `stop` says so.

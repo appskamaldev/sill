@@ -57,10 +57,31 @@ pub fn scan() -> Result<Vec<App>> {
     Ok(crate::tidy(apps))
 }
 
-/// The app's icon as a `size`×`size` PNG with alpha.
+/// The full path of an Apps list ID of the form "{KNOWNFOLDERID}\\rest\\app.exe" (a desktop app);
+/// `None` for an AppUserModelID or an ID that names no known folder.
+pub fn app_path(id: &str) -> Option<String> {
+    let rest = id.strip_prefix('{')?;
+    let (guid, tail) = rest.split_once("}\\")?;
+    let g = GUID::try_from(guid).ok()?;
+    unsafe {
+        let p =
+            windows::Win32::UI::Shell::SHGetKnownFolderPath(&g, windows::Win32::UI::Shell::KNOWN_FOLDER_FLAG(0), None)
+                .ok()?;
+        let base = p.to_string().ok();
+        windows::Win32::System::Com::CoTaskMemFree(Some(p.0 as *const _));
+        Some(format!("{}\\{tail}", base?))
+    }
+}
+
+/// The app's icon as a `size`×`size` PNG with alpha. `id` is an Apps list ID, or a full path (a
+/// window's executable that is not on the list).
 pub fn icon_png(id: &str, size: i32) -> Result<Vec<u8>> {
     com();
-    let path = HSTRING::from(format!("shell:AppsFolder\\{id}"));
+    let path = if id.len() > 2 && id.as_bytes()[1] == b':' {
+        HSTRING::from(id)
+    } else {
+        HSTRING::from(format!("shell:AppsFolder\\{id}"))
+    };
     let item: IShellItemImageFactory = unsafe { SHCreateItemFromParsingName(&path, None)? };
     let bmp = unsafe { item.GetImage(SIZE { cx: size, cy: size }, SIIGBF_RESIZETOFIT | SIIGBF_ICONONLY)? };
     let r = encode_png(bmp);
