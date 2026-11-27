@@ -3,11 +3,16 @@
 //! trust decided by the key's pin alone, inside the handshake, for the ALPN the ClientHello asked
 //! for (`DoorPolicy.trusts`).
 //!
-//! A key the door does not trust is refused with the TLS alert `bad_certificate` (42), which
-//! Apple's stack reports as -9825 (errSSLPeerBadCert): the device then marks the host "Not paired"
-//! and stops redialing (`iOSClient/DiscoveryPolicy.swift:1303-1324`). In TLS 1.3 the device has
-//! sent its Finished by then, so it sees the connection as ready and its first read fails with the
-//! alert, exactly as with the Mac host.
+//! A key the door does not trust is refused with the TLS alert `certificate_unknown` (46), the
+//! alert the Mac host sends (Network.framework's verify block answering false), which Apple's
+//! client stack reports as -9825: the device then marks the host "Not paired" and stops redialing
+//! (`iOSClient/RemoteDialPolicy.swift`, `classify`). In TLS 1.3 the device has sent its Finished by
+//! then, so it sees the connection as ready and its first read fails with the alert, exactly as
+//! with the Mac host.
+//!
+//! Never `bad_certificate` (42): Apple's client reports that one as -9808, which the device reads
+//! as "Something answered …, but it isn't Sill" and keeps redialing (Checkpoint 1, 2026-11-27, R1;
+//! measured with `windows/tools/tlsprobe` against both hosts).
 
 use crate::host::Host;
 use rustls::client::danger::HandshakeSignatureValid;
@@ -63,10 +68,22 @@ impl PinVerifier {
     }
 }
 
-/// `CertificateError::NotValidForName` is the variant rustls sends as `bad_certificate` (42); the
-/// name is not what is judged (nothing but the pin is), the alert is what the device needs.
+/// The pin did not match. Only its alert matters to the device.
+#[derive(Debug)]
+struct NotTrusted;
+
+impl std::fmt::Display for NotTrusted {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("key not trusted")
+    }
+}
+
+impl std::error::Error for NotTrusted {}
+
+/// `CertificateError::Other` is the variant rustls sends as `certificate_unknown` (46), the alert
+/// the Mac host sends and the one Apple's client turns into -9825 (see the module comment).
 fn refuse() -> Error {
-    Error::InvalidCertificate(CertificateError::NotValidForName)
+    Error::InvalidCertificate(CertificateError::Other(rustls::OtherError(Arc::new(NotTrusted))))
 }
 
 impl ClientCertVerifier for PinVerifier {
@@ -98,7 +115,7 @@ impl ClientCertVerifier for PinVerifier {
         let key =
             fp.map(|f| format!("key {}…", spki::short_name(&f))).unwrap_or_else(|| "a key that is not P-256".into());
         info!(
-            "Refused {} at the {} door: {key} not trusted for {} (TLS alert bad_certificate).",
+            "Refused {} at the {} door: {key} not trusted for {} (TLS alert certificate_unknown).",
             self.peer,
             door_word(self.host_door),
             self.alpn.unwrap_or("no ALPN")

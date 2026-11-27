@@ -244,7 +244,7 @@ async fn pairing_by_code_end_to_end() {
     // The window was used: the remote door takes no more pairing connections (the TLS alert), and
     // the home door's pairing ALPN, which always admits, answers a proof closed.
     let mut late = dial(r.remote_port, PAIRING_ALPN, &device()).await.unwrap();
-    assert_eq!(alert(&late.next().await.unwrap_err()), Some(AlertDescription::BadCertificate));
+    assert_eq!(alert(&late.next().await.unwrap_err()), Some(AlertDescription::CertificateUnknown));
     assert_eq!(
         pair_once(r.home_port, &device(), PairRequest::CODE, &key).await.reason.as_deref(),
         Some(PairResult::CLOSED)
@@ -252,13 +252,13 @@ async fn pairing_by_code_end_to_end() {
 }
 
 #[tokio::test]
-async fn an_unpaired_key_gets_the_bad_certificate_alert() {
+async fn an_unpaired_key_gets_the_certificate_unknown_alert() {
     let (host, r) = start().await;
     for (port, alpn) in [(r.remote_port, SESSION_ALPN), (r.remote_port, PAIRING_ALPN), (r.home_port, SESSION_ALPN)] {
         // TLS 1.3: the client's handshake completes; its first read carries the host's alert.
         let mut c = dial(port, alpn, &device()).await.expect("the client's side of the handshake completes");
         let e = c.next().await.expect_err("the host refuses the key");
-        assert_eq!(alert(&e), Some(AlertDescription::BadCertificate), "{alpn} on {port}: {e}");
+        assert_eq!(alert(&e), Some(AlertDescription::CertificateUnknown), "{alpn} on {port}: {e}");
     }
     // The home door's pairing ALPN admits any key.
     let mut c = dial(r.home_port, PAIRING_ALPN, &device()).await.unwrap();
@@ -386,7 +386,7 @@ async fn quit_says_goodbye_and_unpair_says_removed() {
     let g = decode::<Goodbye>(&sa.next_of(Kind::Goodbye).await.payload).unwrap();
     assert_eq!(g.reason, Goodbye::REMOVED);
     let mut again = dial(r.remote_port, SESSION_ALPN, &a).await.unwrap();
-    assert_eq!(alert(&again.next().await.unwrap_err()), Some(AlertDescription::BadCertificate));
+    assert_eq!(alert(&again.next().await.unwrap_err()), Some(AlertDescription::CertificateUnknown));
     // Quit: goodbye quit, reconnect true, then the host closes.
     r.quit().await;
     let g = decode::<Goodbye>(&sb.next_of(Kind::Goodbye).await.payload).unwrap();
