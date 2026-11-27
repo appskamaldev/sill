@@ -292,6 +292,10 @@ pub struct Converter {
     input_view: ID3D11VideoProcessorInputView,
     outputs: Vec<(ID3D11Texture2D, ID3D11VideoProcessorOutputView)>,
     next: usize,
+    /// BGRA copies for an encoder that takes BGRA, made on first use, cycled like `outputs`.
+    bgra: Vec<ID3D11Texture2D>,
+    next_bgra: usize,
+    device: ID3D11Device,
     pub in_width: u32,
     pub in_height: u32,
     pub out_width: u32,
@@ -383,11 +387,48 @@ impl Converter {
             input_view,
             outputs,
             next: 0,
+            bgra: Vec::new(),
+            next_bgra: 0,
+            device: gpu.device.clone(),
             in_width,
             in_height,
             out_width,
             out_height,
         })
+    }
+
+    /// Copies `frame` (GPU to GPU) into the next of a few BGRA textures and returns it, without
+    /// converting, for an encoder that takes BGRA (it may still read the one before).
+    pub fn copy_bgra(&mut self, frame: &Frame) -> Result<ID3D11Texture2D> {
+        if self.bgra.is_empty() {
+            for _ in 0..OUTPUTS {
+                let desc = D3D11_TEXTURE2D_DESC {
+                    Width: self.in_width,
+                    Height: self.in_height,
+                    MipLevels: 1,
+                    ArraySize: 1,
+                    Format: DXGI_FORMAT_B8G8R8A8_UNORM,
+                    SampleDesc: DXGI_SAMPLE_DESC { Count: 1, Quality: 0 },
+                    Usage: D3D11_USAGE_DEFAULT,
+                    BindFlags: (D3D11_BIND_RENDER_TARGET.0 | D3D11_BIND_SHADER_RESOURCE.0) as u32,
+                    CPUAccessFlags: 0,
+                    MiscFlags: 0,
+                };
+                let mut t = None;
+                unsafe { self.device.CreateTexture2D(&desc, None, Some(&mut t))? };
+                self.bgra.push(t.ok_or_else(|| windows::core::Error::from(windows::Win32::Foundation::E_FAIL))?);
+            }
+        }
+        let t = self.bgra[self.next_bgra].clone();
+        self.next_bgra = (self.next_bgra + 1) % self.bgra.len();
+        let w = frame.width.min(self.in_width);
+        let h = frame.height.min(self.in_height);
+        let b = D3D11_BOX { left: 0, top: 0, front: 0, right: w, bottom: h, back: 1 };
+        unsafe {
+            self.context.CopySubresourceRegion(&t, 0, 0, 0, 0, &frame.texture, 0, Some(&b));
+            self.context.Flush();
+        }
+        Ok(t)
     }
 
     /// Copies `frame` (GPU to GPU) and converts it into the next NV12 texture, which it returns.

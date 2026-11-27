@@ -102,6 +102,8 @@ pub struct Settings {
     pub fps: u32,
     /// Bits per second for this stream (the setting is per 60 fps; the caller scales it).
     pub bitrate: u32,
+    /// Feed BGRA (`MFVideoFormat_ARGB32`) instead of NV12: the MFT converts itself.
+    pub bgra_input: bool,
 }
 
 /// One encoded output: Annex-B bytes as the MFT wrote them.
@@ -215,7 +217,7 @@ impl Encoder {
 
             let inp = MFCreateMediaType()?;
             inp.SetGUID(&MF_MT_MAJOR_TYPE, &MFMediaType_Video)?;
-            inp.SetGUID(&MF_MT_SUBTYPE, &MFVideoFormat_NV12)?;
+            inp.SetGUID(&MF_MT_SUBTYPE, if s.bgra_input { &MFVideoFormat_ARGB32 } else { &MFVideoFormat_NV12 })?;
             inp.SetUINT64(&MF_MT_FRAME_SIZE, frame_size)?;
             inp.SetUINT64(&MF_MT_FRAME_RATE, frame_rate)?;
             inp.SetUINT64(&MF_MT_PIXEL_ASPECT_RATIO, (1u64 << 32) | 1)?;

@@ -37,6 +37,9 @@ const USAGE: &str = "usage: sill-host [options]
   --bitrate MBPS           starting megabits per second at 60 fps (default 15; devices can change
                            it; the stream gets bitrate x fps / 60)
   --probe-encoder          list the hardware HEVC encoders and exit
+  --encoder-input bgra|nv12  what the encoder gets at full size (default bgra: the capture as
+                           is, the encoder converts; nv12: converted on the GPU's video processor
+                           first, as a scaled stream always is)
   --help";
 
 struct Args {
@@ -56,6 +59,7 @@ struct Args {
     capture_scale: f64,
     bitrate_mbps: f64,
     probe_encoder: bool,
+    bgra_input: bool,
 }
 
 fn parse(mut it: impl Iterator<Item = String>) -> Result<Args, String> {
@@ -76,6 +80,7 @@ fn parse(mut it: impl Iterator<Item = String>) -> Result<Args, String> {
         capture_scale: 1.0,
         bitrate_mbps: 15.0,
         probe_encoder: false,
+        bgra_input: true,
     };
     while let Some(flag) = it.next() {
         let mut value = |f: &str| it.next().ok_or_else(|| format!("{f} needs a value"));
@@ -102,6 +107,13 @@ fn parse(mut it: impl Iterator<Item = String>) -> Result<Args, String> {
             "--log-level" => a.log_level = value("--log-level")?,
             "--test-clip" => a.test_clip = true,
             "--probe-encoder" => a.probe_encoder = true,
+            "--encoder-input" => {
+                a.bgra_input = match value("--encoder-input")?.as_str() {
+                    "bgra" => true,
+                    "nv12" => false,
+                    v => return Err(format!("--encoder-input: bgra or nv12, not {v}")),
+                }
+            }
             "--capture-scale" => {
                 a.capture_scale = value("--capture-scale")?
                     .parse()
@@ -439,7 +451,7 @@ async fn run(store: Store, args: Args) -> i32 {
             host.stats.clone(),
             stop_desktop.clone(),
             move || h.now_us(),
-            desktop::Options { capture_scale: args.capture_scale },
+            desktop::Options { capture_scale: args.capture_scale, bgra_input: args.bgra_input },
         );
     }
     let _ = tokio::signal::ctrl_c().await;

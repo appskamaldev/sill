@@ -25,6 +25,11 @@ pub struct Options {
     /// A cap on the share of the monitor's pixels (`--capture-scale`, 1 = none), on top of the
     /// devices' Retina or Standard.
     pub capture_scale: f64,
+    /// Give the encoder the captured BGRA (it converts on its own engine) instead of converting to
+    /// NV12 on the video processor first. Full size only (a scaled stream still goes through the
+    /// video processor). On Intel Arc at 1920×1200 this cut capture → sent from about 37 ms to 22 ms
+    /// and freed the video processor (2026-11-27); `--encoder-input nv12` turns it off.
+    pub bgra_input: bool,
 }
 
 /// Starts the desktop pipeline's thread; it runs until `stop` is set.
@@ -83,10 +88,10 @@ pub fn spawn(
                     std::thread::sleep(Duration::from_millis(100));
                     continue;
                 }
-                match Pipeline::new(&monitor, size, fps, bitrate) {
+                match Pipeline::new(&monitor, size, fps, bitrate, o.bgra_input) {
                     Ok(p) => {
                         info!(
-                            "Desktop capture: {} {}×{} at {} Hz (scale {:.2}) → {}×{} at up to {} fps, {} kbit/s, {} on {}.",
+                            "Desktop capture: {} {}×{} at {} Hz (scale {:.2}) → {}×{} at up to {} fps, {} kbit/s, {} on {}{}.",
                             monitor.device,
                             monitor.width,
                             monitor.height,
@@ -97,7 +102,8 @@ pub fn spawn(
                             fps,
                             p.encoder.settings.bitrate / 1000,
                             p.encoder.name,
-                            p.gpu.adapter
+                            p.gpu.adapter,
+                            if p.bgra { ", BGRA input" } else { "" }
                         );
                         hub.set_picture(format!("the desktop streams at {}×{} up to {} fps", size.0, size.1, fps));
                         hub.request_keyframe();
@@ -134,6 +140,8 @@ struct Pipeline {
     fps: u32,
     /// Bits per second at 60 fps, as set (the encoder gets `bitrate × fps / 60`).
     bitrate: u32,
+    /// The encoder takes BGRA: frames are copied, not converted.
+    bgra: bool,
     /// The newest NV12 picture, encoded again when a keyframe is wanted on a still screen.
     last: Option<sill_capture::Texture>,
     /// A new picture waits to be encoded.
@@ -149,7 +157,7 @@ struct Pipeline {
 }
 
 impl Pipeline {
-    fn new(monitor: &Monitor, size: (u32, u32), fps: u32, bitrate: u32) -> Result<Pipeline, String> {
+    fn new(monitor: &Monitor, size: (u32, u32), fps: u32, bitrate: u32, bgra: bool) -> Result<Pipeline, String> {
         let gpu = Gpu::new().map_err(|e| format!("no D3D11 hardware device ({e})"))?;
         let (tx, wake) = mpsc::sync_channel::<()>(1);
         let capture = Capture::start(&gpu, monitor, move || {
@@ -158,10 +166,13 @@ impl Pipeline {
         .map_err(|e| format!("Windows Graphics Capture refused the monitor ({e})"))?;
         let converter = Converter::new(&gpu, capture.width, capture.height, size.0, size.1)
             .map_err(|e| format!("the GPU video processor refused BGRA to NV12 ({e})"))?;
+        let bgra_ok = bgra && size == (capture.width, capture.height);
         let per_stream = (u64::from(bitrate) * u64::from(fps) / 60).clamp(500_000, u64::from(u32::MAX)) as u32;
-        let encoder =
-            mf::Encoder::new(&gpu.device, mf::Settings { width: size.0, height: size.1, fps, bitrate: per_stream })
-                .map_err(|e| format!("no hardware HEVC encoder took {}×{} at {fps} fps ({e})", size.0, size.1))?;
+        let encoder = mf::Encoder::new(
+            &gpu.device,
+            mf::Settings { width: size.0, height: size.1, fps, bitrate: per_stream, bgra_input: bgra_ok },
+        )
+        .map_err(|e| format!("no hardware HEVC encoder took {}×{} at {fps} fps ({e})", size.0, size.1))?;
         Ok(Pipeline {
             _timer: sill_capture::FineTimer::new(),
             gpu,
@@ -173,6 +184,7 @@ impl Pipeline {
             size,
             fps,
             bitrate,
+            bgra: bgra_ok,
             last: None,
             fresh: false,
             keyframe_wanted: true,
@@ -216,7 +228,11 @@ impl Pipeline {
                 return Err(format!("the monitor is now {}×{}", frame.width, frame.height));
             }
             let t = Instant::now();
-            let nv12 = self.converter.convert(&frame).map_err(|e| format!("BGRA to NV12: {e}"))?;
+            let nv12 = if self.bgra {
+                self.converter.copy_bgra(&frame).map_err(|e| format!("BGRA copy: {e}"))?
+            } else {
+                self.converter.convert(&frame).map_err(|e| format!("BGRA to NV12: {e}"))?
+            };
             stats.convert_us.fetch_add(t.elapsed().as_micros() as u64, Ordering::Relaxed);
             self.last = Some(nv12);
             self.last_captured = Some(frame.captured);

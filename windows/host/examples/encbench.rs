@@ -20,16 +20,21 @@ fn main() {
     .unwrap();
     let _ = rx.recv_timeout(Duration::from_millis(500));
     let f = cap.newest().unwrap().expect("a first frame");
-    let (w, h): (u32, u32) = match std::env::var("SIZE").ok().as_deref() {
-        Some("720") => (1280, 720),
-        Some("480") => (854, 480),
-        _ => (cap.width, cap.height),
+    let bgra = std::env::var("BGRA").is_ok();
+    let (w, h): (u32, u32) = if bgra {
+        (cap.width, cap.height)
+    } else {
+        match std::env::var("SIZE").ok().as_deref() {
+            Some("720") => (1280, 720),
+            Some("480") => (854, 480),
+            _ => (cap.width, cap.height),
+        }
     };
     let mut conv = sill_capture::Converter::new(&gpu, cap.width, cap.height, w, h).unwrap();
-    let nv = conv.convert(&f).unwrap();
+    let nv = if bgra { conv.copy_bgra(&f).unwrap() } else { conv.convert(&f).unwrap() };
     let mut enc = sill_encode::mf::Encoder::new(
         &gpu.device,
-        sill_encode::mf::Settings { width: w, height: h, fps, bitrate: 15_000_000 },
+        sill_encode::mf::Settings { width: w, height: h, fps, bitrate: 15_000_000, bgra_input: bgra },
     )
     .unwrap();
     let period = Duration::from_secs_f64(1.0 / fps as f64);
