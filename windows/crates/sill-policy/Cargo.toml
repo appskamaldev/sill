@@ -10,3 +10,7 @@ rust-version.workspace = true
 [dependencies]
 sill-wire = { path = "../sill-wire" }
 sill-pairing = { path = "../sill-pairing" }
+
+[dev-dependencies]
+serde_json.workspace = true
+sha2.workspace = true
