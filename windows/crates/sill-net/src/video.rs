@@ -1,9 +1,14 @@
 //! The synthetic stream: a pre-encoded HEVC clip (`windows/testdata/clip.bin`, made by
 //! `windows/tools/testclip`) looped at its frame rate, fanned out to every session that shows the
 //! Desktop. Kind 0 goes before every keyframe; a join or a keyframe request restarts the clip at
-//! its first frame (an IDR). Per client at most `MAX_IN_FLIGHT` frames wait to be written: a delta
-//! beyond that is dropped and the client then waits for the next keyframe (upstream
-//! `StreamServer.broadcast`).
+//! its first frame (an IDR). Per client at most `MAX_IN_FLIGHT` frames wait to be written: a frame
+//! beyond that is dropped and the client then waits for a keyframe (upstream
+//! `StreamServer.broadcast`), which it is sent only once everything queued has been written, and
+//! only then does it ask for one: never more than one keyframe pending per client.
+//!
+//! The bundled test clip has an IDR every 15 frames (0.5 s at 30 fps). That is for the test clip
+//! only, so a device joining mid-loop sees a picture soon; a real encoder sends keyframes on
+//! request (join, drop, kind 44), not on a schedule.
 //!
 //! Clip format, all integers big-endian:
 //! ```text
@@ -208,16 +213,22 @@ impl Hub {
             if !c.wants.load(Ordering::Relaxed) {
                 continue;
             }
+            let in_flight = c.in_flight.load(Ordering::SeqCst);
             if c.needs_keyframe.load(Ordering::Relaxed) {
-                if !frame.keyframe {
+                // One keyframe, and only into a drained link: a keyframe queued behind unwritten
+                // frames is the storm Checkpoint 1 saw (a stalled phone got 15 IDRs a second).
+                if !frame.keyframe || in_flight > 0 {
                     self.stats.wait_key.fetch_add(1, Ordering::Relaxed);
+                    if in_flight == 0 {
+                        want_keyframe = true;
+                    }
                     continue;
                 }
-            } else if !frame.keyframe && c.in_flight.load(Ordering::SeqCst) >= MAX_IN_FLIGHT {
-                // Every later delta references this one: wait for a keyframe instead of sending them.
+            } else if in_flight >= MAX_IN_FLIGHT {
+                // Every later delta references this one: wait for a keyframe instead of sending them,
+                // and ask for it once the link has drained (above), not now.
                 self.stats.dropped.fetch_add(1, Ordering::Relaxed);
                 c.needs_keyframe.store(true, Ordering::Relaxed);
-                want_keyframe = true;
                 continue;
             }
             if frame.keyframe {
@@ -288,15 +299,101 @@ mod tests {
         assert_eq!(got, vec![(0, false), (1, true), (1, false)]);
         assert_eq!(c.in_flight.load(Ordering::SeqCst), 2);
         assert!(c.needs_keyframe.load(Ordering::SeqCst));
-        assert!(hub.restart.load(Ordering::SeqCst), "a drop asks for a keyframe");
+        assert!(!hub.restart.load(Ordering::SeqCst), "no keyframe asked for while the link is full");
         assert_eq!(hub.stats.take().dropped, 1);
-        // The writer catches up; deltas still wait for the keyframe, which then goes with kind 0.
+        // The writer catches up: the next delta waits and asks for the keyframe, which then goes
+        // with kind 0.
         c.in_flight.store(0, Ordering::SeqCst);
         hub.deliver(&hub.clip.frames[5], 0);
         assert!(rx.try_recv().is_err());
+        assert!(hub.restart.swap(false, Ordering::SeqCst), "a drained link asks for its keyframe");
         hub.deliver(&hub.clip.frames[0], 0);
         assert!(matches!(rx.try_recv(), Ok(Out::Control(b)) if b[0] == 0));
         assert!(matches!(rx.try_recv(), Ok(Out::Frame { header, .. }) if header[9] == 1));
+    }
+
+    fn viewer(hub: &Hub) -> (Arc<ClientVideo>, mpsc::UnboundedReceiver<Out>) {
+        let (tx, rx) = mpsc::unbounded_channel();
+        let c = Arc::new(ClientVideo {
+            tx,
+            in_flight: Arc::new(AtomicUsize::new(0)),
+            needs_keyframe: AtomicBool::new(true),
+            wants: AtomicBool::new(true),
+            last_sent: Arc::new(AtomicU64::new(0)),
+        });
+        hub.join(c.clone());
+        (c, rx)
+    }
+
+    /// Keyframes (kind 1 with the key byte) taken from `rx`.
+    fn keyframes(rx: &mut mpsc::UnboundedReceiver<Out>) -> usize {
+        let mut n = 0;
+        while let Ok(o) = rx.try_recv() {
+            if let Out::Frame { header, .. } = o {
+                n += usize::from(header[9] == 1);
+            }
+        }
+        n
+    }
+
+    /// Plays `ticks` frames as `run` does (a restart goes back to frame 0).
+    fn play(hub: &Hub, index: &mut usize, ticks: usize) {
+        for _ in 0..ticks {
+            if hub.restart.swap(false, Ordering::SeqCst) {
+                *index = 0;
+            }
+            hub.deliver(&hub.clip.frames[*index], 0);
+            *index = (*index + 1) % hub.clip.frames.len();
+        }
+    }
+
+    #[test]
+    fn a_stalled_link_gets_no_keyframes_then_exactly_one_once_drained() {
+        let hub = Hub::new(Clip::bundled(), Arc::new(Stats::default()));
+        let (c, mut rx) = viewer(&hub);
+        let mut index = 0;
+        // The link stalls at once: nothing is ever written. 3 s at 30 fps, several clip IDRs.
+        play(&hub, &mut index, 90);
+        assert_eq!(keyframes(&mut rx), 1, "only the join's keyframe, nothing into the stalled link");
+        assert_eq!(c.in_flight.load(Ordering::SeqCst), MAX_IN_FLIGHT);
+        // One frame drains: still not empty, still nothing.
+        c.in_flight.store(1, Ordering::SeqCst);
+        play(&hub, &mut index, 30);
+        assert_eq!(keyframes(&mut rx), 0);
+        // Drained: exactly one keyframe follows, then deltas; the writer keeps up from here.
+        c.in_flight.store(0, Ordering::SeqCst);
+        let mut sent = 0;
+        for _ in 0..30 {
+            play(&hub, &mut index, 1);
+            let k = keyframes(&mut rx);
+            sent += k;
+            if sent > 0 {
+                c.in_flight.store(0, Ordering::SeqCst);
+            }
+        }
+        assert_eq!(sent, 2, "one keyframe on recovery, then the clip's own IDR 15 frames later");
+        assert!(!c.needs_keyframe.load(Ordering::SeqCst));
+    }
+
+    /// The device's frame age is its clock minus this (upstream stamps at encoder output, seconds
+    /// since 1970); it reads a negative age as 0, so a host clock ahead of the device's shows 0 ms.
+    #[test]
+    fn frames_carry_the_host_wall_clock_at_send() {
+        let hub = Hub::new(Clip::bundled(), Arc::new(Stats::default()));
+        let (_c, mut rx) = viewer(&hub);
+        let before = crate::wall_clock();
+        hub.deliver(&hub.clip.frames[0], 0);
+        let after = crate::wall_clock();
+        let mut stamps = Vec::new();
+        while let Ok(o) = rx.try_recv() {
+            let h = match o {
+                Out::Control(b) => b[..HEADER_LENGTH].to_vec(),
+                Out::Frame { header, .. } => header.to_vec(),
+            };
+            stamps.push(f64::from_bits(u64::from_be_bytes(h[1..9].try_into().unwrap())));
+        }
+        assert_eq!(stamps.len(), 2);
+        assert!(stamps.iter().all(|t| (before..=after).contains(t)), "{stamps:?} not in {before}..{after}");
     }
 
     #[test]
