@@ -1018,7 +1018,7 @@ let K1 = "cmd, opt, ctrl and shift stay on for the next key or trackpad click: t
 let K1VO = "cmd, opt, ctrl and shift stay on for the next key: cmd, then C, copies."
 let K2 = "The keyboard key brings up the on-screen keyboard to type on Mac mini."
 let K3 = "New: A hardware keyboard types on Mac mini by itself, Esc included, and the keyboard key then brings up the keyboard bar."
-let K4 = "Tap with two fingers on the trackpad to right-click.", K5 = "Touch and hold the trackpad, then drag, to move a window or select text."
+let K4 = "Tap with two fingers on the trackpad to right-click.", K5 = "Tap, then touch the trackpad again and drag to move a window or select text."
 let K6 = "New: Larger Picture, in Settings: a window’s picture takes the place of the thumbnails and reaches down to where the keyboard comes up."
 func onIPhone(_ s: String) -> String { s.replacingOccurrences(of: "this iPad", with: "this iPhone") }
 
@@ -1157,7 +1157,7 @@ check(laptopFirst.title == "Keys and Trackpad" && laptopFirst.subtitle == "Uprig
 check(words(.laptop, P, first: false).subtitle == nil, "laptop's subtitle only as a run's first")
 check(texts(laptopFirst) == [K1, K2, K3, K4, K5], "laptop: \(texts(laptopFirst))")
 check(laptopFirst.rows[0].spoken == "Command, Option, Control and Shift stay on for the next key or trackpad click: tap Command, then C, to copy.", "the caps spoken by name")
-check(laptopFirst.rows[4].spans.filter(\.strong).map(\.text) == ["Touch and hold", "then drag"], "two names in the drag row")
+check(laptopFirst.rows[4].spans.filter(\.strong).map(\.text) == ["Tap, then touch", "and drag"], "two names in the drag row")
 check(laptopFirst.rows[2].spans.filter(\.strong).map(\.text) == ["New:", "A hardware keyboard", "the keyboard key"], "two names in the hardware keyboard's row")
 check(laptopFirst.rows.map(\.symbol) == ["command", "keyboard", "keyboard.badge.ellipsis", "cursorarrow.click.2", "hand.draw"], "laptop's symbols")
 check(laptopFirst.hint == "Below the bar: the row of keys, then the trackpad.", "laptop's hint")

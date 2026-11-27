@@ -710,7 +710,7 @@ enum TourPolicy {
             }
             if !voiceOver {
                 rows.append(row("cursorarrow.click.2", [strong("Tap with two fingers"), plain(" on the trackpad to right-click.")]))
-                rows.append(row("hand.draw", [strong("Touch and hold"), plain(" the trackpad, "), strong("then drag"), plain(", to move a window or select text.")]))
+                rows.append(row("hand.draw", [strong("Tap, then touch"), plain(" the trackpad again "), strong("and drag"), plain(" to move a window or select text.")]))
             }
             // Larger Picture (docs/larger-picture-plan.md), where the Settings panel offers it: on this
             // card, upright's alone, which a phone is always offered at its first upright turn (the

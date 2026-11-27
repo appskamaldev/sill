@@ -895,7 +895,12 @@ Below, "this file" means CLAUDE.md, and "Build and run below" means docs/BUILD-A
   host's KeyStrokes), `TrackpadView` (the relative pad: its
   cursor a `PadCursor`, from the anchor; a recognizer that only counts fingers;
   `verticalSpan`, a phone's width ÷ 1.6; its two-finger scroll and coast in
-  Reverse Scrolling's direction, `ScrollDirection`; and the DEBUG input test), `StreamZoom` (pinch to zoom on
+  Reverse Scrolling's direction, `ScrollDirection`; its clicks and drag from
+  `TrackpadTaps`; and the DEBUG input test), `TrackpadTaps` (the pad's clicks
+  and drag: a tap is 3 pt and 0.35 s at most, one finger left, two right; tap,
+  then touch within 0.3 s, drags; moving never presses a button; pure,
+  `Tests/checks/trackpad-taps`; StrokeObserver's `onTouch` feeds it; pbxproj
+  A427/F427), `StreamZoom` (pinch to zoom on
   the picture, 1× to 5× around the point between the fingers, Photos-like, and `StreamZoom.Stroke`, which two
   fingers belong to; pure, `Tests/checks/stream-zoom`; `StreamZoomModel` and `ZoomedStreamView` in
   HEVCDisplayView.swift scale the picture inside the pane's clip; StrokeObserver's `onTouch` feeds it; every
