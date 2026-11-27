@@ -109,9 +109,16 @@ Measurements (Wi-Fi only; the Tailscale run is pending):
 | Memory, streaming | 194 MB | 162 MB | 196 MB |
 | GPU, by engine | VideoProcessing 36 %, VideoDecode (Intel's encoder) 34 %, 3D 9 % | VideoProcessing 40 %, VideoDecode 27 % | VideoDecode 42 %, VideoProcessing 38 % |
 
-Glass to glass (Kamal's slow-motion video of the laptop's stopwatch and its copy on the Duo,
-1920×1200, Wi-Fi, 12 frames read): the Duo shows the stopwatch **40–70 ms behind, about 55 ms
-median**. The laptop's last digit is blurred between two values, ±10 ms.
+Glass to glass: Kamal filmed the laptop's stopwatch and its copy on the Duo (1920×1200, Wi-Fi),
+and 12 frames of each video were read.
+- Video 1 (slow motion, 3–4 ms a frame): the Duo **40–70 ms behind, about 55 ms median**.
+- Video 2 (239.5 fps, 4.2 ms a frame): **30–70 ms, about 40 ms median**.
+- The stopwatch draws about every 33 ms, and the laptop's last digit blurs between two values, so
+  each reading is good to ±15 ms. This is display to display: the laptop panel's own lag is not
+  in it.
+- Upstream documents the Mac host at about 40–60 ms glass to glass on a LAN (`docs/BRIEF.md`
+  lines 82 and 101), so the Windows host is in the Mac's range. §8's 20 ms was this port's own
+  stretch target.
 
 Idle footprint, host running and no client:
 - Before any viewer: 0.00 % CPU, 17.8 MB working set, 7.8 MB private.
@@ -123,7 +130,7 @@ Against the MVP targets (WINDOWS_PORT.md §8):
 
 | Target | Result |
 |---|---|
-| LAN median frame age ≤ 20 ms | **Missed.** Host capture → sent is 40 ms median, glass to glass about 55 ms. The encoder (32 ms) is most of it. |
+| LAN median frame age ≤ 20 ms | **Missed** (a stretch target). Host capture → sent is 40 ms median, glass to glass 40–55 ms median: within the Mac host's documented 40–60 ms. The encoder (32 ms) is most of it. |
 | RTT ≤ 15 ms | **Met:** 5–7 ms median. |
 | 60 fps at 1080p, ≤ 15 Mbps | **Missed.** The Intel MF encoder takes one frame in flight, at about 30 ms at 1920×1200: 30–35 fps at most (R3). |
 | Host CPU ≤ 10 % of one core, static desktop | **Met:** 0 % (WGC sends no frames when nothing changes). |
