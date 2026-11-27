@@ -586,6 +586,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "sill-catalog"
+version = "0.1.0"
+dependencies = [
+ "windows",
+]
+
+[[package]]
 name = "sill-encode"
 version = "0.1.0"
 dependencies = [
@@ -598,6 +605,7 @@ name = "sill-host"
 version = "0.1.0"
 dependencies = [
  "sill-capture",
+ "sill-catalog",
  "sill-encode",
  "sill-input",
  "sill-net",

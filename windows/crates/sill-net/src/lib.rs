@@ -2,6 +2,7 @@
 //! `sill-pair/1`, sessions on `sill/1` and a synthetic test picture. Portable (tokio + rustls);
 //! the Windows-only pieces (Bonjour, DPAPI) live in `sill-platform`.
 
+pub mod apps;
 pub mod bind;
 pub mod cert;
 pub mod conn;

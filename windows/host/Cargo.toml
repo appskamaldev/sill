@@ -22,3 +22,4 @@ sill-capture = { path = "../crates/sill-capture" }
 sill-encode = { path = "../crates/sill-encode" }
 sill-input = { path = "../crates/sill-input" }
 sill-wire = { path = "../crates/sill-wire" }
+sill-catalog = { path = "../crates/sill-catalog" }

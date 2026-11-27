@@ -9,7 +9,7 @@ use sill_pairing::spki;
 use sill_policy::{device_gate, door::Door, viewport};
 use sill_wire::{
     decode, encode, ClientStats, FrameReader, Goodbye, Hello, HostSettingsChange, HostSettingsState, InputEvent, Kind,
-    Limits, Message, StreamSource, Viewport, WindowList, PROTOCOL_CURRENT,
+    LaunchApp, Limits, Message, StreamSource, Viewport, WindowList, PROTOCOL_CURRENT,
 };
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
@@ -141,6 +141,23 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
     out.send(message(Kind::WindowList, encode(&window_list(&host))));
     out.send(message(Kind::HostSettings, encode(&host_settings(&host, None))));
     let video = Arc::new(ClientVideo::new(tx.clone(), in_flight, out.last_sent.clone()));
+    // The Apps drawer after the catalog, as upstream's `sendCatalog`: icons, then the list.
+    let mut app_events = match host.apps.get() {
+        Some(src) => {
+            if src.locked() {
+                debug!("{name} at {peer}: no apps or icons (the computer is locked).");
+            } else {
+                let (list, icons) = src.snapshot();
+                for (id, png) in &icons {
+                    out.send(message(Kind::AppIcon, sill_wire::encode_icon(id, png)));
+                }
+                out.send(message(Kind::AppList, encode(&*list)));
+                debug!("{name} at {peer}: {} apps, {} icons.", list.len(), icons.len());
+            }
+            Some(src.subscribe())
+        }
+        None => None,
+    };
     let video_id = host.hub.join(video.clone());
 
     let mut shutdown = host.shutdown.subscribe();
@@ -206,6 +223,24 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
                 if door == Door::Remote && last_heard.elapsed() >= host.config.remote_silence {
                     info!("{name} at {peer}: silent for {} s; dropped.", host.config.remote_silence.as_secs());
                     break End::Closed;
+                }
+            }
+            ev = async {
+                match app_events.as_mut() {
+                    Some(rx) => rx.recv().await,
+                    None => std::future::pending().await,
+                }
+            } => {
+                use crate::apps::AppEvent;
+                match ev {
+                    Ok(e) if !host.apps.get().is_some_and(|a| a.locked()) => match e {
+                        AppEvent::List(list) => out.send(message(Kind::AppList, encode(&*list))),
+                        AppEvent::Icon(id, png) => out.send(message(Kind::AppIcon, sill_wire::encode_icon(&id, &png))),
+                    },
+                    Ok(_) => {}
+                    // Fell behind (a burst of icons): the next list still comes.
+                    Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {}
+                    Err(tokio::sync::broadcast::error::RecvError::Closed) => app_events = None,
                 }
             }
             changed = s.settings_rx.changed() => {
@@ -388,6 +423,14 @@ impl SessionState<'_> {
                 // Exactly one answer, to this device: the settings as they now stand.
                 self.out.send(message(Kind::HostSettings, encode(&host_settings(self.host, change.token))));
             }
+            Kind::LaunchApp => match (decode::<LaunchApp>(&m.payload), self.host.apps.get()) {
+                (Some(l), Some(src)) if !src.locked() => match src.launch(&l.bundle_id) {
+                    Ok(()) => info!("{name} at {peer} launched {}.", sill_pairing::safe_text::label64(&l.bundle_id)),
+                    Err(e) => info!("{name} at {peer}: launch refused: {e}"),
+                },
+                (Some(_), Some(_)) => info!("{name} at {peer}: launch refused while the computer is locked."),
+                _ => debug!("{name} at {peer}: a launchApp this host cannot take."),
+            },
             Kind::Input => match decode::<InputEvent>(&m.payload) {
                 Some(e) => match self.host.input.get() {
                     // Only to the picture this device sees.

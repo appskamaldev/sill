@@ -92,6 +92,8 @@ pub struct Host {
     pub clip: Option<Arc<Clip>>,
     /// Where input goes (set once by the host binary); none: input is only logged.
     pub input: std::sync::OnceLock<Arc<dyn crate::input::InputSink>>,
+    /// The Apps drawer (set once by the host binary); none: no apps are sent.
+    pub apps: std::sync::OnceLock<Arc<dyn crate::apps::AppSource>>,
     started: Instant,
     state: Mutex<State>,
     pub shutdown: watch::Sender<bool>,
@@ -144,6 +146,7 @@ impl Host {
             hub: Arc::new(Hub::new(stats.clone())),
             clip,
             input: std::sync::OnceLock::new(),
+            apps: std::sync::OnceLock::new(),
             stats,
             started: Instant::now(),
             state: Mutex::new(State {

@@ -3,6 +3,8 @@
 //! no Bonjour, test picture only). See windows/BUILD.md.
 
 #[cfg(windows)]
+mod apps;
+#[cfg(windows)]
 mod desktop;
 #[cfg(windows)]
 mod input;
@@ -445,6 +447,7 @@ async fn run(store: Store, args: Args) -> i32 {
     #[cfg(windows)]
     if !args.test_clip {
         let _ = host.input.set(Arc::new(input::DesktopInput::default()));
+        let _ = host.apps.set(apps::StartApps::start());
         let h = host.clone();
         desktop::spawn(
             host.hub.clone(),
