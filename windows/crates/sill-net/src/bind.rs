@@ -1,5 +1,7 @@
 //! Which local addresses the doors listen on. Default: loopback, private LAN and Tailscale, never
-//! a public address unless internet access is on (WINDOWS_PORT.md §8, SECURITY.md).
+//! a public address unless internet access is on (WINDOWS_PORT.md §8, SECURITY.md), and never an
+//! address on a virtual adapter (Hyper-V/WSL vEthernet, VirtualBox, VMware, Docker:
+//! `sill_platform::adapters`), which no device can reach. `--bind` still takes one explicitly.
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
@@ -77,14 +79,25 @@ pub fn allowed(ip: IpAddr, allow_internet: bool) -> bool {
 pub fn default_addresses(allow_internet: bool) -> Vec<IpAddr> {
     let mut out: Vec<IpAddr> = vec![IpAddr::V4(Ipv4Addr::LOCALHOST)];
     if let Ok(ifs) = if_addrs::get_if_addrs() {
+        let virtual_guids = sill_platform::adapters::virtual_adapter_guids();
         for i in ifs {
             let ip = i.ip();
-            if allowed(ip, allow_internet) && !out.contains(&ip) {
+            if allowed(ip, allow_internet) && !out.contains(&ip) && !on_virtual_adapter(&i, &virtual_guids) {
                 out.push(ip);
             }
         }
     }
     out
+}
+
+#[cfg(windows)]
+fn on_virtual_adapter(i: &if_addrs::Interface, virtual_guids: &std::collections::HashSet<String>) -> bool {
+    virtual_guids.contains(&i.adapter_name)
+}
+
+#[cfg(not(windows))]
+fn on_virtual_adapter(i: &if_addrs::Interface, _: &std::collections::HashSet<String>) -> bool {
+    sill_platform::adapters::is_virtual(&i.name, "")
 }
 
 /// Up to `n` addresses a device could type, Tailscale first, then LAN (for the pairing link).
