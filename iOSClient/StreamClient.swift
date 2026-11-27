@@ -953,6 +953,16 @@ final class StreamClient: ObservableObject {
     /// keyboard's characters as keys only to a Mac that says so (KeyTyping); to one before it they go
     /// through iPadOS's text system, as they always did. Cleared with the session.
     var hostKeyRepeat: Int?
+    /// FORK EXTENSION: the kind of computer this session streams from (`WindowList.hostPlatform`; HostKeys):
+    /// a Windows PC's list says so, a Mac's never does. The key row names a PC's keys, its shortcuts are a
+    /// PC's, and a hardware keyboard's ⌘ goes as Ctrl there. Cleared with the session.
+    @Published var hostPlatform: HostPlatform = .mac
+    /// Whether a hardware keyboard's ⌘ goes to this host as Ctrl (HostKeys.remapsCommand): a PC's, with this
+    /// device's "Use ⌘ as Ctrl on PCs" on.
+    var commandIsControl: Bool {
+        HostKeys.remapsCommand(hostPlatform, switchOn: UserDefaults.standard.object(forKey: HostKeys.commandAsControlKey) as? Bool
+                               ?? HostKeys.commandAsControlDefault)
+    }
     /// How many stops this session's Mac's Desktop has and which it shows, or comes back to, from 1 (the
     /// main display), with their names (`WindowList.desktopDisplays`, `desktopDisplay`,
     /// `desktopDisplayNames`; DesktopDisplays): the Desktop button's "Desktop 2", its dots, VoiceOver's
@@ -2245,7 +2255,8 @@ final class StreamClient: ObservableObject {
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
         // The codecs of the Mac's sound it plays: a Mac sends kind 43 only to a device that lists one.
         return Wire.encode(Hello(appVersion: version, build: build, protocol: SillProtocol.current, device: ClientStatsReporter.deviceName,
-                                 audio: AudioCodec.devicePlays, offConsoleView: LockedMac.viewGeneration))
+                                 audio: AudioCodec.devicePlays, offConsoleView: LockedMac.viewGeneration,
+                                 pcKeys: HostKeys.pcKeysGeneration))
     }()
 
     /// The hello, the first thing on every session connection, written straight to `c` before
@@ -3800,6 +3811,7 @@ final class StreamClient: ObservableObject {
         hostProtocol = nil
         hostGestures = nil
         hostKeyRepeat = nil
+        hostPlatform = .mac
         hostDesktopDisplays = nil
         hostDesktopDisplay = nil
         hostDesktopDisplayNames = nil
@@ -4530,6 +4542,8 @@ final class StreamClient: ObservableObject {
                 if self.hostProtocol != list.protocol { self.hostProtocol = list.protocol }
                 if self.hostGestures != list.gestures { self.hostGestures = list.gestures }
                 self.hostKeyRepeat = list.keyRepeat
+                let platform = HostPlatform(wire: list.hostPlatform)
+                if self.hostPlatform != platform { self.hostPlatform = platform }
                 self.desktopStopsChanged(list)
                 // A locked Mac's list has no windows: the drawer and the panel say why, the cover over the
                 // stream too (LockedMac).

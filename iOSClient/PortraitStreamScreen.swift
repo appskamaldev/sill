@@ -347,7 +347,7 @@ struct PortraitStreamScreen: View {
         KeyRow(metrics: metrics.keyboardRow(caps: rect.height), keys: .full, latched: $latched, keyboardShown: keyboardShown,
                send: { client.sendFromKeyRow($0) },
                toggleKeyboard: { overlay.toggleKeyboard() },
-               showSpotlight: client.active == .desktop)
+               showSpotlight: client.active == .desktop, platform: client.hostPlatform)
     }
 
     /// The Keyboard toggle (Noah, 2026-11-10): the bar's look, lit, the key row's Keyboard symbol; a tap puts
@@ -661,6 +661,7 @@ struct PortraitStreamScreen: View {
                          onModifiersConsumed: { latched = [] },
                          sendGesture: { client.sendGesture($0, fingers: $1) },
                          macRepeatsKeys: { KeyTyping.macRepeats(keyRepeat: client.hostKeyRepeat) },
+                         commandIsControl: { client.commandIsControl },
                          readZoom: { [zoom] in zoom.zoom },
                          writeZoom: { [zoom] in zoom.set($0) },
                          padOverPicture: FullScreenPolicy.pictureIsTrackpad(switchOn: trackpadInFullScreen,
@@ -705,7 +706,7 @@ struct PortraitStreamScreen: View {
         KeyRow(metrics: metrics, keys: keys, latched: $latched, keyboardShown: keyboardShown,
                send: { client.sendFromKeyRow($0) },
                toggleKeyboard: { overlay.toggleKeyboard() },
-               showSpotlight: client.active == .desktop, hidden: hidden)
+               showSpotlight: client.active == .desktop, hidden: hidden, platform: client.hostPlatform)
             .tourTarget(.keys)
     }
 
@@ -981,13 +982,15 @@ private enum Key {
     case keyboard
     /// Spotlight on the Mac: always exactly ⌘Space, whatever is latched.
     case spotlight
+    /// A PC's Shortcuts menu (HostKeys.chords): Search, Alt+Tab, Show desktop and the rest.
+    case chords
 
     #if DEBUG
     /// What the cap says, for `-SillInputTest` to find it by.
     var title: String? {
         switch self {
         case .press(let title, _, _), .modifier(let title, _, _): return title
-        case .arrow, .keyboard, .spotlight: return nil
+        case .arrow, .keyboard, .spotlight, .chords: return nil
         }
     }
     #endif
@@ -1022,6 +1025,12 @@ private struct KeyRow: View {
     /// stands alone above the software keyboard, #215): a cap held as that happens comes up at once, as
     /// it would leaving the screen, not when the finger that held it lifts.
     var hidden: Bool = false
+    /// The host's kind (`StreamClient.hostPlatform`; HostKeys): a PC's row names its keys so (Start, Ctrl,
+    /// Alt, Shift, Tab, Esc, Del) and has a Shortcuts menu where a Mac's has Spotlight.
+    var platform: HostPlatform = .mac
+    /// Each tap on a PC's Start: a tap's wait for a key to join it (HostKeys.startAloneAfter) is the
+    /// latest one's alone.
+    @State private var startTaps = 0
     /// Escape, tab or an arrow held down (HeldCap): its key is down on the Mac until the finger leaves.
     @State private var heldCap = HeldCap()
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -1048,7 +1057,23 @@ private struct KeyRow: View {
         .spotlight,
     ]
 
+    /// A PC's caps (HostKeys): Start (Win), Ctrl, Alt, Shift, Tab, Esc, Del, then on a phone the
+    /// Shortcuts menu and, with Arrow Keys on, the arrows; in the halves the arrows, the keyboard and the
+    /// Shortcuts menu, which has Search where a Mac's row has Spotlight.
+    private static let pcNamed: [Key] = HostKeys.modifiers(.windows).map { Key.modifier($0.title, $0.flag, $0.label) } + [
+        .press("Tab", HIDKey.tab, "Tab"),
+        .press("Esc", HIDKey.escape, "Escape"),
+        .press("Del", HostKeys.deleteKey, "Delete"),
+    ]
+    private static var arrowCaps: [Key] { all.filter { if case .arrow = $0 { return true } else { return false } } }
+
     private var shown: [Key] {
+        if platform == .windows {
+            switch keys {
+            case .phone: return Self.pcNamed + [.chords] + (arrowKeys ? Self.arrowCaps : [])
+            case .full: return Self.pcNamed + Self.arrowCaps + [.keyboard, .chords]
+            }
+        }
         switch keys {
         // The six that name a key, and with Arrow Keys on the four arrows after them: never Keyboard or
         // Spotlight, which a phone has elsewhere.
@@ -1062,13 +1087,18 @@ private struct KeyRow: View {
     /// out of width.
     private var rows: [[Key]] {
         guard metrics.splitKeys else { return [shown] }
-        return [Array(shown.prefix(6)), Array(shown.dropFirst(6))]
+        let named = platform == .windows ? Self.pcNamed.count : 6
+        return [Array(shown.prefix(named)), Array(shown.dropFirst(named))]
     }
 
     var body: some View {
         Group {
-            if keys == .phone && PhoneKeyRow.scrolls(arrowKeys: arrowKeys) {
-                PhoneKeyStrip(count: shown.count, gap: metrics.keyGap, height: metrics.capHeight) { index in
+            if keys == .phone && (PhoneKeyRow.scrolls(arrowKeys: arrowKeys) || platform == .windows) {
+                // A PC's row is eight caps, more than fit whole at 44 pt: it scrolls with Arrow Keys off too.
+                PhoneKeyStrip(count: shown.count, gap: metrics.keyGap, height: metrics.capHeight,
+                              endFocus: platform == .windows ? (arrowKeys ? Self.pcNamed.count + 1 : shown.count - 1)
+                                                             : PhoneKeyRow.voiceOverFocus(atEnd: false),
+                              toEnd: platform == .windows && !arrowKeys ? HostKeys.Copy.showMore : PhoneKeyRow.Copy.showArrows) { index in
                     key(shown[index])
                 }
             } else {
@@ -1087,6 +1117,8 @@ private struct KeyRow: View {
         // Arrow Keys turned on or off with a cap held (another finger in Settings): the row it was in has
         // gone, and no release comes from it, so it comes up here.
         .onChangeCompat(of: arrowKeys) { _, _ in heldCap.releaseAll().forEach(send) }
+        // A Mac's row became a PC's, or back (another host's list): a cap held is in a row that has gone.
+        .onChangeCompat(of: platform) { _, _ in heldCap.releaseAll().forEach(send) }
         .frame(height: metrics.keyBlockHeight)
         // Gone from the screen (a turn, the stream's end) with a cap held: no release comes, so it
         // comes up here; and hidden under the key row alone, whose caps are now the ones to touch.
@@ -1124,7 +1156,35 @@ private struct KeyRow: View {
                     .font(.system(size: 19))
                     .foregroundStyle(Palette.text)
             }
+        case .chords:
+            chordsMenu
         }
+    }
+
+    /// A PC's Shortcuts menu (HostKeys.chords): each one exactly its keys, whatever is latched, and the tap
+    /// spends the latch, as Spotlight's does. The cap's look is the row's.
+    private var chordsMenu: some View {
+        let shape = RoundedRectangle(cornerRadius: 11, style: .continuous)
+        return Menu {
+            ForEach(HostKeys.chords(.windows).indices, id: \.self) { i in
+                let chord = HostKeys.chords(.windows)[i]
+                Button {
+                    chord.events.forEach(send)
+                    latched = []
+                } label: {
+                    Label("\(chord.title)  \(HostKeys.keysText(chord))", systemImage: chord.symbol)
+                }
+                .accessibilityLabel(chord.label)
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+                .font(.system(size: 19))
+                .foregroundStyle(Palette.text)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(shape.fill(Palette.control))
+                .contentShape(shape)
+        }
+        .accessibilityLabel(HostKeys.Copy.shortcutsLabel)
     }
 
     /// A finger landed on escape, tab or an arrow, or left it (HeldCap): its key down with what is
@@ -1152,6 +1212,19 @@ private struct KeyRow: View {
         switch key {
         case .press(_, let usage, _), .arrow(_, let usage, _):
             press(usage)
+        case .modifier(_, let flag, _) where platform == .windows && flag == .command:
+            // A PC's Start: latched as cmd is; with no key joining it within HostKeys.startAloneAfter it goes
+            // alone, down and up, and the Start menu opens.
+            latched.formSymmetricDifference(flag)
+            startTaps += 1
+            guard latched.contains(.command) else { return }
+            let tapNo = startTaps
+            DispatchQueue.main.asyncAfter(deadline: .now() + HostKeys.startAloneAfter) {
+                guard startTaps == tapNo, platform == .windows,
+                      let events = HostKeys.startExpired(latched: latched) else { return }
+                events.forEach(send)
+                latched = []
+            }
         case .modifier(_, let flag, _):
             latched.formSymmetricDifference(flag)
         case .keyboard:
@@ -1160,6 +1233,8 @@ private struct KeyRow: View {
             // Latched modifiers do not join ⌘Space, but the tap still spends them.
             Spotlight.press(send: send)
             latched = []
+        case .chords:
+            break   // a Menu: its items send
         }
     }
 
@@ -1204,11 +1279,15 @@ private struct KeyRow: View {
     /// A latching modifier: it stays lit until something uses it, or until it is tapped again.
     private func latchKey(_ key: Key, _ title: String, _ flag: KeyModifiers, label: String) -> some View {
         let on = latched.contains(flag)
+        let start = platform == .windows && flag == .command
         return cap(open: on,
-                   label: on ? "\(label), held. Tap to release." : "\(label), hold for the next key",
+                   label: on ? "\(label), held. Tap to release."
+                       : start ? "Start. Opens the Start menu, or holds Windows for the next key" : "\(label), hold for the next key",
                    largeContent: title, action: { tap(key) }) {
             Text(title)
                 .font(.system(size: 13, weight: .medium))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
                 .foregroundStyle(on ? Palette.accent : Palette.text)
         }
     }
@@ -1268,6 +1347,11 @@ private struct PhoneKeyStrip<Cap: View>: View {
     let count: Int
     let gap: CGFloat
     let height: CGFloat
+    /// The cap VoiceOver's action moves to on the way to the end: the left arrow on a Mac's row (PhoneKeyRow
+    /// .voiceOverFocus); on a PC's, the left arrow with Arrow Keys on, else the last cap.
+    var endFocus: Int = PhoneKeyRow.voiceOverFocus(atEnd: false)
+    /// That action's words on the way to the end ("Show the arrow keys"; a PC's row without them, "Show more keys").
+    var toEnd: String = PhoneKeyRow.Copy.showArrows
     @ViewBuilder let cap: (Int) -> Cap
 
     /// How far the row has scrolled from its start: 0 at rest.
@@ -1289,10 +1373,10 @@ private struct PhoneKeyStrip<Cap: View>: View {
                             cap(index)
                                 .frame(width: strip.capWidth, height: height)
                                 .accessibilityFocused($focus, equals: index)
-                                .accessibilityAction(named: Text(PhoneKeyRow.Copy.scrollAction(atEnd: atEnd))) {
+                                .accessibilityAction(named: Text(atEnd ? PhoneKeyRow.Copy.showModifiers : toEnd)) {
                                     // From the end back to the start, else on to the end, where the arrows are.
                                     proxy.scrollTo(atEnd ? 0 : count - 1, anchor: atEnd ? UnitPoint.leading : UnitPoint.trailing)
-                                    focus = min(count - 1, PhoneKeyRow.voiceOverFocus(atEnd: atEnd))
+                                    focus = min(count - 1, atEnd ? PhoneKeyRow.voiceOverFocus(atEnd: true) : endFocus)
                                 }
                                 .id(index)
                         }

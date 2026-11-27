@@ -119,11 +119,17 @@ public struct Hello: Codable, Sendable, Equatable {
     /// docs/off-console-plan.md): a host sends it the view's list. Nil from every device before: a host sends
     /// it the locked list without windows, as Sill for Mac 0.6.0 does.
     public var offConsoleView: Int?
+    /// FORK EXTENSION (appskamaldev/sill, not upstream): 1 from a device whose kind 8 keys are a PC's own
+    /// keys when the host's list says `WindowList.hostPlatform` "windows" (0xE3 with the command flag is
+    /// Win, 0xE0 with control is Ctrl, 0xE2 with option is Alt; HostKeys.pcKeysGeneration). Nil from every
+    /// upstream device; a Mac host ignores it.
+    public var pcKeys: Int?
 
     public init(appVersion: String? = nil, build: String? = nil, protocol: Int? = nil, device: String? = nil,
-                audio: [String]? = nil, offConsoleView: Int? = nil) {
+                audio: [String]? = nil, offConsoleView: Int? = nil, pcKeys: Int? = nil) {
         self.appVersion = appVersion; self.build = build; self.protocol = `protocol`; self.device = device
         self.audio = audio
         self.offConsoleView = offConsoleView
+        self.pcKeys = pcKeys
     }
 }
