@@ -183,6 +183,8 @@ pub struct Hub {
     stats: Arc<Stats>,
     /// What the viewport log line says about the picture ("the test picture plays at 30").
     picture: Mutex<String>,
+    /// The stream settings devices set (kind 17); sessions and the source watch it.
+    pub settings: tokio::sync::watch::Sender<crate::settings::Video>,
 }
 
 impl Hub {
@@ -193,7 +195,13 @@ impl Hub {
             next_id: AtomicU64::new(1),
             stats,
             picture: Mutex::new("no picture source runs".into()),
+            settings: tokio::sync::watch::channel(crate::settings::Video::default()).0,
         }
+    }
+
+    /// The stream settings as they stand.
+    pub fn video(&self) -> crate::settings::Video {
+        *self.settings.borrow()
     }
 
     pub fn set_picture(&self, words: impl Into<String>) {

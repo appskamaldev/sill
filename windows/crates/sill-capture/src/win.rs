@@ -20,7 +20,9 @@ use windows::Win32::Graphics::Gdi::{
 };
 use windows::Win32::System::WinRT::Direct3D11::{CreateDirect3D11DeviceFromDXGIDevice, IDirect3DDxgiInterfaceAccess};
 use windows::Win32::System::WinRT::Graphics::Capture::IGraphicsCaptureItemInterop;
-use windows::Win32::UI::HiDpi::{SetProcessDpiAwarenessContext, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2};
+use windows::Win32::UI::HiDpi::{
+    GetDpiForMonitor, SetProcessDpiAwarenessContext, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2, MDT_EFFECTIVE_DPI,
+};
 
 /// The GPU texture the converter hands out (NV12), for callers that keep one.
 pub type Texture = ID3D11Texture2D;
@@ -113,6 +115,8 @@ pub struct Monitor {
     pub width: u32,
     pub height: u32,
     pub refresh_hz: u32,
+    /// Windows' scale for this monitor (1.5 at 144 dpi).
+    pub dpi_scale: f64,
     /// `\\.\DISPLAY1`
     pub device: String,
 }
@@ -137,7 +141,14 @@ pub fn primary_monitor() -> Option<Monitor> {
                 60
             };
         let n = info.szDevice.iter().position(|c| *c == 0).unwrap_or(info.szDevice.len());
+        let (mut dx, mut dy) = (96u32, 96u32);
+        let dpi_scale = if GetDpiForMonitor(handle, MDT_EFFECTIVE_DPI, &mut dx, &mut dy).is_ok() && dx > 0 {
+            f64::from(dx) / 96.0
+        } else {
+            1.0
+        };
         Some(Monitor {
+            dpi_scale,
             handle,
             left: r.left,
             top: r.top,

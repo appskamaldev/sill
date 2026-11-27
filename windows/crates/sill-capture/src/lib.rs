@@ -21,12 +21,22 @@ pub fn stream_size(width: u32, height: u32, scale: f64) -> (u32, u32) {
     (side(width), side(height))
 }
 
-/// The frame rate to encode at: the highest a viewer asked for, within 24 and the smaller of 60
-/// and the monitor's refresh rate (PROTOCOL.md §8; 60 when no viewer said one).
-pub fn stream_fps(asked: Option<i64>, refresh_hz: u32) -> u32 {
-    let top = refresh_hz.clamp(24, 60);
-    let asked = asked.filter(|f| *f > 0).map_or(60, |f| f.min(i64::from(u32::MAX)) as u32);
+/// The frame rate to encode at: the highest a viewer asked for (the top when none said), within
+/// 24 and the smaller of the frame rate limit (60 or 120) and the monitor's refresh rate.
+pub fn stream_fps(asked: Option<i64>, limit: i64, refresh_hz: u32) -> u32 {
+    let limit = limit.clamp(24, 240) as u32;
+    let top = refresh_hz.min(limit).max(24);
+    let asked = asked.filter(|f| *f > 0).map_or(top, |f| f.min(i64::from(u32::MAX)) as u32);
     asked.clamp(24, top)
+}
+
+/// The share of the monitor's pixels to stream for capture scale `capture_scale` (2 Retina, 1
+/// Standard) on a monitor at `dpi_scale` (1.5 at 144 dpi): Standard is its points (DIPs), Retina
+/// its pixels, never more.
+pub fn scale_fraction(capture_scale: f64, dpi_scale: f64) -> f64 {
+    let dpi = if dpi_scale.is_finite() && dpi_scale >= 1.0 { dpi_scale } else { 1.0 };
+    let cs = if capture_scale.is_finite() && capture_scale > 0.0 { capture_scale } else { 2.0 };
+    (cs / dpi).min(1.0)
 }
 
 #[cfg(test)]
@@ -46,15 +56,29 @@ mod tests {
     }
 
     #[test]
-    fn fps_within_24_and_the_refresh_rate() {
-        assert_eq!(stream_fps(None, 60), 60);
-        assert_eq!(stream_fps(Some(120), 60), 60);
-        assert_eq!(stream_fps(Some(120), 144), 60);
-        assert_eq!(stream_fps(Some(30), 60), 30);
-        assert_eq!(stream_fps(Some(10), 60), 24);
-        assert_eq!(stream_fps(Some(60), 48), 48);
-        assert_eq!(stream_fps(Some(0), 60), 60);
-        assert_eq!(stream_fps(Some(-5), 60), 60);
-        assert_eq!(stream_fps(Some(60), 0), 24);
+    fn fps_within_24_the_limit_and_the_refresh_rate() {
+        assert_eq!(stream_fps(None, 60, 60), 60);
+        assert_eq!(stream_fps(Some(120), 60, 60), 60);
+        assert_eq!(stream_fps(Some(120), 60, 144), 60);
+        assert_eq!(stream_fps(Some(120), 120, 144), 120);
+        assert_eq!(stream_fps(Some(120), 120, 60), 60);
+        assert_eq!(stream_fps(None, 120, 144), 120);
+        assert_eq!(stream_fps(Some(30), 60, 60), 30);
+        assert_eq!(stream_fps(Some(10), 60, 60), 24);
+        assert_eq!(stream_fps(Some(60), 60, 48), 48);
+        assert_eq!(stream_fps(Some(0), 60, 60), 60);
+        assert_eq!(stream_fps(Some(-5), 60, 60), 60);
+        assert_eq!(stream_fps(Some(60), 60, 0), 24);
+    }
+
+    #[test]
+    fn standard_is_points_retina_is_pixels() {
+        assert_eq!(scale_fraction(2.0, 1.0), 1.0);
+        assert_eq!(scale_fraction(1.0, 1.0), 1.0);
+        assert_eq!(scale_fraction(1.0, 1.5), 1.0 / 1.5);
+        assert_eq!(scale_fraction(2.0, 1.5), 1.0);
+        assert_eq!(scale_fraction(1.0, 2.0), 0.5);
+        assert_eq!(scale_fraction(f64::NAN, 1.25), 1.0);
+        assert_eq!(scale_fraction(1.0, 0.0), 1.0);
     }
 }

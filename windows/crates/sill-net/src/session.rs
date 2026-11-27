@@ -8,8 +8,8 @@ use crate::video::{ClientVideo, Out};
 use sill_pairing::spki;
 use sill_policy::{device_gate, door::Door, viewport};
 use sill_wire::{
-    decode, encode, ClientStats, FrameReader, Goodbye, Hello, HostSettingsState, InputEvent, Kind, Limits, Message,
-    StreamSettings, StreamSource, Viewport, WindowList, PROTOCOL_CURRENT,
+    decode, encode, ClientStats, FrameReader, Goodbye, Hello, HostSettingsChange, HostSettingsState, InputEvent, Kind,
+    Limits, Message, StreamSource, Viewport, WindowList, PROTOCOL_CURRENT,
 };
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
@@ -24,29 +24,9 @@ pub const TICK: Duration = Duration::from_millis(30);
 /// Kind 44 honoured at most this often per session.
 pub const KEYFRAME_REQUEST_SPACING: Duration = Duration::from_secs(1);
 
-/// The host settings this host reports (kind 16, PROTOCOL.md §10): fixed values, nothing persistent.
-pub fn host_settings() -> HostSettingsState {
-    HostSettingsState {
-        settings: StreamSettings {
-            max_fps: 60,
-            bitrate: 15_000_000,
-            capture_scale: 1.0,
-            prioritize_speed: true,
-            virtual_display: false,
-            direct_wireless: None,
-            send_audio: None,
-        },
-        persistent: false,
-        virtual_display_available: false,
-        virtual_display_note: None,
-        software_encoder: false,
-        stream: None,
-        answering: None,
-        away: None,
-        link: None,
-        audio_note: None,
-        session_paired: None,
-    }
+/// The host settings this host reports (kind 16, PROTOCOL.md §10), answering `token` if given.
+pub fn host_settings(host: &Host, answering: Option<i64>) -> HostSettingsState {
+    crate::settings::state(&host.hub.video(), answering)
 }
 
 pub fn window_list(host: &Host) -> WindowList {
@@ -147,12 +127,14 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
     info!("Client connected: {name} at {peer} ({} door).", crate::tls::door_word(door));
     // Catalog first (kinds 2 then 16), as upstream's `sendCatalog`.
     out.send(message(Kind::WindowList, encode(&window_list(&host))));
-    out.send(message(Kind::HostSettings, encode(&host_settings())));
+    out.send(message(Kind::HostSettings, encode(&host_settings(&host, None))));
     let video = Arc::new(ClientVideo::new(tx.clone(), in_flight, out.last_sent.clone()));
     let video_id = host.hub.join(video.clone());
 
     let mut shutdown = host.shutdown.subscribe();
     let mut removed = host.removed.subscribe();
+    let mut settings = host.hub.settings.subscribe();
+    settings.borrow_and_update();
     let mut ticks = tokio::time::interval(TICK);
     ticks.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     let mut sweep = tokio::time::interval(Duration::from_millis(500));
@@ -169,6 +151,8 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
         fps: &mut fps,
         last_keyframe_request: &mut last_keyframe_request,
         picked_desktop: false,
+        settings_arrivals: Vec::new(),
+        settings_rx: &mut settings,
     };
     for m in early {
         s.handle(m);
@@ -208,6 +192,13 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
                 if door == Door::Remote && last_heard.elapsed() >= host.config.remote_silence {
                     info!("{name} at {peer}: silent for {} s; dropped.", host.config.remote_silence.as_secs());
                     break End::Closed;
+                }
+            }
+            changed = s.settings_rx.changed() => {
+                // Another session changed the settings: every device hears the new state.
+                if changed.is_ok() {
+                    s.settings_rx.borrow_and_update();
+                    out.send(message(Kind::HostSettings, encode(&host_settings(&host, None))));
                 }
             }
             _ = shutdown.changed() => {
@@ -262,6 +253,9 @@ struct SessionState<'a> {
     /// The Desktop was picked and not unpicked since: a device sends its own pick on the first
     /// window list and its switcher's, often in one read (Checkpoint 1: two lines 6 µs apart).
     picked_desktop: bool,
+    /// When this session's last settings changes came (at most `settings::PER_SECOND` a second).
+    settings_arrivals: Vec<Instant>,
+    settings_rx: &'a mut tokio::sync::watch::Receiver<crate::settings::Video>,
 }
 
 impl SessionState<'_> {
@@ -339,6 +333,32 @@ impl SessionState<'_> {
                     self.host.hub.request_keyframe();
                     debug!("{name} at {peer} asked for a keyframe.");
                 }
+            }
+            Kind::ChangeSettings => {
+                // Malformed JSON has no token to answer, so it gets nothing (upstream).
+                let Some(change) = decode::<HostSettingsChange>(&m.payload) else {
+                    debug!("{name} at {peer}: a changeSettings that does not decode.");
+                    return;
+                };
+                self.settings_arrivals.retain(|t| t.elapsed() < Duration::from_secs(1));
+                if self.settings_arrivals.len() >= crate::settings::PER_SECOND {
+                    info!("Settings from {name} ignored: more than {} changes a second.", crate::settings::PER_SECOND);
+                } else {
+                    self.settings_arrivals.push(Instant::now());
+                    let before = self.host.hub.video();
+                    let (after, refused) = crate::settings::accept(&before, &change);
+                    if !refused.is_empty() {
+                        info!("Settings from {name} refused: {}", refused.join(", "));
+                    }
+                    if after != before {
+                        info!("Settings from {name}: {}", crate::settings::changes(&before, &after));
+                        self.host.hub.settings.send_replace(after);
+                        // This session answers below; it need not hear its own change again.
+                        self.settings_rx.borrow_and_update();
+                    }
+                }
+                // Exactly one answer, to this device: the settings as they now stand.
+                self.out.send(message(Kind::HostSettings, encode(&host_settings(self.host, change.token))));
             }
             Kind::Input => match decode::<InputEvent>(&m.payload) {
                 Some(e) => debug!("Input from {name} (not injected in Phase 1): {e:?}"),

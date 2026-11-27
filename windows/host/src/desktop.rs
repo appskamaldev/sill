@@ -22,7 +22,8 @@ const IDLE_TEARDOWN: Duration = Duration::from_secs(3);
 
 #[derive(Clone, Copy, Debug)]
 pub struct Options {
-    pub bitrate: u32,
+    /// A cap on the share of the monitor's pixels (`--capture-scale`, 1 = none), on top of the
+    /// devices' Retina or Standard.
     pub capture_scale: f64,
 }
 
@@ -62,10 +63,16 @@ pub fn spawn(
                     continue;
                 }
             };
-            let fps = sill_capture::stream_fps(hub.max_fps(), monitor.refresh_hz);
-            let size = sill_capture::stream_size(monitor.width, monitor.height, o.capture_scale);
+            let video = hub.video();
+            let fps = sill_capture::stream_fps(hub.max_fps(), video.max_fps, monitor.refresh_hz);
+            let fraction = sill_capture::scale_fraction(video.capture_scale, monitor.dpi_scale) * o.capture_scale;
+            let size = sill_capture::stream_size(monitor.width, monitor.height, fraction);
+            let bitrate = video.bitrate.clamp(500_000, 200_000_000) as u32;
             let stale = pipeline.as_ref().is_some_and(|p| {
-                p.fps != fps || (p.monitor.width, p.monitor.height) != (monitor.width, monitor.height) || p.size != size
+                p.fps != fps
+                    || (p.monitor.width, p.monitor.height) != (monitor.width, monitor.height)
+                    || p.size != size
+                    || p.bitrate != bitrate
             });
             if stale {
                 info!("Desktop picture changes: rebuilding the pipeline.");
@@ -76,14 +83,15 @@ pub fn spawn(
                     std::thread::sleep(Duration::from_millis(100));
                     continue;
                 }
-                match Pipeline::new(&monitor, size, fps, o.bitrate) {
+                match Pipeline::new(&monitor, size, fps, bitrate) {
                     Ok(p) => {
                         info!(
-                            "Desktop capture: {} {}×{} at {} Hz → {}×{} at up to {} fps, {} kbit/s, {} on {}.",
+                            "Desktop capture: {} {}×{} at {} Hz (scale {:.2}) → {}×{} at up to {} fps, {} kbit/s, {} on {}.",
                             monitor.device,
                             monitor.width,
                             monitor.height,
                             monitor.refresh_hz,
+                            monitor.dpi_scale,
                             size.0,
                             size.1,
                             fps,
@@ -124,6 +132,8 @@ struct Pipeline {
     encoder: mf::Encoder,
     size: (u32, u32),
     fps: u32,
+    /// Bits per second at 60 fps, as set (the encoder gets `bitrate × fps / 60`).
+    bitrate: u32,
     /// The newest NV12 picture, encoded again when a keyframe is wanted on a still screen.
     last: Option<sill_capture::Texture>,
     /// A new picture waits to be encoded.
@@ -160,6 +170,7 @@ impl Pipeline {
             encoder,
             size,
             fps,
+            bitrate,
             last: None,
             fresh: false,
             keyframe_wanted: true,

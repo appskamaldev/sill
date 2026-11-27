@@ -30,8 +30,10 @@ const USAGE: &str = "usage: sill-host [options]
   --no-bonjour             do not advertise the home door
   --log-level LEVEL        error, warn, info (default) or debug
   --test-clip              stream the bundled test picture instead of the desktop
-  --capture-scale X        stream the desktop at X (0.1-1) of the monitor's size (default 1)
-  --bitrate MBPS           megabits per second at 60 fps (default 15; scaled to the stream's fps)
+  --capture-scale X        stream at most X (0.1-1) of the monitor's pixels (default 1; devices
+                           choose Retina = all of them, or Standard = Windows' points)
+  --bitrate MBPS           starting megabits per second at 60 fps (default 15; devices can change
+                           it; the stream gets bitrate x fps / 60)
   --probe-encoder          list the hardware HEVC encoders and exit
   --help";
 
@@ -389,6 +391,11 @@ async fn run(store: Store, args: Args) -> i32 {
             return 1;
         }
     };
+    let bitrate = (args.bitrate_mbps * 1e6) as i64;
+    host.hub.settings.send_modify(|v| v.bitrate = bitrate);
+    if !args.test_clip {
+        host.hub.set_picture("the desktop starts when a device views it");
+    }
     if let Some(on) = args.require_pairing {
         if let Err(e) = host.set_require_pairing(on) {
             error!("Could not save Require pairing: {e}");
@@ -429,7 +436,7 @@ async fn run(store: Store, args: Args) -> i32 {
             host.stats.clone(),
             stop_desktop.clone(),
             move || h.now_us(),
-            desktop::Options { bitrate: (args.bitrate_mbps * 1e6) as u32, capture_scale: args.capture_scale },
+            desktop::Options { capture_scale: args.capture_scale },
         );
     }
     let _ = tokio::signal::ctrl_c().await;

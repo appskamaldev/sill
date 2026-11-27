@@ -9,6 +9,7 @@ pub mod host;
 pub mod pairing;
 pub mod server;
 pub mod session;
+pub mod settings;
 pub mod stats;
 pub mod tls;
 pub mod video;
