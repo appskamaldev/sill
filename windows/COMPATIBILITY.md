@@ -52,7 +52,7 @@ with the original Mac host (verified by connecting to Sill.app on the Mac).
 | Require pairing on/off | ✅ | same | 2 | implemented (`--require-pairing`) |
 | Device gate / goodbye / update refusal | ✅ | port `DeviceGate`, `Goodbye` | 1 | implemented |
 | Signed host info (kind 18) | ✅ | ECDSA P-256 over info bytes | 2 | planned |
-| Unpaired key refused with TLS alert → device shows "Not paired" (R1) | ✅ | rustls verifier → `bad_certificate` (42) | 1 | implemented (alert proved by tests; device reaction untested) |
+| Unpaired key refused with TLS alert → device shows "Not paired" (R1) | ✅ | rustls verifier → `certificate_unknown` (46) | 1 | implemented (-9825 on Apple's stack proved by `tlsprobe`; `bad_certificate` failed on the Duo 2026-11-27; device re-run pending) |
 | Session basics: window list, host settings, ping/pong, tick, stats log, keyframe request, goodbye quit/removed/busy, 8 remote sessions, 8 s silence | ✅ | tokio session task | 1 | implemented |
 | Synthetic test picture (pre-encoded HEVC clip, 30 fps) | ✅ (`--synthetic`) | `testdata/clip.bin` from `tools/testclip` | 1 | implemented |
 | Full desktop streaming | ✅ | WGC monitor capture | 2 | planned |

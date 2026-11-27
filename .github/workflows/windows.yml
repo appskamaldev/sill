@@ -47,3 +47,18 @@ jobs:
       - run: cargo test --workspace --locked
       # Cross-check of the Windows-only code from macOS (pure Rust crates: no MSVC needed).
       - run: cargo clippy -p sill-platform -p sill-store --all-targets --locked --target x86_64-pc-windows-msvc -- -D warnings
+      # R1 (Checkpoint 1): an unpaired key must end as Apple's client reports -9825, which the
+      # device reads as "Not paired". tlsprobe dials with the device's own RemoteTLS options.
+      - run: cargo build -p sill-host --locked
+      - run: swift build -c release --package-path tools/tlsprobe
+      - name: tlsprobe against sill-host (unpaired key → -9825 on both doors)
+        run: |
+          D="$RUNNER_TEMP/sill-probe"
+          target/debug/sill-host --data-dir "$D" --name Probe --remote-port 17455 --home-port 17456 --bind 127.0.0.1 --no-bonjour > "$RUNNER_TEMP/host.log" 2>&1 &
+          sleep 2
+          P=tools/tlsprobe/.build/release/tlsprobe
+          $P 127.0.0.1 17455 --expect=revoked
+          $P 127.0.0.1 17456 --expect=revoked
+          $P 127.0.0.1 17455 --alpn=sill-pair/1 --expect=revoked
+          kill %1 || true
+          grep Refused "$RUNNER_TEMP/host.log"

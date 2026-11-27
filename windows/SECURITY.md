@@ -21,6 +21,11 @@ reason to drop one.
 - Default listening: LAN private interfaces + Tailscale only. Internet-facing binding is off by
   default and needs an explicit switch. Firewall rule limited to the Private profile and the
   Tailscale adapter.
+- Virtual adapters are never listened on by default nor offered in a pairing link: Hyper-V
+  vEthernet (WSL's included), VirtualBox and VMware host-only, Docker, recognized by the adapter's
+  description and friendly name (`sill_platform::adapters`), never by address range alone (a real
+  LAN may use 172.16/12). One caveat: a Hyper-V *external* switch moves the PC's real LAN address
+  onto a vEthernet adapter; there, pass `--bind <LAN address>`.
 - No UAC bypass, no disabling UAC, no driver tricks. Elevated windows stay unreachable unless the
   user runs the host elevated. Secure-desktop features (Phase 4) only via an opt-in SYSTEM helper,
   documented, off by default.

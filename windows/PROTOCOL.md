@@ -46,8 +46,10 @@ upstream's Swift (`windows/vectors/`, 2026-11-27, Swift 6.4) and are enforced by
 - **Refusal semantics the client depends on**: the client goes `.ready` and its first read fails
   with **-9825** (peer bad certificate) or **-9829** (peer cert unknown). It then marks the saved
   host "Not paired" and stops redialing (`iOSClient/DiscoveryPolicy.swift:1303-1324`,
-  `RemoteDialPolicy.swift:234-242`). A Windows host must send a TLS alert `bad_certificate` (42)
-  or `certificate_unknown` (46) — to be verified (risk R1).
+  `RemoteDialPolicy.swift:234-242`). A Windows host must send the TLS alert `certificate_unknown`
+  (46), as the Mac host does: Apple's client reports it as -9825. `bad_certificate` (42) is
+  reported as -9808, which the device reads as "isn't Sill" (R1, measured 2026-11-27 with
+  `windows/tools/tlsprobe`; TESTING.md).
 
 ## 3. Framing (`StreamMessage.swift`)
 
@@ -247,10 +249,15 @@ hello lists; today the client lists only `"aac-eld"` (48 kHz stereo, 480/512 fra
 
 ## 12. Where the Windows host (Phase 1) differs from upstream, and why
 
-- **Refusal alert:** an untrusted key gets `bad_certificate` (42) from rustls' verifier, the alert
-  Apple's stack reports as -9825. Proved on loopback by a rustls client (`AlertReceived(BadCertificate)`)
-  and Python `ssl` (`TLS_ALERT_BAD_CERTIFICATE`), both seeing the handshake complete first. The
-  device's reaction ("Not paired", no redial) is untested until Checkpoint 1.
+- **Refusal alert:** an untrusted key gets `certificate_unknown` (46) from rustls' verifier
+  (`CertificateError::Other`), the alert the Mac host sends and Apple's stack reports as -9825.
+  Proved on loopback by `tlsprobe` (Apple's own stack: `.ready`, then `tls(-9825)` on the first
+  receive, as against the Mac host), a rustls client (`AlertReceived(CertificateUnknown)`) and
+  Python `ssl` (`TLS_ALERT_CERTIFICATE_UNKNOWN`). Checkpoint 1 showed that the first choice,
+  `bad_certificate` (42), gives -9808 on the device ("isn't Sill"). The device's "Not paired"
+  with the fix waits for the laptop re-run.
+- **Addresses:** none on a virtual adapter (Hyper-V/WSL vEthernet, VirtualBox, VMware, Docker) is
+  listened on by default or put in a pairing link's `a=`; upstream has no such adapters to skip.
 - **`ask` at the home door:** no window is ever opened by an ask (this host has no window to show
   a code in, and a console the device's user cannot see is not one). A window already open
   (`--pair`) → `shown`; none → `openOnMac` (upstream's answer when it will not open one, e.g. an ask

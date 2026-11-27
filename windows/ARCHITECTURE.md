@@ -109,7 +109,7 @@ Added in Phase 1 task B (`sill-platform`, `sill-store`, `sill-net`, `host/`):
 | Crate | Licence | Why |
 |---|---|---|
 | `tokio` (+ `mio`, `bytes`, `socket2`…) | MIT | Listeners, TLS sessions with deadlines, timers; network threads only. |
-| `rustls` (ring provider, TLS 1.3 only) | Apache-2.0 OR ISC OR MIT | The `Acceptor`/`LazyConfigAcceptor` API reads the ClientHello's ALPN before choosing the client-cert policy; a custom `ClientCertVerifier` does pin-only trust and sends `bad_certificate`. |
+| `rustls` (ring provider, TLS 1.3 only) | Apache-2.0 OR ISC OR MIT | The `Acceptor`/`LazyConfigAcceptor` API reads the ClientHello's ALPN before choosing the client-cert policy; a custom `ClientCertVerifier` does pin-only trust and sends `certificate_unknown` (the Mac host's alert; see PROTOCOL.md §2). |
 | `tokio-rustls` | MIT/Apache-2.0 | rustls on tokio streams; `into_fallible` hands the socket back after a refusal so it closes without a reset. |
 | `rcgen` | MIT/Apache-2.0 | Builds the self-signed P-256 certificate at every launch from the stored key. |
 | `socket2` | MIT/Apache-2.0 | TCP keepalive 5 s / 2 s / 3 probes (time, interval and count on Windows and macOS), IPV6_V6ONLY. |
