@@ -3,7 +3,8 @@
 Source of truth: upstream `Sources/StreamProtocol/` at `22ab5a3e`. This file describes it for
 the Windows port; when they disagree, **the Swift source wins** and this file is fixed.
 Upstream's own rules: `docs/COMPATIBILITY.md`. Status of each item here: read from source, **not
-yet verified against a device** unless marked.
+yet verified against a device** unless marked. Items marked **(vectors)** were measured by running
+upstream's Swift (`windows/vectors/`, 2026-11-27, Swift 6.4) and are enforced by `cargo test`.
 
 ## 1. Transport
 
@@ -54,9 +55,9 @@ yet verified against a device** unless marked.
 
 | Offset | Size | Field |
 |---|---|---|
-| 0 | 1 | kind (u8); unknown kinds are read and skipped |
+| 0 | 1 | kind (u8); unknown kinds are read and skipped (Swift maps them, and the byte 255, to its `unknown = 255` placeholder) |
 | 1 | 8 | timestamp: IEEE-754 f64 bit pattern, host wall clock seconds since 1970 |
-| 9 | 1 | isKeyframe: 1 or 0 |
+| 9 | 1 | isKeyframe: 1 or 0; on reading, only exactly 1 is a keyframe **(vectors)** |
 | 10 | 4 | payload length (u32) |
 
 Caps (close the connection when exceeded):
@@ -81,7 +82,7 @@ Caps (close the connection when exceeded):
 | 6 | selectSource | D→H | JSON `StreamSource` | ✅ |
 | 7 | launchApp | D→H | JSON `{bundleID}` | Phase 3 |
 | 8 | input | D→H | JSON `InputEvent` | ✅ |
-| 9 | viewport | D→H | JSON `Viewport{width,height,scale?,localCursor?,fps?}`; sides 1…16384, scale 0.25…4 else refuse | ✅ (fps; size ignored for Desktop) |
+| 9 | viewport | D→H | JSON `Viewport{width,height,scale?,localCursor?,fps?}`; sides 1…16384, scale 0.25…4 else refuse; a non-whole `fps` fails the decode **(vectors)** | ✅ (fps; size ignored for Desktop) |
 | 10 | ping | D→H | 8 bytes, client clock f64 BE; ~every 0.25 s | ✅ |
 | 11 | pong | H→D | ping payload and timestamp unchanged, immediately | ✅ |
 | 12 | clientStats | D→H | JSON `{fps,frameAgeMs,rttMs,device,frameAgeMaxMs?,rttMaxMs?,audioBehindMs?,audioLate?}` 1/s | ✅ log |
@@ -121,8 +122,22 @@ Reserved by upstream for open PRs: 29–31, 33–42, 45, 46. Never use them.
     - `{"key":{"hidUsage":4,"down":true,"modifiers":1048576}}`
 - `Data` fields are standard base64 (not url-safe) unless the field is documented as base64url
   (fingerprints, secrets, recognition key in links and PairResult).
-- **To be confirmed by golden vectors (risk R2):** exact output for `text`/`scroll`, Double
-  formatting, and nil handling in `HostSettingsState`.
+- Confirmed **(vectors)**, risk R2 closed for these types:
+  - `text` is `{"text":{"_0":"hé"}}`, `scroll` is `{"scroll":{"x":…,"y":…,"dx":…,"dy":…}}`, `key`'s
+    `modifiers` is a plain JSON integer up to 2^64−1.
+  - Key order is **not stable**: it follows Swift's per-process hash seed (an enum's `"_0"` moves
+    between runs). Never compare bytes; the vector tool fixes the seed only to keep files stable.
+  - Swift writes a whole Double without a fraction (`"x":0`, `"captureScale":1`), large ones as
+    `1e+300`, and escapes `/` as `\/`. Rust writes `0.0`; each side reads the other's form.
+  - An **integer** field takes any JSON number whose value is whole and in range: `42`, `42.0`,
+    `1e3`; it refuses `42.5`, `"42"`, `-1` for unsigned, `4294967296` for a UInt32.
+  - An enum is an object holding **exactly one** known case key (other keys are ignored:
+    `{"desktop":{},"x":1}` decodes; `{"none":{},"desktop":{}}` does not); the case's value must be
+    an object (`{"none":null}`, `{"none":5}` fail); unknown keys inside it are ignored.
+  - A struct never decodes from an array (`"settings":[…]` fails).
+  - `Data` (Clipboard `image`) is standard base64 with padding: length a multiple of 4, no
+    whitespace; Foundation also accepts non-zero trailing bits (`Zh==`) and extra `=` (`Zm9v====`).
+  - nil optionals are left out on encode (`HostSettingsState` included) and `null` reads as nil.
 
 ## 6. Session sequence
 
@@ -151,7 +166,9 @@ device                                   host
 
 ## 7. Pairing (`sill-pair/1`)
 
-One kind 19 within 4 s of `.ready`, one kind 20, host closes (after send or 250 ms).
+One kind 19 within 4 s of `.ready` and at most 10 s after accept (`DoorPolicy.deadline`,
+`DoorPolicy.swift:272-277,343-346`; `StreamMessage.swift:37`'s "10 s" is the second limit), one
+kind 20, host closes (after send or 250 ms).
 
 `PairRequest`: `{v:1, method:"qr"|"code"|"ask"|"cancel", proof, name, model?, cable?}`.
 `PairResult`: `{ok, proof?, macID?, name?, recognitionKey?, reason?, triesLeft?, retryAfter?, method?, message?}`.
@@ -169,7 +186,17 @@ Window limits (`PairingWindow.swift`): lives 300 s; 5 wrong proofs end it; after
 (1–4) wait 1/2/4/8 s; same source once per 5 s; else `busy` + `retryAfter`.
 
 QR / link: `sill://pair?v=1&m=<macID>&k=<b64url fp>&s=<b64url secret>&n=<name>&p=<remote port>&a=<addr>…`
-(≤5 addresses; percent-encode to RFC 3986 unreserved + `:`).
+(≤5 addresses; percent-encode to RFC 3986 unreserved + `:`, upper-case hex). The host only builds
+links. Parsing (the device's side) follows `URLComponents`, which is lenient **(vectors)**: user
+info and a port after `pair` are ignored, a fragment is dropped, an invalid `%zz` is kept as typed,
+a space is kept, `+` is not a space, an `a` with no `=` is refused as `address("")`, `p=07455`
+is fine (≤5 digits).
+
+Addresses (`AddressParser`, typed or in `a=`) depend on Apple's libc **(vectors)**: `inet_pton`
+limits each IPv6 group by value, not digit count (`00001::` is `1::`; `12345::1` is refused) and
+takes leading zeros in an embedded IPv4 (`::01.2.3.4`); `inet_ntop` prints IPv4-compatible
+addresses dotted (`::1.2.3.4`, `::0.1.0.0`); `inet_aton` takes `0x.1` and `0x100000000` (so those
+are refused as IPv4, not taken as names). `sill-pairing` ports these exactly.
 
 ## 8. Video
 
@@ -204,7 +231,11 @@ QR / link: `sill://pair?v=1&m=<macID>&k=<b64url fp>&s=<b64url secret>&n=<name>&p
 `HostSettingsState` required fields: `settings{maxFPS,bitrate,captureScale,prioritizeSpeed,virtualDisplay}`,
 `persistent`, `virtualDisplayAvailable`, `softwareEncoder`. MVP sends fixed values with
 `virtualDisplayAvailable:false` and omits `directWireless`, `sendAudio`, `away`, `link`.
-Exact field types to be taken from `HostSettings.swift` when implementing.
+Types (`HostSettings.swift`): `maxFPS`, `bitrate` Int; `captureScale` Double; the three flags Bool;
+`settings.directWireless` and `settings.sendAudio` optional Bools. The MVP form
+`{"settings":{"maxFPS":60,"bitrate":15000000,"captureScale":1,"prioritizeSpeed":true,"virtualDisplay":false},"persistent":false,"virtualDisplayAvailable":false,"softwareEncoder":false}`
+decodes in Swift and is built by `sill-wire` **(vectors)**. Missing `softwareEncoder` or
+`virtualDisplay` fails the whole message.
 
 ## 11. Audio (Phase 4)
 

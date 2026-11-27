@@ -2,7 +2,10 @@
 
 Legend for **Windows status**: `planned` (not written), `implemented` (code exists, untested on
 hardware), `tested` (passed on real hardware, with the evidence in TESTING.md). Today everything is
-`planned`.
+`planned`: a feature's row moves only when the feature works end to end. Phase 1 task A
+(2026-11-27) added the portable logic several rows need (wire format, pairing crypto and window,
+device gate, door trust), tested against Swift-generated vectors on macOS and Windows CI; no row
+changes for that, and none of it is hardware-tested.
 
 ## 1. Can the unmodified iOS client use a Windows host?
 
