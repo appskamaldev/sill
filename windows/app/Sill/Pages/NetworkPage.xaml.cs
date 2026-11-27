@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -44,11 +45,11 @@ public sealed partial class NetworkPage : SillPage
 
     void OnRequirePairing(object sender, RoutedEventArgs e)
     {
-        if (!updating) Run(new { cmd = "set", requirePairing = RequirePairing.IsOn });
+        if (!updating) Run(Req.Of("set", "requirePairing", RequirePairing.IsOn));
     }
 
     void OnStartAtLogin(object sender, RoutedEventArgs e)
     {
-        if (!updating) Run(new { cmd = "set", startAtLogin = StartAtLogin.IsOn });
+        if (!updating) Run(Req.Of("set", "startAtLogin", StartAtLogin.IsOn));
     }
 }

@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 // Polls the host once a second while any window is open, and tells the pages.
 
 using System;
@@ -45,7 +46,7 @@ public sealed class StatusService
     }
 
     /// Sends a command, then polls at once so the window shows its effect.
-    public async Task<string?> RunAsync(object request)
+    public async Task<string?> RunAsync(JsonObject request)
     {
         var e = await HostClient.Shared.CommandAsync(request);
         await RefreshAsync();

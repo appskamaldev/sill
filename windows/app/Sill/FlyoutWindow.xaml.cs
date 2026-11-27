@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 // The tray flyout: what Sill is doing, the devices, and the few things to do from the tray. It sits
 // above the notification area and closes when it loses focus, like the system's own flyouts.
 
@@ -111,7 +112,7 @@ public sealed partial class FlyoutWindow : Window
             if (d.Connected)
             {
                 var k2 = d.Key;
-                var b = Ui.IconButton("", $"Disconnect {name}", async () => await StatusService.Shared.RunAsync(new { cmd = "disconnect", key = k2 }));
+                var b = Ui.IconButton("", $"Disconnect {name}", async () => await StatusService.Shared.RunAsync(Req.Of("disconnect", "key", k2)));
                 trailing = b;
             }
             var row = Ui.Row(Ui.DeviceGlyph(d.Model), name, detail, trailing, card: false);
@@ -137,12 +138,12 @@ public sealed partial class FlyoutWindow : Window
             HostClient.StartHost();
             return;
         }
-        await StatusService.Shared.RunAsync(new { cmd = s.Paused ? "resume" : "pause" });
+        await StatusService.Shared.RunAsync(Req.Of(s.Paused ? "resume" : "pause"));
     }
 
     async void OnQuit(object sender, RoutedEventArgs e)
     {
-        await HostClient.Shared.CommandAsync(new { cmd = "quit" });
+        await HostClient.Shared.CommandAsync(Req.Of("quit"));
         CloseOnce();
     }
 

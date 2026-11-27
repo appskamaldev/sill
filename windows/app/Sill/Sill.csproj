@@ -18,6 +18,9 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\sill.ico</ApplicationIcon>
     <Version>0.1.0</Version>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <PublishTrimmed Condition="'$(Configuration)' == 'Release'">true</PublishTrimmed>
+    <TrimMode>partial</TrimMode>
     <Product>Sill</Product>
     <Description>Sill for Windows: pairing, devices and streaming settings for the Sill host.</Description>
   </PropertyGroup>

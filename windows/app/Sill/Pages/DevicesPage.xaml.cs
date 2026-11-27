@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using System;
 using System.Linq;
 using Microsoft.UI.Xaml;
@@ -32,7 +33,7 @@ public sealed partial class DevicesPage : SillPage
             {
                 trailing.Children.Add(Ui.Pill("Connected"));
                 var k2 = d.Key;
-                trailing.Children.Add(Ui.TextButton("Disconnect", () => Run(new { cmd = "disconnect", key = k2 }), $"Disconnect {name}"));
+                trailing.Children.Add(Ui.TextButton("Disconnect", () => Run(Req.Of("disconnect", "key", k2)), $"Disconnect {name}"));
             }
             var keyToRemove = d.Key;
             trailing.Children.Add(Ui.TextButton("Remove", () => Remove(keyToRemove, name), $"Remove {name}"));
@@ -51,7 +52,7 @@ public sealed partial class DevicesPage : SillPage
             CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Close,
         };
-        if (await dialog.ShowAsync() == ContentDialogResult.Primary) Run(new { cmd = "unpair", key = deviceKey });
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary) Run(Req.Of("unpair", "key", deviceKey));
     }
 
     void OnPair(object sender, RoutedEventArgs e) => App.Current?.ShowMain("pair");

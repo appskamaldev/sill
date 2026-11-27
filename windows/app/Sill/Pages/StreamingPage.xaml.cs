@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using System.Linq;
 using Microsoft.UI.Xaml.Controls;
 
@@ -34,16 +35,16 @@ public sealed partial class StreamingPage : SillPage
 
     void OnQuality(object sender, SelectionChangedEventArgs e)
     {
-        if (!updating && long.TryParse(TagOf(QualityBox), out var b)) Run(new { cmd = "set", bitrate = b });
+        if (!updating && long.TryParse(TagOf(QualityBox), out var b)) Run(Req.Of("set", "bitrate", b));
     }
 
     void OnScale(object sender, SelectionChangedEventArgs e)
     {
-        if (!updating && double.TryParse(TagOf(ScaleBox), out var s)) Run(new { cmd = "set", captureScale = s });
+        if (!updating && double.TryParse(TagOf(ScaleBox), out var s)) Run(Req.Of("set", "captureScale", s));
     }
 
     void OnFps(object sender, SelectionChangedEventArgs e)
     {
-        if (!updating && long.TryParse(TagOf(FpsBox), out var f)) Run(new { cmd = "set", maxFps = f });
+        if (!updating && long.TryParse(TagOf(FpsBox), out var f)) Run(Req.Of("set", "maxFps", f));
     }
 }

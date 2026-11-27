@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 // Small builders for the Settings-style rows the pages show, and the base every page derives from.
 
 using System;
@@ -30,7 +31,7 @@ public abstract class SillPage : Page
     protected abstract void Render(Status? s);
 
     /// Runs a command and shows its error, if any, in a dialog.
-    protected async void Run(object request, string? failureTitle = null)
+    protected async void Run(JsonObject request, string? failureTitle = null)
     {
         var e = await StatusService.Shared.RunAsync(request);
         if (e is not null && XamlRoot is not null)

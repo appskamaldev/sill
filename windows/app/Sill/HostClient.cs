@@ -89,17 +89,27 @@ public sealed class Status
     public Stats Stats { get; set; } = new();
 }
 
+/// The status models, read without reflection (the app is trimmed).
+[JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true, PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSerializable(typeof(Status))]
+internal partial class SillJson : JsonSerializerContext { }
+
+/// A request: {"cmd": ...} and at most one argument.
+public static class Req
+{
+    public static JsonObject Of(string cmd, string? key = null, JsonNode? value = null)
+    {
+        var o = new JsonObject { ["cmd"] = cmd };
+        if (key is not null) o[key] = value;
+        return o;
+    }
+}
+
 /// One connection to the host, reopened on demand.
 public sealed class HostClient : IDisposable
 {
     public static readonly HostClient Shared = new();
 
-    static readonly JsonSerializerOptions Json = new()
-    {
-        PropertyNameCaseInsensitive = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
 
     readonly SemaphoreSlim gate = new(1, 1);
     NamedPipeClientStream? pipe;
@@ -157,7 +167,7 @@ public sealed class HostClient : IDisposable
     }
 
     /// Sends one request; null when the host cannot be reached.
-    public async Task<JsonNode?> RequestAsync(object request)
+    public async Task<JsonNode?> RequestAsync(JsonObject request)
     {
         await gate.WaitAsync().ConfigureAwait(false);
         try
@@ -167,7 +177,7 @@ public sealed class HostClient : IDisposable
                 if (!await EnsureAsync().ConfigureAwait(false)) return null;
                 try
                 {
-                    await writer!.WriteLineAsync(JsonSerializer.Serialize(request, Json)).ConfigureAwait(false);
+                    await writer!.WriteLineAsync(request.ToJsonString()).ConfigureAwait(false);
                     var line = await reader!.ReadLineAsync().ConfigureAwait(false);
                     if (line is null) { Close(); continue; }
                     return JsonNode.Parse(line);
@@ -181,12 +191,12 @@ public sealed class HostClient : IDisposable
 
     public async Task<Status?> StatusAsync()
     {
-        var n = await RequestAsync(new { cmd = "status" }).ConfigureAwait(false);
-        return n?.Deserialize<Status>(Json);
+        var n = await RequestAsync(Req.Of("status")).ConfigureAwait(false);
+        return n?.Deserialize(SillJson.Default.Status);
     }
 
     /// Sends a command; the error in words, or null when it went through.
-    public async Task<string?> CommandAsync(object request)
+    public async Task<string?> CommandAsync(JsonObject request)
     {
         var n = await RequestAsync(request).ConfigureAwait(false);
         if (n is null) return "The Sill host isn't running.";
@@ -195,7 +205,7 @@ public sealed class HostClient : IDisposable
 
     public async Task<List<string>> LogsAsync(int lines)
     {
-        var n = await RequestAsync(new { cmd = "logs", lines }).ConfigureAwait(false);
+        var n = await RequestAsync(Req.Of("logs", "lines", lines)).ConfigureAwait(false);
         var list = new List<string>();
         if (n?["lines"] is JsonArray a)
             foreach (var l in a) if (l is not null) list.Add(l.GetValue<string>());

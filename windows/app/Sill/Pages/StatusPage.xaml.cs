@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -62,7 +63,7 @@ public sealed partial class StatusPage : SillPage
                 var key2 = x.Key;
                 var name = Format.Device(x.Name, device?.Model);
                 SessionList.Children.Add(Ui.Row(Ui.DeviceGlyph(device?.Model), name, detail,
-                    Ui.TextButton("Disconnect", () => Run(new { cmd = "disconnect", key = key2 }), $"Disconnect {name}")));
+                    Ui.TextButton("Disconnect", () => Run(Req.Of("disconnect", "key", key2)), $"Disconnect {name}")));
             }
         }
         NoSessions.Visibility = streaming ? Visibility.Collapsed : Visibility.Visible;
@@ -81,7 +82,7 @@ public sealed partial class StatusPage : SillPage
     void OnPause(object sender, RoutedEventArgs e)
     {
         var paused = StatusService.Shared.Current?.Paused == true;
-        Run(new { cmd = paused ? "resume" : "pause" });
+        Run(Req.Of(paused ? "resume" : "pause"));
     }
 
     void OnPair(object sender, RoutedEventArgs e) => (App.Current)?.ShowMain("pair");

@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using System.Linq;
 using System.Text;
 using Microsoft.UI.Xaml;
@@ -83,9 +84,9 @@ public sealed partial class PairPage : SillPage
         QrPath.Data = (Geometry)XamlBindingHelper.ConvertValue(typeof(Geometry), sb.ToString());
     }
 
-    void OnStart(object sender, RoutedEventArgs e) => Run(new { cmd = "pair" }, "Pairing could not start");
+    void OnStart(object sender, RoutedEventArgs e) => Run(Req.Of("pair"), "Pairing could not start");
 
-    void OnStop(object sender, RoutedEventArgs e) => Run(new { cmd = "cancelPairing" });
+    void OnStop(object sender, RoutedEventArgs e) => Run(Req.Of("cancelPairing"));
 
     void OnCopyCode(object sender, RoutedEventArgs e)
     {
