@@ -43,7 +43,7 @@
                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="12">
                         <TextBlock Text="Scan this code with Sill on your iPhone or iPad" Style="{StaticResource SubtitleTextBlockStyle}" TextWrapping="Wrap" />
                         <TextBlock Style="{StaticResource BodyTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
-                                   Text="Or tap Add a Mac › Type address and code, and enter:" />
+                                   Text="Or tap Add a Mac (or Add Computer) › Type address and code, and enter:" />
                         <TextBlock x:Name="CodeText" FontFamily="{StaticResource MonoFont}" FontSize="32" CharacterSpacing="80" IsTextSelectionEnabled="True" />
                         <StackPanel Spacing="6" MaxWidth="320" HorizontalAlignment="Left">
                             <ProgressBar x:Name="ExpiresBar" Maximum="300" Width="320" />

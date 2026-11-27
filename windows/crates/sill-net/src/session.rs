@@ -160,6 +160,9 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
     active_rx.borrow_and_update();
     let mut app_events = match host.apps.get() {
         Some(src) => {
+            // Subscribe before the snapshot: the first scan may finish in between (it starts
+            // with the first device), and a list sent twice does no harm.
+            let rx = src.subscribe();
             if src.locked() {
                 debug!("{name} at {peer}: no apps or icons (the computer is locked).");
             } else {
@@ -170,7 +173,7 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
                 out.send(message(Kind::AppList, encode(&*list)));
                 debug!("{name} at {peer}: {} apps, {} icons.", list.len(), icons.len());
             }
-            Some(src.subscribe())
+            Some(rx)
         }
         None => None,
     };

@@ -17,12 +17,26 @@ public sealed partial class MainWindow : Window
         var aw = Native.AppWindowOf(this);
         aw.SetIcon(System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "sill.ico"));
         aw.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
-        Native.Resize(this, 1040, 720);
+        // 1040 x 800, or less on a small screen (the pages scroll).
+        var work = DisplayArea.GetFromWindowId(aw.Id, DisplayAreaFallback.Primary).WorkArea;
+        var scale = Native.Scale(this);
+        Native.Resize(this, System.Math.Min(1040, work.Width * 0.9 / scale), System.Math.Min(800, work.Height * 0.9 / scale));
         Center(aw);
         Navigate("status");
+        // Start with focus on the selected page, without a focus rectangle: the rectangle shows
+        // only once Tab or the arrow keys are used.
+        Activated += FocusSelectedOnce;
+        Nav.Loaded += (_, _) => DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () => (Nav.SelectedItem as Control)?.Focus(FocusState.Pointer));
         StatusService.Shared.Updated += OnStatus;
         Closed += (_, _) => StatusService.Shared.Updated -= OnStatus;
         OnStatus();
+    }
+
+    void FocusSelectedOnce(object sender, WindowActivatedEventArgs e)
+    {
+        if (e.WindowActivationState == WindowActivationState.Deactivated) return;
+        Activated -= FocusSelectedOnce;
+        DispatcherQueue.TryEnqueue(() => (Nav.SelectedItem as Control)?.Focus(FocusState.Pointer));
     }
 
     void OnStatus()

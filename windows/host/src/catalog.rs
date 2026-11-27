@@ -1,7 +1,9 @@
 //! The catalog (Windows): the Apps drawer and the window list, from one place so a window and its
 //! app share one icon.
 //!
-//! - Apps: Start's apps, scanned at launch and every 15 minutes. Icons are made one by one in the
+//! - Apps: Start's apps, scanned when the first device connects (not at launch: the shell and the
+//!   icons cost about 50 MB, and an idle host should stay small), then every 15 minutes while a
+//!   device is connected. Icons are made one by one in the
 //!   background (about 70 ms each on Intel Arc) and announced as each is ready. A launch is checked
 //!   against the list.
 //! - Windows: read every 2 s (upstream reads only while a device is connected; a read here is
@@ -78,9 +80,16 @@ impl Catalog {
             thumbs: Mutex::new(crate::thumbs::Thumbs::default()),
         });
         let m = me.clone();
-        let _ = std::thread::Builder::new().name("sill-apps".into()).spawn(move || loop {
-            m.refresh_apps();
-            std::thread::sleep(RESCAN);
+        let _ = std::thread::Builder::new().name("sill-apps".into()).spawn(move || {
+            let mut last: Option<std::time::Instant> = None;
+            loop {
+                let due = last.map_or(true, |t| t.elapsed() >= RESCAN);
+                if due && (m.sessions)() > 0 {
+                    m.refresh_apps();
+                    last = Some(std::time::Instant::now());
+                }
+                std::thread::sleep(Duration::from_millis(250));
+            }
         });
         let m = me.clone();
         let _ = std::thread::Builder::new().name("sill-windows".into()).spawn(move || {

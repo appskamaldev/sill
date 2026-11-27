@@ -168,6 +168,30 @@ Idle footprint, host running and no client:
   Direct3D and Media Foundation stay loaded after the pipeline is torn down.
 - 10 min: not taken yet (the phone reconnected during the attempt).
 
+Idle footprint again, Phase 3 (apps drawer, window list) and the tray (2026-11-28, release build,
+`--no-tray` unless stated, scratch data dir, 40 s after start, PrivateUsage):
+
+| Host | Working set | Private |
+|---|---|---|
+| Phase 3 + tray, before any viewer | 99 MB | 64 MB |
+| same, `--no-tray` | 100 MB | 64 MB |
+| `--test-clip` (no catalog, no desktop thread) | 20 MB | 7 MB |
+| apps scan off | 30 MB | 12 MB |
+| window list off | 97 MB | 62 MB |
+| desktop thread off (no MFStartup) | 99 MB | 63 MB |
+
+The tray costs nothing measurable. The Start-apps scan and its 236 icons (shell items, WIC) cost
+about 52 MB. Fix: the scan starts with the first device and repeats every 15 min only while one is
+connected; the session subscribes to app events before its snapshot, so the list that the first
+scan sends 1.2 s after the connect is not missed (loopback client: "0 apps" at connect, then
+"Apps: 236 in Start").
+
+After the fix (loopback sillclient, 25 s desktop stream):
+- Before any viewer: 29.9 MB working set, 12.3 MB private. **Meets < 40 MB.**
+- Right after the viewer left: 278 MB / 294 MB; 60 s later 135 MB / 88 MB. The Intel driver,
+  Direct3D, Media Foundation and the shell/icon state stay loaded. Still the Phase 5 item above
+  (a separate capture process, or unloading after a long idle).
+
 Against the MVP targets (WINDOWS_PORT.md §8):
 
 | Target | Result |
@@ -176,7 +200,7 @@ Against the MVP targets (WINDOWS_PORT.md §8):
 | RTT ≤ 15 ms | **Met:** 5–7 ms median. |
 | 60 fps at 1080p, ≤ 15 Mbps | **Missed.** The Intel MF encoder takes one frame in flight, at about 30 ms at 1920×1200: 30–35 fps at most (R3). |
 | Host CPU ≤ 10 % of one core, static desktop | **Met:** 0 % (WGC sends no frames when nothing changes). |
-| Idle ≈ 0 % CPU, < 40 MB | **Met** before any viewer (17.8 MB). **Missed** after one (63 MB): a Phase 5 item (unload the pipeline's DLLs, or a separate capture process). |
+| Idle ≈ 0 % CPU, < 40 MB | **Met** before any viewer (17.8 MB; with Phase 3 and the tray, 29.9 MB after the lazy apps scan). **Missed** after one (63 MB; 88 MB private with Phase 3): a Phase 5 item (unload the pipeline's DLLs, or a separate capture process). |
 
 Next for latency: send the frame to the encoder at once (capture → submit is about 7 ms), a
 BGRA input or a shader conversion to free the video processor (36–40 %), and Phase 5's direct
