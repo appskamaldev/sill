@@ -80,7 +80,10 @@ impl Fitter {
         }
         let dpi = sill_catalog::windows_list::dpi_scale_of(windows::Win32::Foundation::HWND(h as *mut _));
         // Upstream: round(panel / scale) points; here points are DIPs.
-        let want = (((vw / scale).round() * dpi).round() as i32, ((vh / scale).round() * dpi).round() as i32);
+        // Even pixel sides: the stream needs them, and a window of exactly the stream's size keeps
+        // the encoder's BGRA input (an odd side was cut by one and went through the video processor).
+        let even = |v: f64| ((v.round() as i32) / 2) * 2;
+        let want = (even((vw / scale).round() * dpi), even((vh / scale).round() * dpi));
         if want.0 < 100 || want.1 < 100 {
             return;
         }
