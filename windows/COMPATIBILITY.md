@@ -55,7 +55,7 @@ with the original Mac host (verified by connecting to Sill.app on the Mac).
 | Unpaired key refused with TLS alert → device shows "Not paired" (R1) | ✅ | rustls verifier → `certificate_unknown` (46) | 1 | implemented (-9825 on Apple's stack proved by `tlsprobe`; `bad_certificate` failed on the Duo 2026-11-27; device re-run pending) |
 | Session basics: window list, host settings, ping/pong, tick, stats log, keyframe request, goodbye quit/removed/busy, 8 remote sessions, 8 s silence | ✅ | tokio session task | 1 | implemented |
 | Synthetic test picture (pre-encoded HEVC clip, 30 fps) | ✅ (`--synthetic`) | `testdata/clip.bin` from `tools/testclip` | 1 | implemented |
-| Full desktop streaming | ✅ | WGC monitor capture | 2 | planned |
+| Full desktop streaming | ✅ | WGC monitor capture | 2 | tested (Duo, App Store 0.6.2, Wi-Fi, 2026-11-27; 1920×1200 at 30–35 fps; TESTING.md Phase 2) |
 | Multiple displays (kind 47 cycle) | ✅ | monitor order main → right | 4 | planned |
 | Individual window streaming | ✅ (primary feature) | WGC window capture | 3 | planned |
 | Window list, thumbnails, icons, app list, launch app | ✅ | EnumWindows, WGC snapshot/JPEG, shell icons, Start-menu apps; `bundleID` = AppUserModelID or exe path | 3 | planned |
@@ -64,14 +64,15 @@ with the original Mac host (verified by connecting to Sill.app on the Mac).
 | Covered window keeps streaming | ❌ on Mac (SCK freezes covered windows) | ✅ WGC captures occluded windows | 3 | planned |
 | Minimized window streaming | ❌ | ❌ (WGC gives no frames) — same | — | — |
 | Virtual display | ✅ optional, private API | IddCx driver (signing needed) | 4+ | planned |
-| Hardware HEVC encode | ✅ VideoToolbox | MF hardware MFT (NVENC/AMF/QSV) | 2 | planned |
+| Hardware HEVC encode | ✅ VideoToolbox | MF hardware MFT (NVENC/AMF/QSV) | 2 | tested (Intel Arc MFT; about 30 ms per 1920×1200 frame, R3) |
 | Software encoder fallback | ✅ VT software, 60 fps max | open (x265 GPL); MVP: hardware required | 5 | open |
+| Device stream settings (kind 17: frame rate limit, quality preset, Retina/Standard) | ✅ | same choices, answered with `answering` | 2 | tested (Duo, 2026-11-27) |
 | Adaptive bitrate | ❌ (report only) | optional improvement, host-side | 4 | planned |
 | Home/away quality pair | ✅ | same, plus "treat Tailscale as home" | 2 | planned |
-| Frame rate follows device (24–120) | ✅ | same | 2 | planned |
-| Pointer, click, drag, right click | ✅ | SendInput | 2 | planned |
-| Scroll with phases / momentum | ✅ (trackpad-like) | wheel deltas (phases ignored); precision touchpad later | 2 | planned |
-| Text and keys, modifiers | ✅ | SendInput Unicode + scan codes, Cmd→Ctrl | 2 | planned |
+| Frame rate follows device (24–120) | ✅ | same | 2 | implemented (kind 17 frame rate limit and the viewport's fps; on the device, 60 Hz monitor only) |
+| Pointer, click, drag, right click | ✅ | SendInput | 2 | tested (Duo, Sill Dev 11, 2026-11-27) |
+| Scroll with phases / momentum | ✅ (trackpad-like) | wheel deltas (phases ignored); precision touchpad later | 2 | tested (Edge, Duo, 2026-11-27) |
+| Text and keys, modifiers | ✅ | SendInput Unicode + scan codes, Cmd→Ctrl; literal PC keys with `pcKeys` (fork extension) | 2 | tested (Notepad, copy/paste, Windows key row, Duo Sill Dev 11, 2026-11-27) |
 | Key repeat (`keyRepeat:1`) | ✅ | system delay/rate | 3 | planned |
 | Trackpad gestures (kind 28) | ✅ Mission Control etc. | Win+Tab, Ctrl+Win+←/→, Win+D, Win | 4 | planned |
 | Cursor shape (kind 14) | ✅ | `GetCursorInfo` + icon → PNG | 3 | planned |

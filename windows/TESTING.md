@@ -75,6 +75,64 @@ client reads it as "isn't Sill".
 | 2026-11-27 | macOS (arm64), loopback | `tlsprobe` against sill-host and against upstream `SillHost --synthetic --remote` | see "R1: what Apple's client sees" below |
 | 2026-11-27 | macOS (arm64) | `cargo test --workspace --locked` (Checkpoint 1 fixes) | 57 passed, 0 failed; clippy `-D warnings` (host and `--target x86_64-pc-windows-msvc` for sill-platform, sill-store) and fmt clean |
 
+### Phase 2 MVP results (task/windows-phase2, 2026-11-27)
+
+Laptop: HP, Core Ultra 7 155H, Intel Arc iGPU (driver 32.0.101.8831), Windows 11 Pro 26H2 build
+26300.9974, one monitor 1920×1200 at 60 Hz, 100 % scaling. Phone: iPhone Duo (iPhone19,4) on the
+same Wi-Fi. CPU is percent of **one** core. The device's own "frame age" (kind 12) compares the
+laptop's clock with the phone's, whose offset is unknown (the laptop was 75–80 ms off
+time.apple.com, `w32tm /stripchart`), so it is **not trustworthy** and §8 is not scored on it.
+
+What works on the device (Kamal, App Store Sill 0.6.2 (1607) and Sill Dev 0.6.3 (9, 11)):
+- The desktop on the Duo, and quality and resolution changes (kind 17) answered and applied.
+  Before 8d1f9036 the app hung on them; before 7adf8b0f a slow keyframe stalled the stream.
+- Control, Sill Dev 11 with `pcKeys: 1`: pointer, click, right-click, drag, typing in Notepad,
+  copy and paste, the Start button and the Windows key row, scrolling in Edge. Kamal: "All work".
+- Picture: "the screen looks ok, but the text is a little off looking, it's not as sharp as the
+  mac screen, which is expected". A 1920×1200 desktop shown in a 935×567 pt panel is downscaled
+  about 2×.
+- Not yet: the apps drawer (Phase 3, first item).
+
+Measurements (Wi-Fi only; the Tailscale run is pending):
+
+| | Run 1: 1920×1200 (default) | Run 2: `--capture-scale 0.67`, 1286×804 | Run A: 1920×1200, latency meter |
+|---|---|---|---|
+| Length, door | 103 s, remote (typed address) | 69 s, home | 193 s, remote |
+| Frames sent, busiest second | 27 | 34 | 30 |
+| Drops | 0 | 0 | 5 |
+| Encode, submit → AU | 34.5 ms median, 39.8 p95 | 26.9 ms median, 31.1 p95 | 32.4 ms median |
+| Host latency, capture → AU | — | — | 39 ms median, 48 p95 |
+| Host latency, capture → last byte sent | — | — | 40 ms median |
+| RTT (kind 12) | 5 ms median, 15 p95, 57 max | 5 median, 8 p95, 27 max | 7 median, 73 p95 (Wi-Fi spikes) |
+| CPU, moving | 14.1 % median, 21.9 p95 | 10.9 % median | 15–17 % |
+| CPU, still screen | 0.0 % (66 s) | 0.0 % (43 s) | — |
+| Memory, streaming | 194 MB | 162 MB | 196 MB |
+| GPU, by engine | VideoProcessing 36 %, VideoDecode (Intel's encoder) 34 %, 3D 9 % | VideoProcessing 40 %, VideoDecode 27 % | VideoDecode 42 %, VideoProcessing 38 % |
+
+Glass to glass (Kamal's slow-motion video of the laptop's stopwatch and its copy on the Duo,
+1920×1200, Wi-Fi, 12 frames read): the Duo shows the stopwatch **40–70 ms behind, about 55 ms
+median**. The laptop's last digit is blurred between two values, ±10 ms.
+
+Idle footprint, host running and no client:
+- Before any viewer: 0.00 % CPU, 17.8 MB working set, 7.8 MB private.
+- 30 s and 1 min after the last viewer left: 0.16–0.31 % CPU, 63 MB working set, 34–35 MB private.
+  Direct3D and Media Foundation stay loaded after the pipeline is torn down.
+- 10 min: not taken yet (the phone reconnected during the attempt).
+
+Against the MVP targets (WINDOWS_PORT.md §8):
+
+| Target | Result |
+|---|---|
+| LAN median frame age ≤ 20 ms | **Missed.** Host capture → sent is 40 ms median, glass to glass about 55 ms. The encoder (32 ms) is most of it. |
+| RTT ≤ 15 ms | **Met:** 5–7 ms median. |
+| 60 fps at 1080p, ≤ 15 Mbps | **Missed.** The Intel MF encoder takes one frame in flight, at about 30 ms at 1920×1200: 30–35 fps at most (R3). |
+| Host CPU ≤ 10 % of one core, static desktop | **Met:** 0 % (WGC sends no frames when nothing changes). |
+| Idle ≈ 0 % CPU, < 40 MB | **Met** before any viewer (17.8 MB). **Missed** after one (63 MB): a Phase 5 item (unload the pipeline's DLLs, or a separate capture process). |
+
+Next for latency: send the frame to the encoder at once (capture → submit is about 7 ms), a
+BGRA input or a shader conversion to free the video processor (36–40 %), and Phase 5's direct
+oneVPL path.
+
 ### Checkpoint 1 results (4d6f4ab1, 2026-11-27)
 
 Laptop: Intel Arc, Windows 11 26H2. Duo: App Store Sill 0.6.2 (1607) and Sill Dev 0.6.3 (7).
