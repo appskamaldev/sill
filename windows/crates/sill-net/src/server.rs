@@ -19,6 +19,7 @@ pub struct Running {
     pub remote_port: u16,
     pub host: Arc<Host>,
     bound: Arc<Mutex<Vec<IpAddr>>>,
+    bonjour: Arc<Mutex<Option<sill_platform::bonjour::Registration>>>,
 }
 
 impl Running {
@@ -26,7 +27,9 @@ impl Running {
         self.bound.lock().unwrap().clone()
     }
 
-    /// Goodbye `quit` to every session, then waits (≤ 2 s) for them to drain.
+    /// Goodbye `quit` to every session, waits (≤ 2 s) for them to drain, then withdraws the
+    /// Bonjour registration before the process ends, so a device's browser sees the row go and
+    /// takes the next registration as the host coming back (`DiscoveryPolicy.reconnectRow`).
     pub async fn quit(&self) {
         self.host.quit();
         for _ in 0..40 {
@@ -34,6 +37,12 @@ impl Running {
                 break;
             }
             tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+        // The condition's temporaries (the registration, the guard) are dropped before the block.
+        if self.bonjour.lock().unwrap().take().is_some() {
+            // Windows sends the withdrawal off this thread: a moment for it before the process ends.
+            tokio::time::sleep(Duration::from_millis(250)).await;
+            info!("Bonjour: withdrawn.");
         }
     }
 }
@@ -145,16 +154,20 @@ pub async fn start(host: Arc<Host>) -> io::Result<Running> {
         });
     }
 
-    advertise(&host, home_port);
+    let bonjour = Arc::new(Mutex::new(None));
+    advertise(&host, home_port, &bonjour);
 
     let hub = host.hub.clone();
     let h = host.clone();
     tokio::spawn(hub.run(host.shutdown.subscribe(), move || h.now_us()));
     tokio::spawn(chores(host.clone()));
-    Ok(Running { home_port, remote_port, host, bound })
+    Ok(Running { home_port, remote_port, host, bound, bonjour })
 }
 
-fn advertise(host: &Arc<Host>, home_port: u16) {
+/// Registers the home door; the registration lives until `Running::quit` drops it (Windows
+/// deregisters on drop). `r` is a fresh tag from the stored recognition key, so a device that
+/// paired before a restart still recognizes this host.
+fn advertise(host: &Arc<Host>, home_port: u16, slot: &Arc<Mutex<Option<sill_platform::bonjour::Registration>>>) {
     if !host.config.bonjour {
         return;
     }
@@ -163,9 +176,9 @@ fn advertise(host: &Arc<Host>, home_port: u16) {
         return;
     }
     let p = tag::door_value(host.require_pairing());
-    let r = match tag::make_tag(&host.identity.recognition_key, sill_store::random) {
-        Some(r) => r,
-        None => return warn!("Bonjour: no tag (random generator failed); not advertised."),
+    let Some(r) = tag::make_tag(&host.identity.recognition_key, sill_store::random) else {
+        warn!("Bonjour: no tag (random generator failed); not advertised.");
+        return;
     };
     match sill_platform::bonjour::register(
         &host.config.name,
@@ -178,19 +191,18 @@ fn advertise(host: &Arc<Host>, home_port: u16) {
                 host.config.name,
                 sill_platform::bonjour::SERVICE_TYPE
             );
-            let mut stop = host.shutdown.subscribe();
+            *slot.lock().unwrap() = Some(reg);
+            let slot = slot.clone();
             tokio::spawn(async move {
                 tokio::time::sleep(Duration::from_secs(3)).await;
-                match reg.status() {
+                let Some(status) = slot.lock().unwrap().as_ref().map(|r| r.status()) else { return };
+                match status {
                     sill_platform::bonjour::Status::Registered => info!("Bonjour: registered."),
                     sill_platform::bonjour::Status::Pending => {
                         warn!("Bonjour: no answer from DnsServiceRegister after 3 s.")
                     }
                     sill_platform::bonjour::Status::Failed(e) => warn!("Bonjour: registration failed (error {e})."),
                 }
-                let _ = stop.changed().await;
-                // Dropping it deregisters (Windows).
-                let _gone = reg;
             });
         }
         Err(e) => warn!("Bonjour: {e}"),
