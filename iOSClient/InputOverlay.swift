@@ -103,7 +103,7 @@ final class InputOverlayView: UIView, UITextInput, UIGestureRecognizerDelegate {
     /// Ahlquist's finding, issue #81; reported again in #322). Sent as a move with the Mac's button still
     /// down, it drew a line from the stroke's end back to where it began.
     private var pencilTouching = false
-    /// Trackpad in Full Screen: the pad lies over this view (FullScreenPolicy.pictureIsTrackpad). Touches and
+    /// Use Picture as Trackpad: the pad lies over this view (FullScreenPolicy.pictureIsTrackpad). Touches and
     /// hovering then pass this view by, whichever of the two SwiftUI put on top (`point(inside:with:)`).
     var padOverPicture = false
     /// Whether the session's Mac repeats a key held down (`StreamClient.hostKeyRepeat`, the window list's
@@ -2126,7 +2126,7 @@ struct InputOverlay: UIViewRepresentable {
     /// view.
     var readZoom: (() -> StreamZoom)? = nil
     var writeZoom: ((StreamZoom) -> Void)? = nil
-    /// Trackpad in Full Screen (FullScreenPolicy.pictureIsTrackpad): the pad lies over this view, and its
+    /// Use Picture as Trackpad (FullScreenPolicy.pictureIsTrackpad): the pad lies over this view, and its
     /// touches and hovering are the pad's; see `InputOverlayView.padOverPicture`.
     var padOverPicture = false
 

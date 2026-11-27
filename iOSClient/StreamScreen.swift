@@ -278,7 +278,7 @@ struct StreamScreen: View {
     /// This device's Larger Picture switch (the Settings panel's This iPhone; docs/larger-picture-plan.md).
     /// It acts only while a window streams (`largerPictureNow`).
     @AppStorage(StreamClient.largerPictureKey) private var largerPicture = false
-    /// This device's Trackpad in Full Screen (FullScreenPolicy.trackpadKey): off unless turned on.
+    /// This device's Use Picture as Trackpad (FullScreenPolicy.trackpadKey): off unless turned on.
     @AppStorage(FullScreenPolicy.trackpadKey) private var trackpadInFullScreen = FullScreenPolicy.trackpadDefault
     /// Larger Picture as it was in effect when the Settings panel opened (`largerPictureNow`), which
     /// the arrangement keeps until the panel closes; nil while it is closed. The panel hangs under row
@@ -410,7 +410,7 @@ struct StreamScreen: View {
                 }
                 // The pad over the picture takes the pinch, so no pinch could undo a zoom made before it; and a
                 // pointer always shows on it, the Mac's or the pad's (PointerPresence.padOverPicture).
-                .onChange(of: FullScreenPolicy.pictureIsTrackpad(hidden: hidden, switchOn: trackpadInFullScreen),
+                .onChange(of: FullScreenPolicy.pictureIsTrackpad(switchOn: trackpadInFullScreen),
                           initial: true) { _, pad in
                     if pad { zoom.reset() }
                     client.setPictureIsTrackpad(pad)
@@ -1855,10 +1855,10 @@ struct StreamScreen: View {
                              macRepeatsKeys: { KeyTyping.macRepeats(keyRepeat: client.hostKeyRepeat) },
                              readZoom: { [zoom] in zoom.zoom },
                              writeZoom: { [zoom] in zoom.set($0) },
-                             padOverPicture: FullScreenPolicy.pictureIsTrackpad(hidden: hidden, switchOn: trackpadInFullScreen))
-                // Trackpad in Full Screen (FullScreenPolicy.pictureIsTrackpad): while hidden, the whole picture
+                             padOverPicture: FullScreenPolicy.pictureIsTrackpad(switchOn: trackpadInFullScreen))
+                // Use Picture as Trackpad (FullScreenPolicy.pictureIsTrackpad): shown or hidden, the whole picture
                 // is the Mac's trackpad, the portrait pad's own surface over the input view.
-                if FullScreenPolicy.pictureIsTrackpad(hidden: hidden, switchOn: trackpadInFullScreen) {
+                if FullScreenPolicy.pictureIsTrackpad(switchOn: trackpadInFullScreen) {
                     TrackpadView(send: { client.sendInput($0) },
                              setPointer: { client.setOwnPointer($0, from: .trackpad) },
                              feed: { let f = client.pointerFeedState; return (f.anchor, f.reseeds) },

@@ -92,7 +92,7 @@ struct HostSettingsPanel: View {
     @AppStorage(PhoneKeyRow.arrowKeysKey) private var arrowKeys = PhoneKeyRow.arrowKeysDefault
     /// Shake to Show Controls (full screen, docs/full-screen-plan.md): on unless turned off, never sent.
     @AppStorage(FullScreenPolicy.shakeKey) private var shakeShowsControls = true
-    /// Trackpad in Full Screen (FullScreenPolicy.trackpadKey): off unless turned on, read by the stream screen,
+    /// Use Picture as Trackpad (FullScreenPolicy.trackpadKey): off unless turned on, read by the stream screen,
     /// never sent.
     @AppStorage(FullScreenPolicy.trackpadKey) private var trackpadInFullScreen = FullScreenPolicy.trackpadDefault
     /// Whether the switch is offered here, the stream screen's say (`largerPictureOffered`): only on an
@@ -180,7 +180,7 @@ struct HostSettingsPanel: View {
     private static let sendAudioID = "sendAudio"
     /// DEBUG `-SillSettingsScroll holddrag`: Hold, Then Drag's switch and its footnote (#292).
     private static let holdThenDragRowID = "holdThenDrag"
-    /// DEBUG `-SillSettingsScroll fullpad`: Trackpad in Full Screen's switch and its footnote.
+    /// DEBUG `-SillSettingsScroll fullpad`: Use Picture as Trackpad's switch and its footnote.
     private static let trackpadInFullScreenRowID = "trackpadInFullScreen"
     private static let muteID = "mute"
     private static let reverseScrollRowID = "reverseScroll"
@@ -967,7 +967,7 @@ struct HostSettingsPanel: View {
         // The first of the rows about touch; under Touch Mode's Direct Touch once #222's row is here (in Trackpad
         // mode the pad over the picture takes the fingers, and has its own hold, then drag), and in the
         // whole-screen Settings pane's Touch and Zoom group once #393 is.
-        // Trackpad in Full Screen (Kamal, 2026-11-27): this device's own, never sent; the first of the rows about
+        // Use Picture as Trackpad (Kamal, 2026-11-27): this device's own, never sent; the first of the rows about
         // touch.
         Rows {
             Toggle(isOn: $trackpadInFullScreen) {

@@ -30,7 +30,7 @@ import Foundation
 ///       own trackpad or mouse
 ///     this device, the Pencil                any         hidden (Q2)
 ///
-/// While the picture is the trackpad (Trackpad in Full Screen, `padOverPicture`) the sprite always shows: the
+/// While the picture is the trackpad (Use Picture as Trackpad, `padOverPicture`) the sprite always shows: the
 /// Mac's pointer while the Mac has it over the stream, else where the pad last put it.
 ///
 /// Nothing shows while nothing streams. The shape is kind 14's in every row. A value; main thread.
@@ -51,7 +51,7 @@ struct PointerPresence: Equatable {
     var origin: Origin = .none
     /// The laptop layout: inner or outer portrait.
     var portrait = false
-    /// Trackpad in Full Screen (FullScreenPolicy.pictureIsTrackpad): the whole picture is the trackpad, so a
+    /// Use Picture as Trackpad (FullScreenPolicy.pictureIsTrackpad): the whole picture is the trackpad, so a
     /// pointer always shows (Kamal, 2026-11-27): the Mac's while it has the pointer over the stream, else where
     /// the pad last put this device's (`padLast`), whatever input came since; none yet, the Mac's last or the
     /// middle, where the pad's cursor starts.
