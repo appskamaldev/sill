@@ -132,7 +132,8 @@ struct Pipeline {
     next_slot: Instant,
     frame_index: i64,
     parameter_sets: Option<Arc<[u8]>>,
-    last_capture: Option<Instant>,
+    /// When each frame the encoder holds went in, oldest first.
+    in_flight: std::collections::VecDeque<Instant>,
 }
 
 impl Pipeline {
@@ -165,18 +166,30 @@ impl Pipeline {
             next_slot: Instant::now(),
             frame_index: 0,
             parameter_sets: None,
-            last_capture: None,
+            in_flight: std::collections::VecDeque::new(),
         })
     }
 
     fn step(&mut self, hub: &Hub, stats: &Stats, now_us: &impl Fn() -> u64) -> Result<(), String> {
-        // Sleep until a frame arrives or the next slot comes (when a picture waits for one).
-        let wait = if self.fresh || (self.keyframe_wanted && self.last.is_some()) {
+        // Sleep until a frame arrives or the next slot comes (when a picture waits for one); poll
+        // every 2 ms while the encoder holds a frame, so its output goes out as soon as it is out.
+        let mut wait = if self.fresh || (self.keyframe_wanted && self.last.is_some()) {
             self.next_slot.saturating_duration_since(Instant::now())
         } else {
             Duration::from_millis(50)
         };
+        if !self.in_flight.is_empty() {
+            wait = wait.min(Duration::from_millis(2));
+        }
         let _ = self.wake.recv_timeout(wait);
+        // Every output first: the MFT asks for no more input while one waits to be taken (a slow
+        // keyframe missed a 50 ms wait and stalled the stream for good, Duo test 2026-11-27).
+        self.drain(hub, stats, now_us, Duration::ZERO)?;
+        if let Some(t) = self.in_flight.front() {
+            if t.elapsed() > Duration::from_secs(2) {
+                return Err("the encoder has held a frame for 2 s".into());
+            }
+        }
         if hub.take_keyframe_request() {
             self.keyframe_wanted = true;
         }
@@ -193,44 +206,45 @@ impl Pipeline {
             stats.convert_us.fetch_add(t.elapsed().as_micros() as u64, Ordering::Relaxed);
             self.last = Some(nv12);
             self.fresh = true;
-            self.last_capture = Some(t);
         }
         let due = Instant::now() >= self.next_slot;
         let Some(nv12) = self.last.clone() else { return Ok(()) };
         if !due || !(self.fresh || self.keyframe_wanted) {
             return Ok(());
         }
-        if !self.encoder.ready(Duration::from_millis(20)).map_err(|e| format!("encoder: {e}"))? {
+        if !self.encoder.ready(Duration::ZERO).map_err(|e| format!("encoder: {e}"))? {
             return Ok(());
         }
         if self.keyframe_wanted {
             self.encoder.force_keyframe();
         }
         let interval = 10_000_000 / i64::from(self.fps);
-        let submitted = Instant::now();
         self.encoder.submit(&nv12, self.frame_index * interval, interval).map_err(|e| format!("encoder input: {e}"))?;
+        self.in_flight.push_back(Instant::now());
         self.frame_index += 1;
         self.fresh = false;
-        let wanted_key = std::mem::replace(&mut self.keyframe_wanted, false);
+        self.keyframe_wanted = false;
         let slot = Duration::from_secs_f64(1.0 / f64::from(self.fps));
         self.next_slot = (self.next_slot + slot).max(Instant::now() + slot / 2);
-        // Low-latency mode: one AU per input, a few milliseconds later.
-        let mut got = false;
-        for _ in 0..3 {
-            match self.encoder.output(Duration::from_millis(if got { 0 } else { 50 })) {
+        // Low-latency mode: one AU per input, some milliseconds later; what is not out within
+        // 40 ms is taken by a later step.
+        self.drain(hub, stats, now_us, Duration::from_millis(40))
+    }
+
+    /// Takes every output the encoder has, waiting up to `first` for one.
+    fn drain(&mut self, hub: &Hub, stats: &Stats, now_us: &impl Fn() -> u64, first: Duration) -> Result<(), String> {
+        let mut wait = first;
+        loop {
+            match self.encoder.output(wait) {
                 Ok(Some(out)) => {
-                    got = true;
-                    self.publish(hub, stats, now_us, &out.annexb, submitted.elapsed().as_micros() as u64);
+                    let us = self.in_flight.pop_front().map_or(0, |t| t.elapsed().as_micros() as u64);
+                    self.publish(hub, stats, now_us, &out.annexb, us);
+                    wait = Duration::ZERO;
                 }
-                Ok(None) => break,
+                Ok(None) => return Ok(()),
                 Err(e) => return Err(format!("encoder output: {e}")),
             }
         }
-        if !got && wanted_key {
-            // Nothing came out yet; ask again with the next frame.
-            self.keyframe_wanted = true;
-        }
-        Ok(())
     }
 
     fn publish(&mut self, hub: &Hub, stats: &Stats, now_us: &impl Fn() -> u64, annexb_bytes: &[u8], us: u64) {
