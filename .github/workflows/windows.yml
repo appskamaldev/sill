@@ -1,0 +1,37 @@
+# The Windows host's portable crates (windows/), on Windows and macOS. Fork-only file: upstream's
+# own workflows are untouched.
+name: windows
+
+on:
+  push:
+    branches: ["task/**"]
+    paths: ["windows/**", ".github/workflows/windows.yml"]
+  pull_request:
+    paths: ["windows/**", ".github/workflows/windows.yml"]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: windows
+
+env:
+  CARGO_TERM_COLOR: never
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal --component clippy,rustfmt && rustup default stable
+      - run: cargo test --workspace --locked
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: cargo fmt --check
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal && rustup default stable
+      - run: cargo test --workspace --locked
