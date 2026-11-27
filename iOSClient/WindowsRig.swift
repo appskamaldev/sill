@@ -17,7 +17,35 @@ enum WindowsRig {
         let d = UserDefaults.standard
         return d.string(forKey: "SillPairCode") != nil || d.string(forKey: "SillAutoConnect") != nil
             || d.string(forKey: "SillInputScript") == "windows" || d.bool(forKey: "SillRigLog")
+            || d.string(forKey: "SillPickWindow") != nil || d.string(forKey: "SillTextScale") != nil
+            || d.string(forKey: "SillCommandWindow") != nil
     }()
+
+    /// `-SillPickWindow <text>` and `-SillCommandWindow <text>`: the first listed window whose title or
+    /// app name contains the text, any case. Nil for empty text or no match.
+    static func windowMatch(_ query: String, in windows: [WindowInfo]) -> WindowInfo? {
+        let q = query.trimmingCharacters(in: .whitespaces)
+        guard !q.isEmpty else { return nil }
+        return windows.first { $0.title.localizedCaseInsensitiveContains(q) || $0.appName.localizedCaseInsensitiveContains(q) }
+    }
+
+    /// One window as the log writes it: `id 1234 "Untitled - Notepad" (Notepad) 800×600`.
+    static func describe(_ w: WindowInfo) -> String {
+        "id \(w.id) \(w.title.debugDescription) (\(w.appName)) \(w.width)×\(w.height)"
+    }
+
+    /// `-SillTextScale <number>`: Aa's value as the ruler's release would set it (the nearest scale,
+    /// 0.5× to 1.5×, no Off). Nil for anything that is not a positive number.
+    static func textScale(_ text: String) -> Double? {
+        guard let v = Double(text.trimmingCharacters(in: .whitespaces)), v > 0, v.isFinite else { return nil }
+        return TextScale.snap(v, offered: false)
+    }
+
+    /// `-SillCommandAction minimize|close|fullScreen` (any case): the bar menu's window command.
+    static func commandAction(_ text: String) -> WindowCommand.Action? {
+        let t = text.trimmingCharacters(in: .whitespaces).lowercased()
+        return [WindowCommand.Action.close, .minimize, .fullScreen].first { $0.rawValue.lowercased() == t }
+    }
 
     /// `-SillAutoConnect <saved name or address>`: the saved computer it names, by its name (any
     /// case) or by one of its addresses (a `:port` after it is ignored, so is `[…]` around IPv6).
