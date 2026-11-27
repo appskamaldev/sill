@@ -71,3 +71,26 @@ the switch on, no pointer in full screen; the laptop pose's pad shows one.
   starts). The shape is the Mac's (kind 14), as always. Off the picture, nothing changes.
 - **Verified.** `Tests/checks/pointer-presence/run.sh` (178 checks) and `--mutants` (49 of 49, six new); the
   simulator: hidden with no input, the arrow in the middle of the picture. Not run: the Duo's own glass.
+
+**Trackpad in Full Screen: the picture's fingers are the pad's whatever the stacking (2026-11-27, same branch).**
+Kamal, on the Duo (builds 6 and 7, iOS 27.3), open flat and closed: with the switch on, full screen was still direct
+touch, the Mac's pointer jumping to the finger and a touch clicking there.
+
+- **What was ruled out, with evidence.** One key (`Sill.trackpadInFullScreen`) written by the Settings row and read
+  by both panes, through `UserDefaults.standard` (no other store, no idiom or size gate); both picture panes
+  (StreamScreen's content area and PortraitStreamScreen's, every layout goes through one) lay the pad. In the agents'
+  Duo simulator the pad is on top and takes the touch: a live session with the synthetic host, sideways, a real
+  touch event's view the pad (switch off: the input view); the harness's cover upright and sideways, `hitTest`
+  the pad; the switch turned on at run time, then full screen, the pad.
+- **What the device says.** Build 5 drew no pointer at all, and a stroke on the pad draws one: the pad's fingers
+  never reached it there. So on the glass the input view under the pad still took the touches, which the simulator
+  never shows; the stacking of two sibling SwiftUI representables, one put in later, is the only difference left,
+  and was not seen directly.
+- **What it does now.** The decision no longer rests on the stacking: `FullScreenPolicy.surface(for:padOverPicture:)`,
+  asked by both surfaces' `point(inside:with:)`. With the pad over the picture, touches and hovering are the pad's
+  (the input view refuses them, `InputOverlayView.padOverPicture`), so nothing puts the pointer where a finger is;
+  a scroll and a pinch stay the input view's. Hovering changed: an iPad's pointer or Pencil hovering over the
+  picture no longer moves the Mac's pointer while the switch is on (before, it fell through).
+- **Verified.** full-screen check (101,652 checks; 75 of 75 mutants, four new), pointer-presence, trackpad-taps,
+  repo-rules; the simulator (both switch states). Not run: the touch rig (it makes a simulator of its own), the
+  Duo's and the iPad's glass.

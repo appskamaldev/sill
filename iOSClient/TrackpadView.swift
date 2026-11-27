@@ -113,6 +113,18 @@ struct TrackpadView: UIViewRepresentable {
     }
 }
 
+extension FullScreenPolicy.PictureEvent {
+    /// A UIKit event as the picture's surfaces sort it (no event, UIKit's own hit test, is a touch's).
+    init(_ event: UIEvent?) {
+        switch event?.type {
+        case .hover?: self = .hover
+        case .scroll?: self = .scroll
+        case .transform?: self = .transform
+        default: self = .touch
+        }
+    }
+}
+
 final class TrackpadSurface: UIView, UIGestureRecognizerDelegate {
     var send: (InputEvent) -> Void = { _ in }
     /// Writes this device's own pointer (`StreamClient.setOwnPointer`, from the trackpad: a fraction
@@ -456,11 +468,11 @@ final class TrackpadSurface: UIView, UIGestureRecognizerDelegate {
             onEnd: { send(.scrollGesture(.momentumEnded, x: at.x, y: at.y)) })
     }
 
-    /// Over the hidden picture, the events that carry no touch (the pointer or the Pencil hovering, a
-    /// trackpad's or a wheel's scroll, a trackpad's pinch or rotation) fall through to the picture's input
-    /// view, whose recognizers take them as in Direct Touch. Touches are the pad's.
+    /// Over the hidden picture, touches and hovering are the pad's; a trackpad's or a wheel's scroll and a
+    /// trackpad's pinch or rotation fall through to the picture's input view, whose recognizers take them as in
+    /// Direct Touch (FullScreenPolicy.surface, which the input view asks too).
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-        if overPicture, let type = event?.type, type == .hover || type == .scroll || type == .transform { return false }
+        if overPicture, FullScreenPolicy.surface(for: .init(event), padOverPicture: true) != .pad { return false }
         return super.point(inside: point, with: event)
     }
 
