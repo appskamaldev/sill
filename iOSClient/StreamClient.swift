@@ -4224,6 +4224,14 @@ final class StreamClient: ObservableObject {
         renderPointer()   // a rotation: the trackpad's arrow goes in landscape and comes back in portrait
     }
 
+    /// Trackpad in Full Screen: whether the picture is the trackpad now (FullScreenPolicy.pictureIsTrackpad),
+    /// which keeps a pointer on it (PointerPresence.padOverPicture). Main thread.
+    func setPictureIsTrackpad(_ on: Bool) {
+        guard presence.padOverPicture != on else { return }
+        presence.padOverPicture = on
+        renderPointer()
+    }
+
     /// How many fingers are on the portrait pad; only Q1's flip reads it. Main thread.
     func trackpadFingers(_ n: Int) {
         presence.fingers(n, now: ProcessInfo.processInfo.systemUptime)
@@ -4275,6 +4283,7 @@ final class StreamClient: ObservableObject {
     private func resetPointer() {
         resetPointerFeed()
         presence.fingers(0, now: ProcessInfo.processInfo.systemUptime)
+        presence.forgetPad()
         setOwnPointer(nil, from: .none)
     }
 

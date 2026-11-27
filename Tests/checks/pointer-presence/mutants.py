@@ -16,6 +16,14 @@ MUTANTS = [
     ("a finger down does not stop the linger", "        if fingersOnTrackpad > 0 {\n            trackpadLiftedAt = nil\n        } else if wasDown {",
      "        if fingersOnTrackpad > 0 {\n        } else if wasDown {"),
     ("a lift without a finger down starts the linger", "        } else if wasDown {\n            trackpadLiftedAt = now", "        } else {\n            trackpadLiftedAt = now"),
+    # Trackpad in Full Screen
+    ("the full-screen pad's rule ignored", "        if padOverPicture {\n", "        if false {\n"),
+    ("the full-screen pad shows the Mac's off the stream first", "if control == .elsewhere, macInside, let mac { return mac }\n            return padLast",
+     "if control == .elsewhere, let mac { return mac }\n            return padLast"),
+    ("the full-screen pad forgets on a key", "        if origin == .trackpad, let p { padLast = p }\n", "        padLast = p\n"),
+    ("the Pencil's position counts as the pad's", "if origin == .trackpad, let p { padLast = p }", "if let p { padLast = p }"),
+    ("no middle when nothing is known", "return padLast ?? mac ?? CGPoint(x: 0.5, y: 0.5)", "return padLast ?? mac"),
+    ("forgetPad forgets nothing", "mutating func forgetPad() { padLast = nil }", "mutating func forgetPad() {}"),
     # The key row, and a new frame size
     ("the key row hides the Mac's arrow", "        guard macInside, let mac else { return (nil, .none) }\n        return (mac, .trackpad)\n",
      "        return (nil, .none)\n"),
