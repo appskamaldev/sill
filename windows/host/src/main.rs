@@ -14,6 +14,7 @@ const USAGE: &str = "usage: sill-host [options]
   --data-dir DIR           where the identity and paired devices live
                            (Windows default %LOCALAPPDATA%\\Sill; required elsewhere: DEV ONLY, unencrypted)
   --pair                   open a 5-minute pairing window and print its code and sill://pair link
+                           (a host already running for this data dir opens it and this prints it)
   --list-devices           print the paired devices and exit
   --unpair NAME|KEY        remove the paired device with this name, or whose key (as --list-devices
                            prints it and log lines begin it) starts with KEY, and exit
@@ -148,6 +149,25 @@ fn main() {
         std::process::exit(manage(&store, &args));
     }
 
+    // One host per data directory: it holds this lock for as long as it runs.
+    let lock = match std::fs::OpenOptions::new().create(true).truncate(false).write(true).open(dir.join("host.lock")) {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("sill-host: {}: {e}", dir.join("host.lock").display());
+            std::process::exit(1);
+        }
+    };
+    if lock.try_lock().is_err() {
+        if args.pair {
+            std::process::exit(ask_running_host_to_pair(&dir));
+        }
+        eprintln!(
+            "sill-host: a host is already running for {}. `sill-host --pair` opens a pairing window in it.",
+            dir.display()
+        );
+        std::process::exit(1);
+    }
+
     let log_file = std::fs::create_dir_all(dir.join("logs"))
         .and_then(|_| std::fs::OpenOptions::new().create(true).append(true).open(dir.join("logs").join("host.log")))
         .ok()
@@ -161,7 +181,106 @@ fn main() {
         .init();
 
     let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build().expect("tokio runtime");
-    std::process::exit(rt.block_on(run(store, args)));
+    let code = rt.block_on(run(store, args));
+    drop(lock);
+    std::process::exit(code);
+}
+
+const PAIR_REQUEST: &str = "pair.request";
+const PAIR_RESPONSE: &str = "pair.response";
+
+/// `--pair` while a host runs for `dir`: asks it through `pair.request`, prints what it leaves in
+/// `pair.response` (the code and link, read once and deleted).
+fn ask_running_host_to_pair(dir: &std::path::Path) -> i32 {
+    let mut nonce = [0u8; 12];
+    if !sill_store::random(&mut nonce) {
+        eprintln!("sill-host: the random generator failed.");
+        return 1;
+    }
+    let nonce = sill_pairing::base64url::encode(&nonce);
+    let _ = std::fs::remove_file(dir.join(PAIR_RESPONSE));
+    if let Err(e) = std::fs::write(dir.join(PAIR_REQUEST), &nonce) {
+        eprintln!("sill-host: could not ask the running host: {e}");
+        return 1;
+    }
+    println!("A host is already running for {}: asking it to open a pairing window…", dir.display());
+    for _ in 0..50 {
+        std::thread::sleep(std::time::Duration::from_millis(100));
+        let Ok(text) = std::fs::read_to_string(dir.join(PAIR_RESPONSE)) else { continue };
+        let Some(rest) = text.strip_prefix(&format!("{nonce}\n")) else { continue };
+        let _ = std::fs::remove_file(dir.join(PAIR_RESPONSE));
+        print!("{rest}");
+        return 0;
+    }
+    let _ = std::fs::remove_file(dir.join(PAIR_REQUEST));
+    eprintln!("sill-host: the running host did not answer within 5 s (is it an older sill-host?).");
+    1
+}
+
+/// Opens a pairing window and returns the lines `--pair` prints.
+fn open_pairing(host: &Arc<Host>, running: &sill_net::Running) -> Result<Vec<String>, String> {
+    let offer = host.open_pairing().map_err(|e| e.to_string())?;
+    let mut lines = vec![
+        format!(
+            "Pairing open for {:.0} minutes. On the device: Add a Mac, Type address and code.",
+            offer.expires_in / 60.0
+        ),
+        format!("  Code: {}", sill_pairing::code::grouped(&offer.code)),
+        format!("  Link: {}", offer.link),
+    ];
+    for ip in running.addresses().iter().filter(|ip| !ip.is_loopback()) {
+        lines.push(format!(
+            "  Address: {ip} (port {} is the default; type it only if you changed it)",
+            running.remote_port
+        ));
+    }
+    Ok(lines)
+}
+
+/// Twice a second: a `sill-host --pair` from another process (its `pair.request`) opens a window
+/// here, logged as at launch, and the lines go back in `pair.response`.
+async fn answer_pair_requests(host: Arc<Host>, running: Arc<sill_net::Running>, dir: PathBuf) {
+    let mut every = tokio::time::interval(std::time::Duration::from_millis(500));
+    loop {
+        every.tick().await;
+        let Ok(nonce) = std::fs::read_to_string(dir.join(PAIR_REQUEST)) else { continue };
+        let _ = std::fs::remove_file(dir.join(PAIR_REQUEST));
+        let nonce = nonce.trim();
+        if nonce.is_empty()
+            || nonce.len() > 64
+            || !nonce.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+        {
+            continue;
+        }
+        info!("Another sill-host asked for a pairing window.");
+        let text = match open_pairing(&host, &running) {
+            Ok(lines) => {
+                for l in &lines {
+                    info!("{l}");
+                }
+                lines.join("\n") + "\n"
+            }
+            Err(e) => {
+                error!("Could not open a pairing window: {e}");
+                format!("Could not open a pairing window: {e}\n")
+            }
+        };
+        if let Err(e) = write_private(&dir.join(PAIR_RESPONSE), &format!("{nonce}\n{text}")) {
+            warn!("Could not answer the pairing request: {e}");
+        }
+    }
+}
+
+/// Writes `path` whole (a temporary file renamed into place), readable by this user only outside
+/// Windows (on Windows the data directory's own permissions keep it private).
+fn write_private(path: &std::path::Path, text: &str) -> std::io::Result<()> {
+    let tmp = path.with_extension("tmp");
+    let mut o = std::fs::OpenOptions::new();
+    o.create(true).truncate(true).write(true);
+    #[cfg(unix)]
+    std::os::unix::fs::OpenOptionsExt::mode(&mut o, 0o600);
+    o.open(&tmp)?.write_all(text.as_bytes())?;
+    std::fs::rename(tmp, path)
 }
 
 fn manage(store: &Store, args: &Args) -> i32 {
@@ -215,6 +334,7 @@ fn manage(store: &Store, args: &Args) -> i32 {
 }
 
 async fn run(store: Store, args: Args) -> i32 {
+    let store_dir = store.dir().to_path_buf();
     let mut config = Config::new(args.name.clone().unwrap_or_else(default_name));
     config.remote_port = args.remote_port;
     config.home_port = args.home_port;
@@ -246,29 +366,19 @@ async fn run(store: Store, args: Args) -> i32 {
         if host.require_pairing() { "on" } else { "off" },
         host.paired().len()
     );
+    let dir = store_dir.clone();
     let running = match sill_net::start(host.clone()).await {
-        Ok(r) => r,
+        Ok(r) => Arc::new(r),
         Err(e) => {
             error!("Could not start the doors: {e}");
             return 1;
         }
     };
+    let _ = std::fs::remove_file(dir.join(PAIR_REQUEST));
+    tokio::spawn(answer_pair_requests(host.clone(), running.clone(), dir));
     if args.pair {
-        match host.open_pairing() {
-            Ok(offer) => {
-                info!(
-                    "Pairing open for {:.0} minutes. On the device: Add a Mac, Type address and code.",
-                    offer.expires_in / 60.0
-                );
-                info!("  Code: {}", sill_pairing::code::grouped(&offer.code));
-                info!("  Link: {}", offer.link);
-                for ip in running.addresses().iter().filter(|ip| !ip.is_loopback()) {
-                    info!(
-                        "  Address: {ip} (port {} is the default; type it only if you changed it)",
-                        running.remote_port
-                    );
-                }
-            }
+        match open_pairing(&host, &running) {
+            Ok(lines) => lines.iter().for_each(|l| info!("{l}")),
             Err(e) => error!("Could not open a pairing window: {e}"),
         }
     }

@@ -14,7 +14,7 @@ members = [
 edition = "2021"
 license = "Apache-2.0"
 publish = false
-rust-version = "1.75"
+rust-version = "1.89"
 
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }
