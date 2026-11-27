@@ -380,13 +380,13 @@ pub(crate) fn inet_ntop6(b: &[u8; 16]) -> String {
                 None => (i, 1),
             });
         } else if let Some(c) = cur.take() {
-            if best.map_or(true, |b| c.1 > b.1) {
+            if best.is_none_or(|b| c.1 > b.1) {
                 best = Some(c);
             }
         }
     }
     if let Some(c) = cur {
-        if best.map_or(true, |b| c.1 > b.1) {
+        if best.is_none_or(|b| c.1 > b.1) {
             best = Some(c);
         }
     }

@@ -50,7 +50,7 @@ const LENIENT: GeneralPurpose = GeneralPurpose::new(
 
 /// `Data(base64Encoded:)`.
 pub fn data_from_base64(text: &str) -> Option<Vec<u8>> {
-    if text.len() % 4 != 0 {
+    if !text.len().is_multiple_of(4) {
         return None;
     }
     let body = text.trim_end_matches('=');

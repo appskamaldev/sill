@@ -337,7 +337,7 @@ impl SessionState<'_> {
                 None => info!("Viewport from {peer} refused: it does not decode."),
             },
             Kind::KeyframeRequest => {
-                let due = self.last_keyframe_request.map_or(true, |t| t.elapsed() >= KEYFRAME_REQUEST_SPACING);
+                let due = self.last_keyframe_request.is_none_or(|t| t.elapsed() >= KEYFRAME_REQUEST_SPACING);
                 if due {
                     *self.last_keyframe_request = Some(Instant::now());
                     self.video.needs_keyframe.store(true, Ordering::Relaxed);

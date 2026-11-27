@@ -267,7 +267,7 @@ mod tests {
     fn exactly_the_cap_is_taken() {
         let mut r = FrameReader::new(Limits::HostPairing);
         let mut m = header(19, MAX_PAIRING_PAYLOAD as u32);
-        m.extend(std::iter::repeat(b'x').take(MAX_PAIRING_PAYLOAD));
+        m.extend(std::iter::repeat_n(b'x', MAX_PAIRING_PAYLOAD));
         r.push(&m).unwrap();
         let got = r.next_message().unwrap().unwrap();
         assert_eq!(got.payload.len(), MAX_PAIRING_PAYLOAD);
