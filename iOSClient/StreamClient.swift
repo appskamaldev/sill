@@ -4224,7 +4224,7 @@ final class StreamClient: ObservableObject {
         renderPointer()   // a rotation: the trackpad's arrow goes in landscape and comes back in portrait
     }
 
-    /// Trackpad in Full Screen: whether the picture is the trackpad now (FullScreenPolicy.pictureIsTrackpad),
+    /// Use Picture as Trackpad: whether the picture is the trackpad now (FullScreenPolicy.pictureIsTrackpad),
     /// which keeps a pointer on it (PointerPresence.padOverPicture). Main thread.
     func setPictureIsTrackpad(_ on: Bool) {
         guard presence.padOverPicture != on else { return }

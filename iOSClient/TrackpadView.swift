@@ -85,7 +85,7 @@ struct TrackpadView: UIViewRepresentable {
     let onModifiersConsumed: () -> Void
     var verticalSpan: CGFloat? = nil
     var sendGesture: (TrackpadGestures.Gesture, Int) -> Bool = { _, _ in false }
-    /// Trackpad in Full Screen (FullScreenPolicy.pictureIsTrackpad): this pad lies over the hidden picture,
+    /// Use Picture as Trackpad (FullScreenPolicy.pictureIsTrackpad): this pad lies over the picture,
     /// whose input view is under it. Read once, as the surface is made (`TrackpadSurface.overPicture`).
     var overPicture = false
 
@@ -152,7 +152,7 @@ final class TrackpadSurface: UIView, UIGestureRecognizerDelegate {
     /// which checks this device's switch and the Mac's `gestures`, and shows the Desktop first while
     /// a window streams). True when it went, which the light tick follows.
     var sendGesture: (TrackpadGestures.Gesture, Int) -> Bool = { _, _ in false }
-    /// Trackpad in Full Screen: this pad lies over the hidden picture, as the whole picture's trackpad, instead
+    /// Use Picture as Trackpad: this pad lies over the picture, as the whole picture's trackpad, instead
     /// of below it. Its fingers are the pad's; the events that carry no touch (iPadOS's pointer and the Pencil
     /// hovering, a trackpad's or a wheel's scroll, a trackpad's pinch) fall through to the picture's input view
     /// (`point(inside:with:)`). The on-screen trackpad takes everything, as before.
@@ -231,7 +231,7 @@ final class TrackpadSurface: UIView, UIGestureRecognizerDelegate {
         self.init(frame: frame, overPicture: false)
     }
 
-    /// `overPicture`: Trackpad in Full Screen's pad over the picture (fixed for the surface's life).
+    /// `overPicture`: Use Picture as Trackpad's pad over the picture (fixed for the surface's life).
     init(frame: CGRect, overPicture: Bool) {
         super.init(frame: frame)
         self.overPicture = overPicture
