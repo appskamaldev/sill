@@ -406,6 +406,26 @@ enum FullScreenPolicy {
         (portrait && !hidden) || pictureIsTrackpad(hidden: hidden, switchOn: switchOn)
     }
 
+    /// What reaches the picture: a touch (a finger, the Pencil, the iPad pointer's click; UIKit's own hit test
+    /// with no event counts as one), the pointer or the Pencil hovering, a trackpad's or a wheel's scroll, a
+    /// trackpad's pinch or rotation.
+    enum PictureEvent: CaseIterable { case touch, hover, scroll, transform }
+    /// The picture's two surfaces: its input view (direct touch) and, while the picture is the trackpad, the pad.
+    enum PictureSurface { case inputView, pad }
+
+    /// Which surface takes an event. Each surface asks for itself (`point(inside:with:)`), so the answer does not
+    /// hang on how SwiftUI stacks the two: on Kamal's Duo (builds 6 and 7, open flat and closed) the fingers still
+    /// reached the input view with the switch on. With the pad over the picture, touches and hovering are the
+    /// pad's, so nothing puts the pointer where a finger is; a scroll and a pinch stay the input view's (an iPad's
+    /// trackpad and wheel). Without the pad, everything is the input view's, as always.
+    static func surface(for event: PictureEvent, padOverPicture: Bool) -> PictureSurface {
+        guard padOverPicture else { return .inputView }
+        switch event {
+        case .touch, .hover: return .pad
+        case .scroll, .transform: return .inputView
+        }
+    }
+
     // MARK: The Settings rows
 
     /// Where Settings shows Full Screen and Shake to Show Controls: right after Frame Rate and its words while

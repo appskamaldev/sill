@@ -103,6 +103,9 @@ final class InputOverlayView: UIView, UITextInput, UIGestureRecognizerDelegate {
     /// Ahlquist's finding, issue #81; reported again in #322). Sent as a move with the Mac's button still
     /// down, it drew a line from the stroke's end back to where it began.
     private var pencilTouching = false
+    /// Trackpad in Full Screen: the pad lies over this view (FullScreenPolicy.pictureIsTrackpad). Touches and
+    /// hovering then pass this view by, whichever of the two SwiftUI put on top (`point(inside:with:)`).
+    var padOverPicture = false
     /// Whether the session's Mac repeats a key held down (`StreamClient.hostKeyRepeat`, the window list's
     /// `keyRepeat`): a hardware keyboard's characters go to it as keys only then (KeyTyping), as a Mac that
     /// repeats none would type each once. Asked as each key goes down.
@@ -744,6 +747,13 @@ final class InputOverlayView: UIView, UITextInput, UIGestureRecognizerDelegate {
     }
     /// Which button the current pointer press holds down, so the up matches the down.
     private var pointerButtonIsSecondary = false
+
+    /// With the pad over the picture, what is the pad's (FullScreenPolicy.surface: touches and hovering) is never
+    /// this view's, so no finger and no hover puts the pointer where it is.
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        if padOverPicture, FullScreenPolicy.surface(for: .init(event), padOverPicture: true) != .inputView { return false }
+        return super.point(inside: point, with: event)
+    }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         // Any new touch stops a coasting flick, the way touching a moving list does on iOS (and
@@ -2117,6 +2127,9 @@ struct InputOverlay: UIViewRepresentable {
     /// view.
     var readZoom: (() -> StreamZoom)? = nil
     var writeZoom: ((StreamZoom) -> Void)? = nil
+    /// Trackpad in Full Screen (FullScreenPolicy.pictureIsTrackpad): the pad lies over this view, and its
+    /// touches and hovering are the pad's; see `InputOverlayView.padOverPicture`.
+    var padOverPicture = false
 
     func makeUIView(context: Context) -> InputOverlayView {
         let view = InputOverlayView(frame: .zero)
@@ -2134,6 +2147,7 @@ struct InputOverlay: UIViewRepresentable {
         uiView.macRepeatsKeys = macRepeatsKeys
         uiView.readZoom = readZoom
         uiView.writeZoom = writeZoom
+        uiView.padOverPicture = padOverPicture
         // Called straight from a UIKit text-input callback, never from inside a SwiftUI update,
         // so writing the binding here needs no hop.
         uiView.onModifiersConsumed = onModifiersConsumed
