@@ -348,6 +348,9 @@ if signed.verified() == nil {
     exit(1)
 }
 enc("SignedMacInfo", "signed", signed)
+// The same bytes signed by sill-pairing's `sign` (p256, RFC 6979, so fixed): upstream must take it.
+let rustSig = "MEYCIQCtPd/8cKCP+m6r4qj7Og2HUW1d89aBv2zAJA1Tudc8mAIhANckbI3PAE0hVf99HwoWJUqRlI446DJQ4M4EVAlasLPw"
+var rustSigned = signed; rustSigned.sig = rustSig
 var tampered = signed; tampered.info = Data(infoBytes.map { $0 == UInt8(ascii: "5") ? UInt8(ascii: "6") : $0 }).base64EncodedString()
 var wrongKey = signed; wrongKey.key = try! P256.Signing.PrivateKey(rawRepresentation: Data(repeating: 0x22, count: 32)).publicKey.x963Representation.base64EncodedString()
 let signedVectors: [String: Any] = [
@@ -355,6 +358,7 @@ let signedVectors: [String: Any] = [
     "valid": ["info": signed.info, "key": signed.key, "sig": signed.sig, "verifies": signed.verified() != nil,
               "fingerprint": hex(signed.verified()!.fingerprint)],
     "tampered": ["info": tampered.info, "key": tampered.key, "sig": tampered.sig, "verifies": tampered.verified() != nil],
+    "rustSigned": ["info": rustSigned.info, "key": rustSigned.key, "sig": rustSigned.sig, "verifies": rustSigned.verified() != nil],
     "wrongKey": ["info": wrongKey.info, "key": wrongKey.key, "sig": wrongKey.sig, "verifies": wrongKey.verified() != nil],
 ]
 dec(SignedMacInfo.self, "SignedMacInfo", [#"{"info":"e30=","key":"","sig":""}"#, #"{"info":"e30=","key":""}"#])
