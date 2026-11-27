@@ -534,7 +534,7 @@ UDID defaults write com.apple.Accessibility ApplicationAccessibilityEnabled
 A hardware keyboard (docs/hardware-keyboard-plan.md): a simulator's GameController
 always counts the simulator's own keyboard, so the stream's input view takes the
 keyboard by itself there (an empty input view: nothing drawn); `-SillHardwareKeyboard
-1|0` says a keyboard is attached or not for the run instead. The console prints
+1|0` says a keyboard is attached or not for the run instead. A mouse or trackpad (PointerDeviceMonitor, GCMouse; it pauses Use Picture as Trackpad): `-SillPointerDevice 1|0` says one is connected or not for the run, and the console prints `pointer: …` at each connect and disconnect. The console prints
 `keyboard: …` for what HardwareKeyboardPolicy does and `hwkey: usage 41 down via
 pressesBegan (none): to the Mac` (or `keyCommand`) for every hardware key the input
 view sees; `-SillKeyProbe 1` adds GameController's own view of each key,
