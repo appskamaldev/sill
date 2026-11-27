@@ -1,0 +1,16 @@
+[package]
+name = "sill-store"
+version = "0.1.0"
+description = "The host's identity (P-256 key, recognition key), paired devices and settings: DPAPI files on Windows, plain DEV ONLY files elsewhere."
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+sill-pairing = { path = "../sill-pairing" }
+sill-platform = { path = "../sill-platform" }
+serde.workspace = true
+serde_json.workspace = true
+p256.workspace = true
+getrandom.workspace = true

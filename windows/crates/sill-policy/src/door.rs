@@ -137,3 +137,22 @@ pub fn pairing(door: Door, method: &str, version: i64) -> Pairing {
         Pairing::Closed
     }
 }
+
+/// From accept to `.ready`: the whole TLS handshake (`DoorPolicy.handshakeDeadline`).
+pub const HANDSHAKE_DEADLINE: f64 = 4.0;
+/// From `.ready` to a pairing connection's one kind 19 (`DoorPolicy.requestDeadline`).
+pub const REQUEST_DEADLINE: f64 = 4.0;
+/// From accept to admission, at the latest; a known address's handshake deadline too.
+pub const ADMISSION_DEADLINE: f64 = 10.0;
+
+/// When a connection still waiting for admission is refused, in seconds after accept
+/// (`DoorPolicy.deadline`): before `.ready` the handshake deadline (`ADMISSION_DEADLINE` for an
+/// address that recently proved a paired key); once ready (a pairing connection waiting for its
+/// kind 19) `REQUEST_DEADLINE` after `.ready`, never later than `ADMISSION_DEADLINE`.
+pub fn deadline(known: bool, ready_after: Option<f64>) -> f64 {
+    match ready_after {
+        None if known => ADMISSION_DEADLINE,
+        None => HANDSHAKE_DEADLINE,
+        Some(r) => (r + REQUEST_DEADLINE).min(ADMISSION_DEADLINE),
+    }
+}

@@ -457,3 +457,13 @@ fn swift_double_description() {
         assert_eq!(viewport::swift_double(x), want, "{x:?}");
     }
 }
+
+/// `DoorPolicy.deadline(known:readyAfter:)`, as its doc comment states it.
+#[test]
+fn admission_deadlines() {
+    assert_eq!(door::deadline(false, None), 4.0);
+    assert_eq!(door::deadline(true, None), 10.0);
+    assert_eq!(door::deadline(false, Some(1.0)), 5.0);
+    assert_eq!(door::deadline(true, Some(3.5)), 7.5);
+    assert_eq!(door::deadline(false, Some(8.0)), 10.0);
+}

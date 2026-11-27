@@ -1,0 +1,21 @@
+[package]
+name = "sill-host"
+version = "0.1.0"
+description = "Sill's Windows host (Phase 1: pairing, sessions and a synthetic test picture)."
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "sill-host"
+path = "src/main.rs"
+
+[dependencies]
+sill-net = { path = "../crates/sill-net" }
+sill-store = { path = "../crates/sill-store" }
+sill-pairing = { path = "../crates/sill-pairing" }
+sill-wire = { path = "../crates/sill-wire" }
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
