@@ -87,6 +87,9 @@ pub struct Host {
     pub cert: HostCertificate,
     pub stats: Arc<Stats>,
     pub hub: Arc<Hub>,
+    /// The test clip, when it is the picture (`start` loops it into `hub`); otherwise the caller
+    /// feeds `hub` itself (the desktop encoder).
+    pub clip: Option<Arc<Clip>>,
     started: Instant,
     state: Mutex<State>,
     pub shutdown: watch::Sender<bool>,
@@ -116,7 +119,9 @@ fn uuid_like(b: [u8; 16]) -> String {
 }
 
 impl Host {
-    pub fn new(config: Config, store: Store, clip: Clip) -> io::Result<Arc<Host>> {
+    /// `clip`: the test picture `start` loops, or `None` when the caller feeds `hub`.
+    pub fn new(config: Config, store: Store, clip: impl Into<Option<Clip>>) -> io::Result<Arc<Host>> {
+        let clip = clip.into().map(Arc::new);
         let identity = store.identity()?;
         let paired = store.paired()?;
         let settings = store.settings()?;
@@ -134,7 +139,8 @@ impl Host {
             identity,
             launch_id: uuid_like(launch),
             cert,
-            hub: Arc::new(Hub::new(clip, stats.clone())),
+            hub: Arc::new(Hub::new(stats.clone())),
+            clip,
             stats,
             started: Instant::now(),
             state: Mutex::new(State {

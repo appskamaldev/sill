@@ -12,7 +12,7 @@ use sill_wire::{
     StreamSettings, StreamSource, Viewport, WindowList, PROTOCOL_CURRENT,
 };
 use std::net::SocketAddr;
-use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, WriteHalf};
@@ -148,13 +148,7 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
     // Catalog first (kinds 2 then 16), as upstream's `sendCatalog`.
     out.send(message(Kind::WindowList, encode(&window_list(&host))));
     out.send(message(Kind::HostSettings, encode(&host_settings())));
-    let video = Arc::new(ClientVideo {
-        tx: tx.clone(),
-        in_flight,
-        needs_keyframe: AtomicBool::new(true),
-        wants: AtomicBool::new(true),
-        last_sent: out.last_sent.clone(),
-    });
+    let video = Arc::new(ClientVideo::new(tx.clone(), in_flight, out.last_sent.clone()));
     let video_id = host.hub.join(video.clone());
 
     let mut shutdown = host.shutdown.subscribe();
@@ -325,12 +319,13 @@ impl SessionState<'_> {
                     Some(why) => info!("Viewport from {peer} refused: {why}"),
                     None => {
                         *self.fps = v.fps;
+                        self.video.fps.store(v.fps.unwrap_or(0).max(0), Ordering::Relaxed);
                         info!(
-                            "Viewport from {name}: {}×{} points, fps {} (the test picture plays at {}).",
+                            "Viewport from {name}: {}×{} points, fps {} ({}).",
                             viewport::whole(v.width),
                             viewport::whole(v.height),
                             v.fps.map_or("-".into(), |f| f.to_string()),
-                            self.host.hub.clip.fps
+                            self.host.hub.picture()
                         );
                     }
                 },

@@ -157,9 +157,11 @@ pub async fn start(host: Arc<Host>) -> io::Result<Running> {
     let bonjour = Arc::new(Mutex::new(None));
     advertise(&host, home_port, &bonjour);
 
-    let hub = host.hub.clone();
-    let h = host.clone();
-    tokio::spawn(hub.run(host.shutdown.subscribe(), move || h.now_us()));
+    if let Some(clip) = host.clip.clone() {
+        let hub = host.hub.clone();
+        let h = host.clone();
+        tokio::spawn(hub.run_clip(clip, host.shutdown.subscribe(), move || h.now_us()));
+    }
     tokio::spawn(chores(host.clone()));
     Ok(Running { home_port, remote_port, host, bound, bonjour })
 }
