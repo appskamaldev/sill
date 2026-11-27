@@ -46,3 +46,7 @@ approved the design that day). Our fork only (Sill Dev), not for upstream.** Cli
 **Own build 9 (2026-11-27, `task/duo-own-build`).** The gallery and Use Picture as Trackpad, CURRENT_PROJECT_VERSION 9.
 Release with `-allowProvisioningUpdates` (com.appskamaldev.sill, MinimumOSVersion 16.4). Installed on Kamal's iPad
 (cfgutil); the Duo was not reachable (devicectl 1011), so not installed there.
+
+**Own build 10 (2026-11-27, `task/duo-own-build`).** Build 9 plus Use Picture as Trackpad pausing while a mouse or
+trackpad is connected (docs/steps/2026-11-27-task-duo-trackpad.md), CURRENT_PROJECT_VERSION 10. Release with
+`-allowProvisioningUpdates`, for Kamal's Duo (devicectl) and iPad (cfgutil).
