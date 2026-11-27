@@ -389,21 +389,24 @@ enum FullScreenPolicy {
 
     // MARK: The trackpad
 
-    /// Trackpad in Full Screen (Settings › This iPad), a Bool on this device, off unless turned on (Kamal,
-    /// 2026-11-27): while the interface is hidden, the whole picture is the Mac's trackpad, the portrait pad's
-    /// own surface (TrackpadView) laid over it, so the pointer moves from where it is and never jumps to the
-    /// finger. Never sent: the pad sends what the trackpad below the picture does, which every Sill for Mac takes.
+    /// Use Picture as Trackpad (Settings › This iPad), a Bool on this device, off unless turned on (Kamal,
+    /// 2026-11-27; "Trackpad in Full Screen" until build 9, when it went from full screen alone to every layout,
+    /// the bar shown or hidden; the key kept, so the choice carries over): the whole picture is the Mac's
+    /// trackpad, the portrait pad's own surface (TrackpadView) laid over it, so the pointer moves from where it is
+    /// and never jumps to the finger. The laptop pose keeps its pad below the fold, and its picture above follows
+    /// the switch too. Never sent: the pad sends what the trackpad below the picture does, which every Sill for
+    /// Mac takes.
     static let trackpadKey = "Sill.trackpadInFullScreen"
     static let trackpadDefault = false
 
-    /// Whether the picture is the Mac's trackpad: while the interface is hidden and the switch is on. Shown,
-    /// the picture is direct touch, as always.
-    static func pictureIsTrackpad(hidden: Bool, switchOn: Bool) -> Bool { hidden && switchOn }
+    /// Whether the picture is the Mac's trackpad: whenever the switch is on, in every layout, the interface
+    /// shown or hidden. Off, the picture is direct touch, as always.
+    static func pictureIsTrackpad(switchOn: Bool) -> Bool { switchOn }
 
     /// Whether this device's own pointer shows (`StreamClient.setPointerLayout`): wherever a trackpad of this
     /// device moves it, the one below the picture upright (`portrait`, never while hidden) or the picture.
     static func showsOwnPointer(portrait: Bool, hidden: Bool, switchOn: Bool) -> Bool {
-        (portrait && !hidden) || pictureIsTrackpad(hidden: hidden, switchOn: switchOn)
+        (portrait && !hidden) || pictureIsTrackpad(switchOn: switchOn)
     }
 
     /// What reaches the picture: a touch (a finger, the Pencil, the iPad pointer's click; UIKit's own hit test
@@ -515,9 +518,9 @@ enum FullScreenPolicy {
         /// Settings › This iPad › Shake to Show Controls, and the line under it.
         static let shakeTitle = "Shake to Show Controls"
         static func shakeFootnote(device: String) -> String { "Shaking your \(device) brings the controls back too." }
-        /// Settings › This iPad › Trackpad in Full Screen, and the line under it.
-        static let trackpadTitle = "Trackpad in Full Screen"
-        static let trackpadFootnote = "In full screen, the whole picture works as a trackpad: drag to move the pointer, tap to click, tap with two fingers to right-click, tap, then drag to drag, and drag two fingers to scroll."
+        /// Settings › This iPad › Use Picture as Trackpad, and the line under it.
+        static let trackpadTitle = "Use Picture as Trackpad"
+        static let trackpadFootnote = "The whole picture works as a trackpad, with the controls shown or in full screen: drag to move the pointer, tap to click, tap with two fingers to right-click, tap, then drag to drag, and drag two fingers to scroll."
         /// Under the row while Sill's window does not fill the screen.
         static let notOffered = "Full Screen works while Sill fills the screen."
     }
