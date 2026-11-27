@@ -318,6 +318,7 @@ impl Host {
                     model,
                     paired_at: crate::wall_clock(),
                     method: req.method.clone(),
+                    app: None,
                 };
                 // On the list before kind 20 goes out, so the session dial that follows is admitted.
                 s.paired.retain(|d| d.fingerprint != device.fingerprint);
@@ -328,9 +329,9 @@ impl Host {
                 }
                 s.paired_modified = self.store.paired_modified();
                 info!(
-                    "Paired {} (key {}…) from {source}, with {}.",
+                    "Paired {} (key {}) from {source}, with {}.",
                     if name.is_empty() { "a device" } else { &name },
-                    spki::short_name(fp_device),
+                    spki::key_label(fp_device),
                     if req.method == PairRequest::QR { "the QR code" } else { "the code" }
                 );
                 PairResult {
@@ -362,11 +363,29 @@ impl Host {
         }
     }
 
-    /// Removes devices by name or fingerprint (prefix of 6+); returns them.
+    /// The app a paired device said hello with ("Sill 0.6.2 (1607)"), saved when it changed, so
+    /// `--list-devices` tells two pairings from one phone apart (the App Store and a Dev build).
+    pub fn note_app(&self, fp: &[u8], app: Option<String>) {
+        let Some(app) = app else { return };
+        let b = base64url::encode(fp);
+        let mut s = self.state.lock().unwrap();
+        let Some(d) = s.paired.iter_mut().find(|d| d.fingerprint == b) else { return };
+        if d.app.as_deref() == Some(app.as_str()) {
+            return;
+        }
+        d.app = Some(app);
+        if let Err(e) = self.store.save_paired(&s.paired) {
+            warn!("Could not save the paired devices: {e}");
+        }
+        s.paired_modified = self.store.paired_modified();
+    }
+
+    /// Removes the device named `which` or whose fingerprint starts with it
+    /// (`sill_store::remove_matching`); returns it.
     pub fn unpair(&self, which: &str) -> io::Result<Vec<PairedDevice>> {
         let mut s = self.state.lock().unwrap();
         let mut next = s.paired.clone();
-        let removed = sill_store::remove_matching(&mut next, which);
+        let removed = sill_store::remove_matching(&mut next, which).map_err(io::Error::other)?;
         if !removed.is_empty() {
             self.store.save_paired(&next)?;
             s.paired_modified = self.store.paired_modified();

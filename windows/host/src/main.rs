@@ -15,7 +15,8 @@ const USAGE: &str = "usage: sill-host [options]
                            (Windows default %LOCALAPPDATA%\\Sill; required elsewhere: DEV ONLY, unencrypted)
   --pair                   open a 5-minute pairing window and print its code and sill://pair link
   --list-devices           print the paired devices and exit
-  --unpair NAME|FP         remove paired devices by name or fingerprint (6+ leading characters) and exit
+  --unpair NAME|KEY        remove the paired device with this name, or whose key (as --list-devices
+                           prints it and log lines begin it) starts with KEY, and exit
   --require-pairing on|off the home door's Require pairing (saved), then run
   --remote-port N          the remote door's port (default 7455)
   --home-port N            the home door's port (default: a free one)
@@ -83,6 +84,17 @@ fn parse(mut it: impl Iterator<Item = String>) -> Result<Args, String> {
         }
     }
     Ok(a)
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn utc_times() {
+        assert_eq!(super::utc(0.0), "1970-01-01 00:00 UTC");
+        assert_eq!(super::utc(1_798_382_700.0), "2026-12-27 14:45 UTC");
+        assert_eq!(super::utc(951_782_400.0), "2000-02-29 00:00 UTC");
+        assert_eq!(super::utc(f64::NAN), "-");
+    }
 }
 
 /// Writes each log line to the console and to the log file.
@@ -161,7 +173,13 @@ fn manage(store: &Store, args: &Args) -> i32 {
         }
     };
     if let Some(which) = &args.unpair {
-        let removed = sill_store::remove_matching(&mut devices, which);
+        let removed = match sill_store::remove_matching(&mut devices, which) {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("sill-host: {e}");
+                return 1;
+            }
+        };
         if removed.is_empty() {
             eprintln!("sill-host: no paired device matches {which:?}");
             return 1;
@@ -183,11 +201,12 @@ fn manage(store: &Store, args: &Args) -> i32 {
         }
         for d in &devices {
             println!(
-                "{}  {}  model {}  paired {:.0} by {}",
+                "{}  {}  model {}  app {}  paired {} by {}",
                 d.fingerprint,
                 d.name,
                 d.model.as_deref().unwrap_or("-"),
-                d.paired_at,
+                d.app.as_deref().unwrap_or("-"),
+                utc(d.paired_at),
                 d.method
             );
         }
@@ -257,6 +276,26 @@ async fn run(store: Store, args: Args) -> i32 {
     info!("Quitting: goodbye to every device.");
     running.quit().await;
     0
+}
+
+/// "2026-11-27 16:25 UTC" for seconds since 1970.
+fn utc(secs: f64) -> String {
+    if !secs.is_finite() || secs < 0.0 {
+        return "-".into();
+    }
+    let s = secs as i64;
+    let (days, rest) = (s.div_euclid(86_400), s.rem_euclid(86_400));
+    // Howard Hinnant's civil_from_days.
+    let z = days + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let day = doy - (153 * mp + 2) / 5 + 1;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = yoe + era * 400 + i64::from(month <= 2);
+    format!("{year:04}-{month:02}-{day:02} {:02}:{:02} UTC", rest / 3600, rest % 3600 / 60)
 }
 
 fn sill_platform_protected() -> bool {

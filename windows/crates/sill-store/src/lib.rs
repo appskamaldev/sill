@@ -61,6 +61,9 @@ pub struct PairedDevice {
     pub paired_at: f64,
     /// "code" or "qr".
     pub method: String,
+    /// The app of its last hello, "Sill 0.6.2 (1607)".
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub app: Option<String>,
 }
 
 impl PairedDevice {
@@ -208,15 +211,26 @@ impl Store {
     }
 }
 
-/// Removes the devices whose name or fingerprint (base64url, or a prefix of 6+ characters of it)
-/// is `which`; returns those removed.
-pub fn remove_matching(devices: &mut Vec<PairedDevice>, which: &str) -> Vec<PairedDevice> {
-    let hit = |d: &PairedDevice| {
-        d.name == which || d.fingerprint == which || (which.len() >= 6 && d.fingerprint.starts_with(which))
-    };
-    let removed: Vec<PairedDevice> = devices.iter().filter(|d| hit(d)).cloned().collect();
-    devices.retain(|d| !hit(d));
-    removed
+/// Removes the one device named `which`, or else the one whose fingerprint (base64url, as
+/// `--list-devices` prints it and log lines begin it) starts with `which`; returns it (none when
+/// nothing matches). More than one match removes nothing and says which keys to tell apart.
+pub fn remove_matching(devices: &mut Vec<PairedDevice>, which: &str) -> Result<Vec<PairedDevice>, String> {
+    let which = which.trim().trim_end_matches('…');
+    if which.is_empty() {
+        return Ok(Vec::new());
+    }
+    let named: Vec<usize> = (0..devices.len()).filter(|&i| devices[i].name == which).collect();
+    let keyed: Vec<usize> = (0..devices.len()).filter(|&i| devices[i].fingerprint.starts_with(which)).collect();
+    let hit = if named.is_empty() { keyed } else { named };
+    if hit.len() > 1 {
+        let names: Vec<String> = hit.iter().map(|&i| devices[i].fingerprint.chars().take(8).collect()).collect();
+        return Err(format!(
+            "{} paired devices match {which:?} (keys {}); give more of the key, as --list-devices prints it",
+            hit.len(),
+            names.join(", ")
+        ));
+    }
+    Ok(hit.first().map(|&i| devices.remove(i)).into_iter().collect())
 }
 
 #[cfg(test)]
@@ -254,14 +268,24 @@ mod tests {
             model: Some("iPhone".into()),
             paired_at: 1.8e9,
             method: "code".into(),
+            app: Some("Sill 0.6.2 (1607)".into()),
         };
         s.save_paired(std::slice::from_ref(&d)).unwrap();
         s.save_settings(&Settings { require_pairing: false }).unwrap();
         assert_eq!(s.paired().unwrap(), vec![d.clone()]);
         assert!(!s.settings().unwrap().require_pairing);
         let mut list = vec![d.clone()];
-        assert_eq!(remove_matching(&mut list, &d.fingerprint[..8]), vec![d]);
+        assert_eq!(remove_matching(&mut list, &d.fingerprint[..8]), Ok(vec![d.clone()]));
         assert!(list.is_empty());
+        // Two pairings from one phone: the same name, keys that differ after their first letters.
+        let other = PairedDevice { fingerprint: format!("BwcX{}", &d.fingerprint[4..]), ..d.clone() };
+        let mut list = vec![d.clone(), other.clone()];
+        assert!(remove_matching(&mut list, "Kamal's iPhone").is_err());
+        assert!(remove_matching(&mut list, &d.fingerprint[..2]).is_err(), "Bw… is both");
+        assert_eq!(list.len(), 2);
+        assert_eq!(remove_matching(&mut list, &format!("{}…", &d.fingerprint[..5])), Ok(vec![d.clone()]));
+        assert_eq!(remove_matching(&mut list, "zzzz"), Ok(vec![]));
+        assert_eq!(list, vec![other]);
         fs::remove_dir_all(dir).unwrap();
     }
 }

@@ -114,7 +114,7 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
     let writer = tokio::spawn(writer(w, rx, in_flight.clone()));
     let out = Sender { tx: tx.clone(), last_sent: Arc::new(AtomicU64::new(0)), host: host.clone() };
     let name =
-        host.paired_name(&fp).filter(|n| !n.is_empty()).unwrap_or_else(|| format!("key {}…", spki::short_name(&fp)));
+        host.paired_name(&fp).filter(|n| !n.is_empty()).unwrap_or_else(|| format!("key {}", spki::key_label(&fp)));
     let started = Instant::now();
     let mut reader = FrameReader::new(Limits::HostSession);
     let mut buf = vec![0u8; 64 * 1024];
@@ -170,9 +170,11 @@ pub async fn run<S: AsyncRead + AsyncWrite + Send + 'static>(
         out: &out,
         video: &video,
         peer,
+        fp,
         name: &name,
         fps: &mut fps,
         last_keyframe_request: &mut last_keyframe_request,
+        picked_desktop: false,
     };
     for m in early {
         s.handle(m);
@@ -259,9 +261,13 @@ struct SessionState<'a> {
     out: &'a Sender,
     video: &'a Arc<ClientVideo>,
     peer: SocketAddr,
+    fp: [u8; 32],
     name: &'a str,
     fps: &'a mut Option<i64>,
     last_keyframe_request: &'a mut Option<Instant>,
+    /// The Desktop was picked and not unpicked since: a device sends its own pick on the first
+    /// window list and its switcher's, often in one read (Checkpoint 1: two lines 6 µs apart).
+    picked_desktop: bool,
 }
 
 impl SessionState<'_> {
@@ -274,7 +280,10 @@ impl SessionState<'_> {
                 self.host.stats.pongs.fetch_add(1, Ordering::Relaxed);
             }
             Kind::Hello => match decode::<Hello>(&m.payload) {
-                Some(h) => info!("{}", device_gate::hello_line(&h, &peer.to_string())),
+                Some(h) => {
+                    info!("{}", device_gate::hello_line(&h, &peer.to_string()));
+                    self.host.note_app(&self.fp, device_gate::app_label(&h));
+                }
                 None => info!("{name} at {peer}: a hello that does not decode."),
             },
             Kind::ClientStats => {
@@ -291,14 +300,19 @@ impl SessionState<'_> {
                 }
             }
             Kind::SelectSource => match decode::<StreamSource>(&m.payload) {
+                Some(StreamSource::Desktop) if self.picked_desktop => {
+                    debug!("{name} at {peer} picked the Desktop again; it streams already.");
+                }
                 Some(StreamSource::Desktop) => {
                     info!("{name} at {peer} picked the Desktop.");
+                    self.picked_desktop = true;
                     self.video.needs_keyframe.store(true, Ordering::Relaxed);
                     self.video.wants.store(true, Ordering::Relaxed);
                     self.host.hub.request_keyframe();
                 }
                 Some(StreamSource::None) => {
                     info!("{name} at {peer} picked nothing.");
+                    self.picked_desktop = false;
                     self.video.wants.store(false, Ordering::Relaxed);
                 }
                 Some(StreamSource::Window(id)) => {

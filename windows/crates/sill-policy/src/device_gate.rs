@@ -82,6 +82,17 @@ pub fn count_line(n: usize, source: &str, floor: &SillVersion) -> String {
 }
 
 /// "Client hello: iPad (iPad14,1), Sill 1.0 (42), protocol 1 (192.168.1.23:52344)".
+/// "Sill 0.6.2 (1607)" from a hello; `None` when it names no version.
+pub fn app_label(hello: &Hello) -> Option<String> {
+    let v = safe_text::label(hello.app_version.as_deref().unwrap_or(""), 32);
+    let build = safe_text::label(hello.build.as_deref().unwrap_or(""), 32);
+    match (v.is_empty(), build.is_empty()) {
+        (true, _) => None,
+        (false, true) => Some(format!("Sill {v}")),
+        (false, false) => Some(format!("Sill {v} ({build})")),
+    }
+}
+
 pub fn hello_line(hello: &Hello, endpoint: &str) -> String {
     let name = safe_text::label64(hello.device.as_deref().unwrap_or(""));
     let v = safe_text::label(hello.app_version.as_deref().unwrap_or(""), 32);

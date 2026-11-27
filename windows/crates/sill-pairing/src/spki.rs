@@ -61,7 +61,15 @@ pub fn mac_id_is_well_formed(text: &str) -> bool {
     text.chars().count() == 16 && text.bytes().all(|b| ALPHABET.contains(&b))
 }
 
-/// "5KD2Q7": the first six characters of the Mac ID, for log lines.
+/// "aNDLkEyP…": the first eight base64url characters of a device key's fingerprint, the form
+/// `sill-host --list-devices` prints in full and `--unpair` takes a prefix of. Every log line
+/// names a device key this way.
+pub fn key_label(fingerprint: &[u8]) -> String {
+    let b = crate::base64url::encode(fingerprint);
+    format!("{}…", &b[..b.len().min(8)])
+}
+
+/// "5KD2Q7": the first six characters of the Mac ID (upstream's `shortName`, for a host's key).
 pub fn short_name(fingerprint: &[u8]) -> String {
     mac_id(fingerprint).chars().take(6).collect()
 }

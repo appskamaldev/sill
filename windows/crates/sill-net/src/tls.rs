@@ -113,7 +113,7 @@ impl ClientCertVerifier for PinVerifier {
         }
         host.stats.refused.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let key =
-            fp.map(|f| format!("key {}…", spki::short_name(&f))).unwrap_or_else(|| "a key that is not P-256".into());
+            fp.map(|f| format!("key {}", spki::key_label(&f))).unwrap_or_else(|| "a key that is not P-256".into());
         info!(
             "Refused {} at the {} door: {key} not trusted for {} (TLS alert certificate_unknown).",
             self.peer,
