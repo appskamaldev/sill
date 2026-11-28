@@ -86,7 +86,7 @@ exe is inside its own folder; `sill-host.exe --control-any-client` lifts that fo
 The app starts the host if it is not running, keeps one instance (a second launch is handed to the
 first), and exits when its last window closes; the host and the tray icon stay.
 Development flags: `--page status|pair|devices|streaming|network|logs|about`, `--theme light|dark`,
-`--stay` (the flyout stays open without focus), `--timing` (launch times in app.log). App errors: `%LOCALAPPDATA%\Sill\logs\app.log`.
+`--stay` (the flyout stays open without focus), `--timing` (launch times in app.log; every flyout open logs its draw time anyway). App errors: `%LOCALAPPDATA%\Sill\logs\app.log`.
 
 ## Synthetic clip (macOS, no Xcode project, no simulator: no xcode-lock)
 

@@ -56,7 +56,7 @@ public sealed partial class FlyoutWindow : Window
         Activate();
         Native.Foreground(this);
         PairButton.Focus(FocusState.Programmatic);
-        if (App.Current?.Timing == true)
+        // One line per open, so a slow open from the tray (cold cache after sleep) can be measured.
         {
             void Drawn(object? o, object e)
             {
