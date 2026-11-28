@@ -48,6 +48,12 @@ security review (fuzz the parsers, TLS refusal paths), MSIX or MSI installer wit
 documentation, regression against the Mac host (the same device build talks to both), optional
 client changes C1/C2 if approved.
 
+## Ideas (not scheduled)
+- **Windows ↔ Mac control** (Kamal, 2026-11-28): a Windows laptop controls a Mac running Sill, and a
+  Mac controls a Windows PC running sill-host. Needs a desktop viewer on each side (the client today
+  is iOS/iPadOS only): a Windows client for the Mac host, and a Mac client (or the iPad app on
+  Apple silicon) for sill-host. Not assessed yet.
+
 ## Windows 10 / Server (evaluated separately)
 - Windows 10 21H2+: WGC works but shows a capture border; `DnsServiceRegister` ok; process loopback
   audio needs 2004+. Expected to work with the border caveat.

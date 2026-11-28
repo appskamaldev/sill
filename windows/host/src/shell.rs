@@ -394,7 +394,17 @@ unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPARAM) 
     if msg == WM_TRAY {
         // NOTIFYICON_VERSION_4: the event is the low word of lParam.
         match (lp.0 as u32) & 0xFFFF {
-            WM_LBUTTONUP | 0x0400 /* NIN_SELECT */ | 0x0401 /* NIN_KEYSELECT */ => open_app("--flyout"),
+            // One click brings WM_LBUTTONUP and then NIN_SELECT: act on NIN_SELECT only, and let a
+            // burst (Enter on a keyboard-selected icon sends NIN_KEYSELECT twice) open it once.
+            0x0400 /* NIN_SELECT */ | 0x0401 /* NIN_KEYSELECT */ => {
+                static LAST: Mutex<Option<std::time::Instant>> = Mutex::new(None);
+                let mut last = LAST.lock().unwrap_or_else(|e| e.into_inner());
+                if last.is_none_or(|t| t.elapsed() >= std::time::Duration::from_millis(300)) {
+                    *last = Some(std::time::Instant::now());
+                    drop(last);
+                    open_app("--flyout");
+                }
+            }
             WM_CONTEXTMENU | WM_RBUTTONUP => show_menu(hwnd),
             _ => {}
         }

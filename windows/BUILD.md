@@ -77,7 +77,7 @@ Needs the .NET 8 SDK (8.0.4xx); NuGet fetches the Windows App SDK 1.6. No Visual
 ```
 cd windows\app\Sill
 dotnet build -c Release                                  # bin\Release\net8.0-windows10.0.22621.0\win-x64\Sill.exe
-dotnet publish -c Release -r win-x64 --self-contained -o <install dir>\app   # trimmed, about 77 MB
+dotnet publish -c Release -r win-x64 --self-contained -o <install dir>\app   # trimmed + ReadyToRun, about 84 MB
 ```
 Install layout: `<dir>\sill-host.exe` and `<dir>\app\Sill.exe` (+ its files). The host opens the app
 from the tray (`--flyout`; `--pair` for Pair a device) and lets onto its control pipe
@@ -86,7 +86,7 @@ exe is inside its own folder; `sill-host.exe --control-any-client` lifts that fo
 The app starts the host if it is not running, keeps one instance (a second launch is handed to the
 first), and exits when its last window closes; the host and the tray icon stay.
 Development flags: `--page status|pair|devices|streaming|network|logs|about`, `--theme light|dark`,
-`--stay` (the flyout stays open without focus). App errors: `%LOCALAPPDATA%\Sill\logs\app.log`.
+`--stay` (the flyout stays open without focus), `--timing` (launch times in app.log). App errors: `%LOCALAPPDATA%\Sill\logs\app.log`.
 
 ## Synthetic clip (macOS, no Xcode project, no simulator: no xcode-lock)
 

@@ -83,7 +83,7 @@ impl Catalog {
         let _ = std::thread::Builder::new().name("sill-apps".into()).spawn(move || {
             let mut last: Option<std::time::Instant> = None;
             loop {
-                let due = last.map_or(true, |t| t.elapsed() >= RESCAN);
+                let due = last.is_none_or(|t| t.elapsed() >= RESCAN);
                 if due && (m.sessions)() > 0 {
                     m.refresh_apps();
                     last = Some(std::time::Instant::now());

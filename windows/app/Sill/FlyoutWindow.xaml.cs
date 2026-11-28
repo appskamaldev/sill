@@ -56,6 +56,15 @@ public sealed partial class FlyoutWindow : Window
         Activate();
         Native.Foreground(this);
         PairButton.Focus(FocusState.Programmatic);
+        if (App.Current?.Timing == true)
+        {
+            void Drawn(object? o, object e)
+            {
+                Microsoft.UI.Xaml.Media.CompositionTarget.Rendering -= Drawn;
+                App.Log($"flyout drawn at {App.Since()} ms");
+            }
+            Microsoft.UI.Xaml.Media.CompositionTarget.Rendering += Drawn;
+        }
     }
 
     /// Bottom right of the work area of the display under the pointer, 12 px in from each edge.

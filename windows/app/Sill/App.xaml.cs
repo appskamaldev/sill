@@ -52,6 +52,12 @@ public partial class App : Application
     /// A forced theme ("--theme light|dark"); the system's otherwise.
     public ElementTheme Theme { get; private set; } = ElementTheme.Default;
 
+    /// "--timing": log how long launches take (app.log).
+    public bool Timing { get; private set; }
+
+    /// Milliseconds since this process started.
+    public static long Since() => (long)(DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime).TotalMilliseconds;
+
     /// "--stay": the flyout stays open when it loses focus (for screenshots and tests).
     public bool Stay { get; private set; }
 
@@ -64,6 +70,8 @@ public partial class App : Application
     /// What a launch asks for: "--flyout", "--pair", "--page <tag>", or the window.
     public void Route(string[] args)
     {
+        Timing |= args.Contains("--timing");
+        if (Timing) Log($"route {string.Join(' ', args)} at {Since()} ms");
         Theme = After(args, "--theme") switch { "light" => ElementTheme.Light, "dark" => ElementTheme.Dark, _ => Theme };
         Stay |= args.Contains("--stay");
         if (args.Contains("--flyout"))
