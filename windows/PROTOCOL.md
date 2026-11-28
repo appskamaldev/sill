@@ -218,7 +218,7 @@ are refused as IPv4, not taken as names). `sill-pairing` ports these exactly.
 - Pointer: `x,y ∈ [0,1]` of the frame → source rectangle in virtual-desktop pixels → `SendInput`
   `MOUSEEVENTF_ABSOLUTE|MOUSEEVENTF_VIRTUALDESK`. Move with a button held = drag. Click count is
   not on the wire; Windows derives double-clicks itself.
-- Scroll: `dy × rect height` (points) → wheel delta, carrying the remainder; natural sign as sent.
+- Scroll: `dy × rect height` (points) × 1.2 (measured in Edge: 120 units = 100 DIPs) → one high-resolution wheel delta per event (not whole notches), carrying the remainder; natural sign as sent. `scrollGesture` `ended`/`momentumEnded` sends the rounded remainder; `began` drops it.
 - Keys: HID usage → Windows scan code (set 1), extended flag for navigation keys.
   Modifier bits (UIKeyModifierFlags): capsLock 1<<16, shift 1<<17, control 1<<18, option 1<<19,
   command 1<<20. Policy (configurable): **Command → Ctrl**, Option → Alt, Control → Ctrl,

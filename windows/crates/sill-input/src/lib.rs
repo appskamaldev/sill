@@ -4,8 +4,12 @@
 //! - Pointer: `x, y` in 0…1 of the frame land on the captured monitor's rectangle, in physical
 //!   pixels of the virtual desktop. A move with a button held is a drag, because Windows sees the
 //!   button down.
-//! - Scroll: `dx, dy` (fractions of the frame the content moves, natural sign) become wheel
-//!   units, carrying the remainder so slow scrolls still move.
+//! - Scroll: `dx, dy` (fractions of the frame the content moves, natural sign) become
+//!   high-resolution wheel deltas (not whole 120 notches), one `SendInput` per event, carrying the
+//!   remainder so slow scrolls still move. Apps that scroll per pixel (Edge, Chromium, WinUI,
+//!   Office) follow the finger; apps that take whole notches add the small deltas up themselves.
+//!   A gesture's end (`ended`, `momentumEnded`) sends what is left; a new one (`began`) starts
+//!   from zero.
 //! - Text: UTF-16 units as Unicode key events; "\n", "\t" and "\u{8}" are Return, Tab and
 //!   Backspace.
 //! - Keys: HID usage to scan code. The modifiers follow the event's flags on every key down.
@@ -19,7 +23,7 @@ pub mod keymap;
 pub mod win;
 
 use keymap::Scan;
-use sill_wire::{InputEvent, PointerAction};
+use sill_wire::{InputEvent, PointerAction, ScrollPhase};
 use std::collections::BTreeSet;
 
 /// UIKeyModifierFlags bits.
@@ -28,8 +32,10 @@ pub const CONTROL: u64 = 1 << 18;
 pub const OPTION: u64 = 1 << 19;
 pub const COMMAND: u64 = 1 << 20;
 
-/// Wheel units per point the content moves (Windows' 120 per notch over about 50 points).
-pub const WHEEL_PER_POINT: f64 = 2.4;
+/// Wheel units per point the content moves. Measured in Edge (Windows 11, 3 lines per notch, any
+/// scale): 120 units scroll 100 DIPs, and deltas under 120 scroll in proportion (60 × 1 unit = 50
+/// DIPs), so one point of finger travel is 1.2 units.
+pub const WHEEL_PER_POINT: f64 = 1.2;
 /// The longest text event typed (anything longer is cut there).
 pub const MAX_TEXT_UNITS: usize = 4096;
 
@@ -163,7 +169,7 @@ impl Injector {
                 a
             }
             InputEvent::Scroll { x, y, dx, dy } => self.scroll(rect, *x, *y, *dx, *dy),
-            InputEvent::ScrollGesture { .. } => Vec::new(),
+            InputEvent::ScrollGesture { phase, .. } => self.scroll_phase(*phase),
             InputEvent::Text(t) => text(t),
             InputEvent::Key { hid_usage, down, modifiers } => self.key(*hid_usage, *down, *modifiers),
         }
@@ -181,13 +187,31 @@ impl Injector {
         // (dx < 0) is the wheel turned right (positive).
         let v = dy.clamp(-1.0, 1.0) * rect.points(rect.height) * WHEEL_PER_POINT + self.wheel_rest.1;
         let h = -dx.clamp(-1.0, 1.0) * rect.points(rect.width) * WHEEL_PER_POINT + self.wheel_rest.0;
-        let (vi, hi) = (v.trunc(), h.trunc());
+        // The nudge keeps 1.2 + 0.8 from landing on 1.999… and sending 1.
+        let whole = |u: f64| (u + u.signum() * 1e-9).trunc();
+        let (vi, hi) = (whole(v), whole(h));
         self.wheel_rest = (h - hi, v - vi);
         if vi != 0.0 {
             a.push(Action::Wheel { delta: vi as i32, horizontal: false });
         }
         if hi != 0.0 {
             a.push(Action::Wheel { delta: hi as i32, horizontal: true });
+        }
+        a
+    }
+
+    /// At a gesture's end the remainder, rounded, so the page lands where the finger left it;
+    /// at a new gesture's start, a clean slate.
+    fn scroll_phase(&mut self, phase: ScrollPhase) -> Vec<Action> {
+        let (h, v) = std::mem::take(&mut self.wheel_rest);
+        let mut a = Vec::new();
+        if matches!(phase, ScrollPhase::Ended | ScrollPhase::MomentumEnded) {
+            if v.round() != 0.0 {
+                a.push(Action::Wheel { delta: v.round() as i32, horizontal: false });
+            }
+            if h.round() != 0.0 {
+                a.push(Action::Wheel { delta: h.round() as i32, horizontal: true });
+            }
         }
         a
     }
@@ -355,19 +379,47 @@ mod tests {
     #[test]
     fn scroll_carries_the_remainder_with_natural_sign() {
         let mut i = Injector::new();
-        // 1/1200 of the frame is 1 point: 2.4 units, then 2.4 more (4.8 → 4, rest 0.8).
+        // 1/1200 of the frame is 1 point: 1.2 units each time (1, 1, 1, 1, then the carried 0.8
+        // makes 2).
         let one_point = 1.0 / 1200.0;
-        let a = i.handle(&InputEvent::Scroll { x: 0.5, y: 0.5, dx: 0.0, dy: one_point }, &RECT);
-        assert_eq!(a[1], Action::Wheel { delta: 2, horizontal: false });
-        let a = i.handle(&InputEvent::Scroll { x: 0.5, y: 0.5, dx: 0.0, dy: one_point }, &RECT);
-        assert_eq!(a[1], Action::Wheel { delta: 2, horizontal: false });
-        let a = i.handle(&InputEvent::Scroll { x: 0.5, y: 0.5, dx: 0.0, dy: one_point }, &RECT);
-        assert_eq!(a[1], Action::Wheel { delta: 3, horizontal: false }, "the carried 0.8 adds up");
+        let wheel = |i: &mut Injector| i.handle(&InputEvent::Scroll { x: 0.5, y: 0.5, dx: 0.0, dy: one_point }, &RECT);
+        for _ in 0..4 {
+            assert_eq!(wheel(&mut i)[1], Action::Wheel { delta: 1, horizontal: false });
+        }
+        assert_eq!(wheel(&mut i)[1], Action::Wheel { delta: 2, horizontal: false }, "the carried 0.8 adds up");
         // Content moving up (dy < 0) is the wheel down; content moving left is the wheel right.
         let a = i.handle(&InputEvent::Scroll { x: 0.5, y: 0.5, dx: -0.01, dy: -0.01 }, &RECT);
         assert!(matches!(a[1], Action::Wheel { delta, horizontal: false } if delta < 0));
         assert!(matches!(a[2], Action::Wheel { delta, horizontal: true } if delta > 0));
         assert!(i.handle(&InputEvent::Scroll { x: 0.5, y: 0.5, dx: f64::INFINITY, dy: 0.0 }, &RECT).is_empty());
+    }
+
+    #[test]
+    fn one_frame_of_travel_is_one_frame_of_wheel() {
+        // 100 points of content travel (1/12 of a 1200-point frame) is 120 units: one notch,
+        // which Edge scrolls 100 DIPs.
+        let mut i = Injector::new();
+        let a = i.handle(&InputEvent::Scroll { x: 0.5, y: 0.5, dx: 0.0, dy: 100.0 / 1200.0 }, &RECT);
+        assert_eq!(a[1], Action::Wheel { delta: 120, horizontal: false });
+        // At 150 % a 1800-pixel-high monitor is 1200 points: the same travel, the same delta.
+        let r = Rect { left: 0, top: 0, width: 2880, height: 1800, dpi_scale: 1.5 };
+        let a = i.handle(&InputEvent::Scroll { x: 0.5, y: 0.5, dx: 0.0, dy: 100.0 / 1200.0 }, &r);
+        assert_eq!(a[1], Action::Wheel { delta: 120, horizontal: false });
+    }
+
+    #[test]
+    fn a_gesture_end_sends_the_rest_and_a_start_drops_it() {
+        let gesture = |p| InputEvent::ScrollGesture { phase: p, x: 0.5, y: 0.5 };
+        let mut i = Injector::new();
+        // 0.6 point: 0.72 units, nothing yet; the end sends 1.
+        assert_eq!(i.handle(&InputEvent::Scroll { x: 0.5, y: 0.5, dx: 0.0, dy: 0.6 / 1200.0 }, &RECT).len(), 1);
+        assert_eq!(i.handle(&gesture(ScrollPhase::Ended), &RECT), vec![Action::Wheel { delta: 1, horizontal: false }]);
+        assert!(i.handle(&gesture(ScrollPhase::MomentumEnded), &RECT).is_empty(), "nothing is sent twice");
+        // A remainder left over is not carried into the next gesture.
+        i.handle(&InputEvent::Scroll { x: 0.5, y: 0.5, dx: 0.0, dy: 0.6 / 1200.0 }, &RECT);
+        assert!(i.handle(&gesture(ScrollPhase::Began), &RECT).is_empty());
+        assert!(i.handle(&gesture(ScrollPhase::Ended), &RECT).is_empty());
+        assert!(i.handle(&gesture(ScrollPhase::MomentumBegan), &RECT).is_empty());
     }
 
     #[test]
